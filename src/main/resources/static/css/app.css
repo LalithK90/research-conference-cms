@@ -1,0 +1,23 @@
+/* App global styles to prevent horizontal scroll and improve layout */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure containers don't exceed viewport width */
+.container, .container-fluid {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Prevent long words/urls from forcing horizontal scroll */
+.no-wrap-fix {
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Utility: remove horizontal scroll for specific wrappers */
+.no-h-scroll {
+  overflow-x: hidden !important;
+}

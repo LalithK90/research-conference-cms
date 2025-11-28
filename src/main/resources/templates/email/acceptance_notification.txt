@@ -1,0 +1,12 @@
+Hello [[${submitterName}]],
+
+Congratulations — your paper titled:
+
+"[[${paperTitle}]]"
+
+has been accepted to the conference.
+
+Please follow the instructions in your author dashboard for camera-ready submission and registration.
+
+Regards,
+Conference Committee

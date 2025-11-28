@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Register for Conference</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/" th:text="${conference.title}">Conference</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">Conference Registration</h3>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${user == null}" class="alert alert-warning">
+                            Please <a href="/login">login</a> or <a href="/login">create an account</a> to register.
+                        </div>
+
+                        <div th:if="${user != null}">
+                            <h5 th:text="${conference.title}">Conference Title</h5>
+                            <p class="text-muted" th:text="${conference.venue} + ' | ' + ${conference.startDate}">Venue
+                                | Date</p>
+                            <hr>
+
+                            <form action="/register" method="post">
+                                <div class="mb-3">
+                                    <label class="form-label">Select Ticket Type</label>
+                                    <select name="ticketType" class="form-select" required onchange="updatePrice(this)">
+                                        <option value="REGULAR" data-price="100">Regular Attendee ($100)</option>
+                                        <option value="STUDENT" data-price="50">Student ($50)</option>
+                                        <option value="VIRTUAL" data-price="25">Virtual Access ($25)</option>
+                                    </select>
+                                </div>
+
+                                <input type="hidden" name="amount" id="amountInput" value="100">
+
+                                <!-- Payment Info Display -->
+                                <div class="alert alert-info" th:if="${paymentConfig != null}">
+                                    <h6 class="alert-heading">Payment Method: <span
+                                            th:text="${paymentConfig.provider}">PROVIDER</span></h6>
+
+                                    <div th:if="${paymentConfig.provider.name() == 'LOCAL_BANK'}">
+                                        <p class="mb-0">Please transfer the fees to the following account:</p>
+                                        <pre class="mt-2 bg-light p-2 border" th:text="${paymentConfig.bankDetails}">
+                                        </pre>
+                                        <small>Your registration will be pending until payment is verified.</small>
+                                    </div>
+
+                                    <div th:if="${paymentConfig.provider.name() == 'STRIPE'}">
+                                        <p>You will be redirected to Stripe for secure payment.</p>
+                                        <!-- Placeholder for Stripe Elements -->
+                                        <div id="card-element" class="form-control mb-3"></div>
+                                    </div>
+
+                                    <div th:if="${paymentConfig.provider.name() == 'PAYPAL'}">
+                                        <p>Pay securely with PayPal.</p>
+                                    </div>
+
+                                    <div th:if="${paymentConfig.provider.name() == 'FREE'}">
+                                        <p>This conference is free to attend.</p>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success btn-lg">Complete Registration</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updatePrice (select) {
+            const price = select.options[select.selectedIndex].getAttribute('data-price');
+            document.getElementById('amountInput').value = price;
+        }
+    </script>
+</body>
+
+</html>

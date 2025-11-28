@@ -1,0 +1,13 @@
+Hello [[${submitterName}]],
+
+Thank you for submitting your paper titled:
+
+"[[${paperTitle}]]"
+
+Submission ID: [[${paperId}]]
+Track: [[${track}]]
+
+We have received your submission and will notify you when reviews are complete.
+
+Regards,
+Conference Team

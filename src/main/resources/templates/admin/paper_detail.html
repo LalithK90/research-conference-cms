@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Paper Detail</title>
+    <style>
+        .section { margin-bottom: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { padding: 8px; border: 1px solid #ddd; }
+        th { background: #f4f4f4; }
+    </style>
+</head>
+<body>
+<h1>Paper Detail</h1>
+<div th:if="${error}">
+    <p th:text="${error}"></p>
+</div>
+<div th:if="${paper}">
+    <div class="section">
+        <h2 th:text="${paper.title}"></h2>
+        <p><strong>Track:</strong> <span th:text="${paper.track}"></span></p>
+        <p><strong>Status:</strong> <span th:text="${paper.status}"></span></p>
+        <p><strong>Submitter:</strong> <span th:text="${paper.submitter.fullName}"></span> (<span th:text="${paper.submitter.email}"></span>)</p>
+    </div>
+
+    <div class="section">
+        <h3>Authors</h3>
+        <ul>
+            <li th:each="a : ${paper.authors}" th:text="${a.name} + ' <' + a.email + '>'"></li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>Versions</h3>
+        <table>
+            <thead>
+                <tr><th>Version</th><th>Filename</th><th>File Path</th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="v : ${paper.versions}">
+                    <td th:text="${v.versionNumber}"></td>
+                    <td th:text="${v.originalFilename}"></td>
+                    <td th:text="${v.filePath}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Reviews</h3>
+        <table>
+            <thead>
+                <tr><th>Reviewer</th><th>Score</th><th>Comments</th><th>Confidential</th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="r : ${reviews}">
+                    <td th:text="${r.reviewer.fullName}"></td>
+                    <td th:text="${r.score}"></td>
+                    <td th:text="${r.comments}"></td>
+                    <td th:text="${r.confidentialComments}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h3>Decision</h3>
+        <form th:action="@{'/admin/decisions/' + ${paper.id} + '/apply?decision=ACCEPT'}" method="post">
+            <button type="submit">Accept</button>
+        </form>
+        <form th:action="@{'/admin/decisions/' + ${paper.id} + '/apply?decision=REJECT'}" method="post">
+            <button type="submit">Reject</button>
+        </form>
+        <form th:action="@{'/admin/decisions/' + ${paper.id} + '/apply?decision=BORDERLINE'}" method="post">
+            <button type="submit">Borderline</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

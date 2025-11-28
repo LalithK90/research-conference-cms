@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${conference.title}">Conference</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/app.css" rel="stylesheet">
+    <style>
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/" th:text="${conference.title}">Conference</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/committee">Committee</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/speakers">Speakers</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/schedule">Schedule</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/venue">Venue</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/contact">Contact</a></li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="nav-link" href="/login">Login</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <form method="post" action="/logout" class="d-inline">
+                            <button type="submit" class="btn btn-link nav-link" style="border:none;">Logout</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero text-center">
+        <div class="container">
+            <h1 class="display-3" th:text="${conference.title}">Conference Title</h1>
+            <p class="lead" th:text="${conference.venue}">Venue</p>
+            <p class="lead" th:text="${conference.startDate} + ' - ' + ${conference.endDate}">Dates</p>
+            <div th:if="${conference != null}" id="countdown" class="mt-3" th:attr="data-end-date=${conference.endDate}">
+                <div class="h5">Time until conference end:</div>
+                <div id="countdown-timer" class="h3 fw-bold">--:--:--</div>
+            </div>
+            <a href="/register" class="btn btn-light btn-lg mt-3">Register Now</a>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-md-4 text-center">
+                <h3>Call for Papers</h3>
+                <p>Submit your research and contribute to advancing knowledge</p>
+                <a href="/author/submit" class="btn btn-primary">Submit Paper</a>
+            </div>
+            <div class="col-md-4 text-center">
+                <h3>Keynote Speakers</h3>
+                <p>Learn from leading experts in the field</p>
+                <a href="/speakers" class="btn btn-primary">View Speakers</a>
+            </div>
+            <div class="col-md-4 text-center">
+                <h3>Program Schedule</h3>
+                <p>Explore our comprehensive conference program</p>
+                <a href="/schedule" class="btn btn-primary">View Schedule</a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white text-center py-4">
+        <p>&copy; 2026 <span th:text="${conference.title}">Conference</span>. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Simple countdown to conference end date (reads YYYY-MM-DD from data attribute)
+        (function(){
+            const el = document.getElementById('countdown');
+            if (!el) return;
+            const endDate = el.dataset.endDate; // e.g. 2025-11-30
+            if (!endDate) return;
+            const target = new Date(endDate + 'T23:59:59');
+            const timer = document.getElementById('countdown-timer');
+            function update() {
+                const now = new Date();
+                const diff = target - now;
+                if (diff <= 0) {
+                    timer.textContent = 'Conference ended';
+                    clearInterval(interval);
+                    return;
+                }
+                const days = Math.floor(diff / (1000*60*60*24));
+                const hours = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+                const mins = Math.floor((diff % (1000*60*60)) / (1000*60));
+                const secs = Math.floor((diff % (1000*60)) / 1000);
+                timer.textContent = days + 'd ' + String(hours).padStart(2,'0') + ':' + String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+            }
+            update();
+            const interval = setInterval(update, 1000);
+        })();
+    </script>
+</body>
+
+</html>

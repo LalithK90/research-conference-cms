@@ -1,0 +1,67 @@
+plugins {
+  id 'java'
+  id 'org.springframework.boot' version '3.5.8'
+  id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = "com.icosiam"
+version = "1.0.0"
+description = 'Demo project for Spring Boot'
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
+}
+
+repositories {
+    mavenCentral()
+}
+dependencies {
+    // Spring Boot Starters
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa") // This handles persistence!
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    // Third-Party Libraries
+    implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6")
+
+    // Database Driver (Use the version managed by Spring Boot if possible)
+    runtimeOnly("com.mysql:mysql-connector-j")
+
+    // PDF Generation (Requires explicit version as it's not a Spring dependency)
+    // NOTE: You must update the version '2.0.30' as it is ancient.
+    implementation("org.apache.pdfbox:pdfbox:3.0.1") // RECOMMENDED: Use a modern version like 3.0.1
+
+    // Lombok
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
+
+    // Dev Tools
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+
+    // In-memory DB for development profile
+    runtimeOnly("com.h2database:h2")
+
+    // Testing
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test")
+}
+
+tasks.named('test') {
+  useJUnitPlatform()
+}
+
+// Ensure Gradle's bootRun and bootJar pick the correct main class when multiple mains exist
+bootRun {
+  mainClass.set('com.icosiam.cms.ConferenceCmsApplication')
+}
+
+bootJar {
+  mainClass.set('com.icosiam.cms.ConferenceCmsApplication')
+}
