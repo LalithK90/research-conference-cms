@@ -184,7 +184,7 @@ This reuses existing email infrastructure and the existing magic-link token patt
 
 **Requirement (confirmed):** prioritize the concrete technical gaps now; treat consent/retention policy as a later, separate item.
 
-**Gap (already identified in 1.3, restated here under its actual driver):** CSRF is disabled; the default admin password is published in plaintext in the README; no field-level encryption exists for sensitive personal data (payment details already go through Stripe/PayPal so card data itself isn't stored — good — but things like national ID-style fields if any institution adds them, or raw email addresses used for the new download-audit log in 2.9, are stored as plain columns).
+**Gap (already identified in 1.3, restated here under its actual driver, plus one newly-verified finding):** CSRF is disabled; the default admin password is published in plaintext in the README; no field-level encryption exists for sensitive personal data. **Newly verified:** `AdminConferenceController.ConferenceForm` and `ConferencePaymentConfig` store Stripe **secret key** and PayPal **client secret** as plain `String` fields with no encryption — these are real credentials (not just personal data), and a DB dump or backup would expose them in cleartext. This is a more concrete finding than the general "payment details" note in 1.3.
 
 **Recommendation (technical baseline only, per your scope choice):**
 
@@ -192,19 +192,44 @@ This reuses existing email infrastructure and the existing magic-link token patt
 - Replace the published static default admin credential with a forced first-run setup flow (generate a random password on first boot, print it once to the server log or require setting one during initial DB seed, never in the README).
 - Enforce TLS at the deployment/reverse-proxy layer (document this as a deployment requirement for self-hosting institutions, since the app itself can't force HTTPS if it's behind a customer's own proxy).
 - Encrypt at rest any personal-data column beyond what's already delegated to Stripe/PayPal — the download-audit log's `ip_address` (2.9) is itself personal data under PDPA and should have a documented retention limit, not be kept forever by default.
+- Encrypt `stripeSecretKey` and `paypalClientSecret` at rest (e.g. JPA attribute converter with AES, key sourced from an environment variable / secrets manager, never committed) — these are payment-processor credentials, arguably a higher-severity leak than most PDPA personal-data fields, since a leaked secret key can be used to move money, not just identify a person.
 - This is explicitly the *technical* baseline; consent capture, retention/deletion workflows, and breach-notification process are noted here as a real future requirement but out of scope for this pass, per your answer.
+
+### 2.11 Committee member selection at conference-creation time
+
+**Requirement (confirmed):** when a conference is created, the creator must select/assign the Chair (required) and Co-Chairs (0+) as part of that same creation step — a conference cannot be saved without a Chair.
+
+**Gap (verified in code):** `AdminConferenceController.newConferenceForm`/`saveConference` and `conference_form.html` handle only title/venue/dates/logo/contact/payment config — there is **no committee or chair field anywhere in the creation flow**. `SteeringCommitteeMember` is a separate entity (free-text `role: String`, e.g. `"Conference Chair"` as a label, not an enforced role) with no visible creation-time UI wiring at all — it's unclear from what's been read whether it's populated through any screen today. This means the "select chair, then show on website" flow you're describing doesn't exist yet in either the security-role sense (2.1) or the public-committee-page sense.
+
+**Recommendation:**
+
+- Merge this with 2.1 rather than treating it as separate: the conference-creation form gains a required "Chair" selector (search-existing-user-or-invite-by-email, reusing the same invite mechanism from 2.3) and a repeatable "Co-Chair" add-row, writing directly into the `Conference`↔`User` role-join table from 2.1 at save time. `saveConference` must reject the submission server-side if no Chair is set — enforced in the service layer, not just a required HTML attribute, since the public API (`AdminConferenceController`, or any future REST equivalent) must not bypass it.
+- `SteeringCommitteeMember` (name/role-label/bio/imageUrl) should become the **public-display projection** of the same committee-role data, not a second source of truth maintained separately — i.e., the committee-role join table is what's authoritative for permissions, and the public committee page renders from it (pulling bio/photo from the linked `User` profile, extended with conference-specific bio/photo override fields since a person's bio may differ per conference). This directly answers your "keep as dynamic" question: **committee membership, role, and per-conference bio/photo are dynamic (DB, keyed to the conference)**; a person's base profile (name, ORCID, default photo) is dynamic too but keyed to the user, not the conference — reused across every conference they're ever part of, not re-entered each time.
+
+### 2.12 Login location tracking (GeoLite2)
+
+**Requirement (confirmed):** wire up the currently-unused `GeoLite2-City.mmdb` file to log an approximate location per login, as a real feature (security/suspicious-login awareness), not remove it.
+
+**Gap (verified):** `src/main/resources/static/GeoLite2-City.mmdb` exists but **no Java code references it** — no MaxMind reader, no import anywhere in `src/main/java`. It's a dropped-in asset with nothing wired to it. There's also no `com.maxmind.geoip2` dependency in `build.gradle`.
+
+**Recommendation:**
+
+- Add the `com.maxmind.geoip2:geoip2` dependency to `build.gradle` and move the `.mmdb` file out of `static/` (a public web-servable directory — anyone could currently download the raw geolocation database, which is at minimum a wasted-bandwidth issue and arguably a licensing concern for MaxMind's redistribution terms) into a non-served resource path (e.g. `src/main/resources/geoip/`), loaded via classpath at startup.
+- On successful login (and optionally failed attempts, useful for suspicious-activity detection), resolve the request IP to city/country via `DatabaseReader.city(ip)` and record it — this is naturally the same kind of audit event as the download log in 2.9, so consider one shared `AuthEventLog`/`AccessLog` table (login events and paper-download events both being "who, when, from where, what") rather than two separate logging mechanisms.
+- The resolved location is itself personal data under PDPA (2.10) — it needs the same retention-limit treatment as the download log's IP address, and MaxMind's own license requires periodic database updates (the bundled `.mmdb` will go stale) — note this as an operational requirement for self-hosting institutions, not a one-time setup step.
+- **Also found, not yet in this doc:** Trumbowyg (rich-text editor) is fully vendored under `static/dist/trumbowyg*` with ready-made Thymeleaf fragments (`templates/fragments/trumbowygStyle.html`, `trumbowygScript.html`) but, like GeoLite2, **no template currently includes those fragments** — it's available but unused. Given 2.11's committee bios and the "About this conference" static content (1.5) are exactly the kind of free-text content an admin would want to format, wiring Trumbowyg into those admin-editing forms (committee bio, conference description) is low-effort since the fragments already exist — flagging it as a small win to bundle with 2.11 rather than its own item.
 
 ---
 
 ## Summary: recommended order of work
 
 1. **Fix the domain-model split + package rename** (1.2, 2.7) — blocking, everything else builds on `User`/`Paper`/review entities, and doing the rename separately means touching every file twice.
-2. **Committee roles** (2.1) — Chair/Co-Chair as conference-scoped roles, replacing the implicit assumption that `ADMIN` does everything.
+2. **Committee roles + chair-required-at-creation** (2.1, 2.11) — Chair/Co-Chair as conference-scoped roles selected/invited during conference creation, replacing both the implicit "`ADMIN` does everything" assumption and the disconnected `SteeringCommitteeMember` free-text role.
 3. **Reviewer decline + suggestion + chair-approved auto-invite** (2.2, 2.3) — the specific workflow you called out as special.
 4. **Reviewer paper access + feedback-to-author** (2.8) — depends on 1.2 (needs one real `User`/file-storage model) but not on 2.1–2.3.
 5. **Multi-auth** (2.4) — magic link wiring + Google/ORCID/Zenodo as OAuth2 registrations, `UserIdentity` table.
-6. **Security/PDPA technical baseline** (2.10) — CSRF, default-credential fix; small and independent, can realistically be done anytime, but do it early since it's a live exposure, not a feature gap.
-7. **Download audit log + duplicate detection** (2.9) — hooks into the same file-storage consolidation as step 1; the hash-based duplicate check is cheap once storage is unified.
+6. **Security/PDPA technical baseline** (2.10) — CSRF, default-credential fix, payment-secret encryption; small and independent, can realistically be done anytime, but do it early since it's a live exposure, not a feature gap.
+7. **Download + login audit log, duplicate detection, GeoLite2 wiring** (2.9, 2.12) — one shared access-log design covers both; hooks into the same file-storage consolidation as step 1; the hash-based duplicate check is cheap once storage is unified.
 8. **Proceedings real implementation + Zenodo deposit** (2.5) — depends on 2.1 (chair sign-off) and 2.4 (ORCID metadata), so sequenced last.
 9. **Conference cloning UX** (2.6) — small, can slot in anytime, no dependencies.
 
