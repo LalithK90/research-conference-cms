@@ -178,21 +178,21 @@ This reuses existing email infrastructure and the existing magic-link token patt
 
 *(a) Access/download audit log* — a `PaperDownloadLog` (or generically `FileAccessLog`, since reviewers viewing papers in 2.8 is the same kind of event) entity: `paper_id` (or `paper_version_id`, to know exactly which revision), `user_id`, `downloaded_at`, `ip_address`. Written from one place — inside `FileStorageService.load()` (once consolidated to one class per 1.2/2.7) or a thin wrapper around it — so every download path (reviewer view, author re-download, admin export, proceedings generation) is captured without each caller remembering to log it themselves. This is a pure audit trail; no business logic needed beyond "write a row."
 
-*(b) Duplicate/prior-submission detection* — a materially different problem: comparing a *newly submitted* paper against everything previously submitted (in this conference, and potentially across conferences if the same institution runs several). Cheapest useful version: hash the uploaded PDF content (e.g. SHA-256) and store it on `PaperVersion`; on new submission, check for existing rows with the same hash and flag an exact-duplicate match to the chair for review. This catches literal re-uploads cheaply. **Note:** true "resubmitted to a different journal with edits" detection (not byte-identical) needs text-similarity comparison, which is a meaningfully bigger feature (extract text, compare against a corpus) — recommend shipping the hash-based exact-match check first, and treating similarity-based detection as a separate future item rather than bundling it in now.
+*(b) Duplicate/prior-submission detection* — a materially different problem: comparing a *newly submitted* paper against everything previously submitted (in this conference, and potentially across conferences if the same institution runs several). Cheapest useful version: hash the uploaded PDF content (e.g. SHA-256) and store it on `PaperVersion`; on new submission, check for existing rows with the same hash and flag an exact-duplicate match to the chair for review. This catches literal byte-identical re-uploads cheaply and is worth keeping regardless of 2.13, since it's near-free and catches a case text-similarity might miss (identical file, different metadata). **Update:** true text-similarity detection (not byte-identical) is no longer out of scope — see 2.13, which now covers both internal-corpus and external-provider similarity checking as part of desk review.
 
 ### 2.10 PDPA / personal-data protection — technical baseline
 
 **Requirement (confirmed):** prioritize the concrete technical gaps now; treat consent/retention policy as a later, separate item.
 
-**Gap (already identified in 1.3, restated here under its actual driver, plus one newly-verified finding):** CSRF is disabled; the default admin password is published in plaintext in the README; no field-level encryption exists for sensitive personal data. **Newly verified:** `AdminConferenceController.ConferenceForm` and `ConferencePaymentConfig` store Stripe **secret key** and PayPal **client secret** as plain `String` fields with no encryption — these are real credentials (not just personal data), and a DB dump or backup would expose them in cleartext. This is a more concrete finding than the general "payment details" note in 1.3.
+**Gap (already identified in 1.3, restated here under its actual driver, plus one newly-verified finding):** CSRF is disabled; the default admin password is published in plaintext in the README; no field-level encryption exists for sensitive personal data. **Newly verified:** `AdminConferenceController.ConferenceForm` and `ConferencePaymentConfig` store Stripe **secret key** and PayPal **client secret** as plain `String` fields in the database — confirmed by the stakeholder to currently be placeholder/dummy data, with the real design intent being to keep payment credentials out of the database entirely (see 2.14).
 
 **Recommendation (technical baseline only, per your scope choice):**
 
 - Re-enable CSRF in `SecurityConfig` (currently explicitly disabled) — this alone is the single highest-value fix, since it's a real, exploitable gap today, not a future risk.
 - Replace the published static default admin credential with a forced first-run setup flow (generate a random password on first boot, print it once to the server log or require setting one during initial DB seed, never in the README).
 - Enforce TLS at the deployment/reverse-proxy layer (document this as a deployment requirement for self-hosting institutions, since the app itself can't force HTTPS if it's behind a customer's own proxy).
-- Encrypt at rest any personal-data column beyond what's already delegated to Stripe/PayPal — the download-audit log's `ip_address` (2.9) is itself personal data under PDPA and should have a documented retention limit, not be kept forever by default.
-- Encrypt `stripeSecretKey` and `paypalClientSecret` at rest (e.g. JPA attribute converter with AES, key sourced from an environment variable / secrets manager, never committed) — these are payment-processor credentials, arguably a higher-severity leak than most PDPA personal-data fields, since a leaked secret key can be used to move money, not just identify a person.
+- Encrypt at rest any personal-data column that must remain in the database — the download-audit log's `ip_address` (2.9) is itself personal data under PDPA and should have a documented retention limit, not be kept forever by default.
+- Payment provider credentials specifically move to externalized config rather than being encrypted-in-DB — see 2.14 for the confirmed design.
 - This is explicitly the *technical* baseline; consent capture, retention/deletion workflows, and breach-notification process are noted here as a real future requirement but out of scope for this pass, per your answer.
 
 ### 2.11 Committee member selection at conference-creation time
@@ -219,6 +219,46 @@ This reuses existing email infrastructure and the existing magic-link token patt
 - The resolved location is itself personal data under PDPA (2.10) — it needs the same retention-limit treatment as the download log's IP address, and MaxMind's own license requires periodic database updates (the bundled `.mmdb` will go stale) — note this as an operational requirement for self-hosting institutions, not a one-time setup step.
 - **Also found, not yet in this doc:** Trumbowyg (rich-text editor) is fully vendored under `static/dist/trumbowyg*` with ready-made Thymeleaf fragments (`templates/fragments/trumbowygStyle.html`, `trumbowygScript.html`) but, like GeoLite2, **no template currently includes those fragments** — it's available but unused. Given 2.11's committee bios and the "About this conference" static content (1.5) are exactly the kind of free-text content an admin would want to format, wiring Trumbowyg into those admin-editing forms (committee bio, conference description) is low-effort since the fragments already exist — flagging it as a small win to bundle with 2.11 rather than its own item.
 
+### 2.13 Plagiarism / similarity checking at desk review
+
+**Requirement (confirmed):** desk review (2.1) needs similarity checking against **external sources** (the industry-standard meaning of "plagiarism check" — comparing against published literature, the web, and other institutions' submissions, not just this system's own data); checking against **this system's own database** of past submissions is a good addition on top, not a replacement.
+
+**Gap:** No plagiarism/similarity checking exists in any form today — this is new scope, not a fix to something partially built.
+
+**Recommendation:** since this product is self-hosted per-institution (confirmed framing throughout this doc) and different institutions already hold subscriptions to different plagiarism services (Turnitin, iThenticate, Copyleaks, PlagScan, Grammarly's checker, etc., or none at all), design this the same way payment providers already are — a **pluggable provider interface**, confirmed as the preferred approach:
+
+- Define one interface, e.g. `PlagiarismCheckProvider { CheckResult check(PaperVersion version) }`, returning a similarity score and a report URL/reference at minimum.
+- Each concrete provider (Turnitin, iThenticate, Copyleaks, ...) implements it against that vendor's actual API; which one is active is an installation-level config choice (credentials in the same externalized-properties location as payment providers — see 2.14 — since these are also third-party API credentials, not conference data).
+- An installation with no plagiarism-provider credentials configured simply has the feature unavailable in the desk-review UI (same "gracefully absent, not erroring" pattern already recommended for OAuth2 providers in 2.4) — this keeps the product usable for institutions with no subscription yet.
+- **Internal-database similarity check** (your "also so good" addition) is a separate, always-available check requiring no third-party subscription: compare a new submission's extracted text against the text of all previously-stored papers in this installation (which, notably, grows more useful over time and across every conference the same installation has ever run — another reason the single-tenant/self-hosted model from earlier in this doc matters, since each institution's own historical corpus stays with their own instance). A basic approach (e.g. shingling + Jaccard similarity, or an existing Java text-similarity library) is enough for a first version; this can ship independently of and before any external-provider integration, since it needs no external account.
+- Both checks' results surface together on the desk-review screen the chair/co-chair (2.1) uses — external score/report link (if a provider is configured) alongside internal-corpus matches (if any) — as input to the desk-review accept/reject/send-to-review decision, not as an automatic reject.
+
+### 2.14 Payment credentials externalized + manual bank-transfer with slip upload
+
+**Requirement (confirmed):** all payment-provider credentials (Stripe, PayPal, etc.) move to a separate `.properties` file rather than the database (current DB fields are confirmed placeholder/dummy data, not real design intent). Additionally, manual bank-transfer payment needs a real workflow: the author uploads a payment slip through the app, and a backend/finance team member reviews it and updates the payment status.
+
+**Gap (verified in code):** `ConferencePaymentConfig` (still living in the legacy flat package — another instance of the 1.2 duplication) stores `stripeSecretKey`/`paypalClientSecret` as DB columns with no externalization, and `Registration.paymentStatus` only has `PENDING/PAID/FAILED/REFUNDED` — no status for "slip submitted, awaiting verification," and no slip-file field exists anywhere on `Registration` (only an unrelated `invoicePath`, which reads as an outbound generated invoice, not an inbound uploaded proof-of-payment).
+
+**Recommendation:**
+
+- Move provider API credentials (Stripe/PayPal keys) into `application*.properties` (or environment variables, following the pattern already used for DB/SMTP credentials in this same file) — read via `@Value`/`@ConfigurationProperties`, never stored in `ConferencePaymentConfig`. `ConferencePaymentConfig` keeps only non-secret, conference-specific data (which provider is active, bank account *display* details for instructions — those aren't credentials, just information shown to payers).
+- Add `AWAITING_VERIFICATION` to `PaymentStatus`, and a `paymentSlipPath` field on `Registration` (via the existing `FileStorageService`, once consolidated per 1.2) — populated when an author uploads their bank-transfer slip.
+- New endpoint for authors: upload slip → `Registration.paymentStatus = AWAITING_VERIFICATION`.
+- New finance-team-facing screen/role: list registrations `AWAITING_VERIFICATION` with their uploaded slip viewable, and an action to mark `PAID` or reject back to `PENDING` with a reason. This is a distinct responsibility from Chair/Co-Chair (2.1) and from `ADMIN` — worth a `FINANCE`/`REGISTRATION_MANAGER` role rather than overloading `ADMIN`, so an institution can delegate payment verification without granting full admin rights (consistent with the conference-scoped-role pattern already established in 2.1).
+- This slip file is another case the download-audit log (2.9) should cover — the finance reviewer opening a slip is a download/access event like any other.
+
+### 2.15 Author-facing full submission status (current + all previous submissions)
+
+**Requirement (confirmed):** authors need to see full status for their submissions — both the current one and previous ones — covering everything: review/decision stage and payment/registration status together.
+
+**Gap:** No author-facing status dashboard exists in what's been read — `SubmissionRestController` (submission endpoints) and `RegistrationController` exist independently, but nothing surfaces "here is everything about my papers and my registration, across every conference I've submitted to on this installation" in one place.
+
+**Recommendation:**
+
+- One author-facing "My Submissions" view, scoped to the logged-in `User`, listing every `Paper` they're an author on (via `PaperAuthor`) across **all** conferences this installation has run — not just the currently-active one — each showing: current status (`SUBMITTED`/`UNDER_REVIEW`/`ACCEPTED`/`REJECTED`, extended with a `DESK_REJECTED` stage per 2.1 if desk review ends a paper early), which version is latest, and (once 2.8 ships) a link to any reviewer feedback released to them.
+- Alongside it, the author's own registration/payment status (2.14) — including `AWAITING_VERIFICATION` if they've uploaded a slip and are waiting on finance review — so "did my payment go through" and "what happened to my paper" are visible in the same place rather than two disconnected screens.
+- This is a read-only aggregation view over data that will already exist once 2.1/2.2/2.8/2.14 are built — no new domain modeling required beyond exposing what's already there, but it should be designed alongside those items (not bolted on after) since it's the thing that determines what fields/statuses those items need to expose in the first place.
+
 ---
 
 ## Summary: recommended order of work
@@ -228,9 +268,12 @@ This reuses existing email infrastructure and the existing magic-link token patt
 3. **Reviewer decline + suggestion + chair-approved auto-invite** (2.2, 2.3) — the specific workflow you called out as special.
 4. **Reviewer paper access + feedback-to-author** (2.8) — depends on 1.2 (needs one real `User`/file-storage model) but not on 2.1–2.3.
 5. **Multi-auth** (2.4) — magic link wiring + Google/ORCID/Zenodo as OAuth2 registrations, `UserIdentity` table.
-6. **Security/PDPA technical baseline** (2.10) — CSRF, default-credential fix, payment-secret encryption; small and independent, can realistically be done anytime, but do it early since it's a live exposure, not a feature gap.
-7. **Download + login audit log, duplicate detection, GeoLite2 wiring** (2.9, 2.12) — one shared access-log design covers both; hooks into the same file-storage consolidation as step 1; the hash-based duplicate check is cheap once storage is unified.
-8. **Proceedings real implementation + Zenodo deposit** (2.5) — depends on 2.1 (chair sign-off) and 2.4 (ORCID metadata), so sequenced last.
-9. **Conference cloning UX** (2.6) — small, can slot in anytime, no dependencies.
+6. **Security/PDPA technical baseline** (2.10) — CSRF, default-credential fix; small and independent, can realistically be done anytime, but do it early since it's a live exposure, not a feature gap.
+7. **Payment credentials externalized + manual bank-slip workflow** (2.14) — independent of most other items; do early since it removes real (if currently dummy) secrets from the database.
+8. **Download + login audit log, duplicate detection, GeoLite2 wiring** (2.9, 2.12) — one shared access-log design covers both; hooks into the same file-storage consolidation as step 1; the hash-based duplicate check is cheap once storage is unified.
+9. **Plagiarism/similarity checking** (2.13) — internal-corpus check can ship early (no external dependency); external-provider integration depends on desk review (2.1) existing as the place results are shown.
+10. **Author-facing submission status dashboard** (2.15) — design alongside 2.1/2.2/2.8/2.14 since it consumes their output, but the aggregation view itself is straightforward once they exist.
+11. **Proceedings real implementation + Zenodo deposit** (2.5) — depends on 2.1 (chair sign-off) and 2.4 (ORCID metadata), so sequenced last.
+12. **Conference cloning UX** (2.6) — small, can slot in anytime, no dependencies.
 
 Each numbered item above is sized to become its own brainstorm → spec → implementation-plan cycle, per the project's existing architectural workflow, rather than one combined plan.
