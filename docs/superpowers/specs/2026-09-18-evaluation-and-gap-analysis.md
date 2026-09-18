@@ -261,19 +261,64 @@ This reuses existing email infrastructure and the existing magic-link token patt
 
 ---
 
+## Part 3 — Gaps found via external research (industry-standard practice)
+
+Requested check: compare this design against how established conference-management tools (EasyChair, Microsoft CMT, HotCRP, OpenReview) actually work, to surface anything missing that wasn't raised by either the AIT comparison or the stakeholder's own requirements. Four real gaps surfaced, all standard practice in every tool checked — none of these were previously in this doc.
+
+### 3.1 Double-blind review anonymization
+
+**Finding:** every serious conference tool (CMT, EasyChair, OpenReview, HotCRP) treats author-identity-hiding-from-reviewers as core, not optional — because reviewer bias by author identity is a well-documented, studied problem (see PNAS research on single- vs double-blind review bias). Standard practice: the submission system automatically strips identifying metadata from what a reviewer sees, and authors are instructed to avoid self-identifying language in the paper body itself.
+
+**Gap (verified against this codebase):** `Paper` has `submitter` and `authors` directly on the entity with no separation between "what the chair/admin sees" and "what an assigned reviewer sees." Once 2.8 (reviewer paper access) is built, a reviewer fetching the paper file and metadata would see author names/affiliations directly — there is currently no mechanism to prevent this.
+
+**Recommendation:**
+
+- Make blind-review mode a **per-conference setting** (not hardcoded), since some institutions/tracks run single-blind or open review instead — this fits the existing `Conference`-scoped-config pattern already used for payment/tracks.
+- When enabled, the reviewer-facing paper view/download (2.8) must serve a version with author metadata stripped from what's rendered to the reviewer (author list, any header/footer identifying info in the file itself is an author responsibility per standard practice, same as every real tool — the system can't scrub arbitrary PDF body text, only what it controls: the metadata and any author-list fields it renders).
+- This has to be designed as part of 2.8 (reviewer paper access), not bolted on after — it changes what that endpoint is allowed to return.
+
+### 3.2 Conflict-of-interest declaration by name/affiliation, without de-blinding
+
+**Finding:** standard practice (confirmed across CMT/EasyChair-style tools) separates two different CoI mechanisms: (a) authors declare CoIs with committee/reviewer members at submission time, and (b) reviewers declare CoIs against a list of **author names and affiliations only** (no paper titles/abstracts/IDs) *before* being shown any paper — this lets CoI be resolved without ever de-blinding a paper to find out if a conflict exists.
+
+**Gap:** `ReviewBid.conflictReason` (a free-text field, populated only when a reviewer bids `CONFLICT` on a specific paper) is the only CoI mechanism that exists today. This requires the reviewer to already be looking at (or bidding on) a specific paper to discover a conflict — the opposite of the standard "declare against a name list first" pattern, and in tension with 3.1's blinding goal, since bidding-per-paper implicitally exposes something about the paper to the reviewer before any conflict is screened.
+
+**Recommendation:** add a conference-level "declare conflicts" step for reviewers/chairs — a simple multi-select against the list of author names+affiliations for that conference's submitted papers (no titles/abstracts shown) — run once per reviewer per conference (or per assignment round), whose output feeds automatic exclusion from `ReviewAssignment`/auto-assignment (2.1's assignment logic) for any paper sharing a declared conflicted name/affiliation. This is a smaller, more standard-aligned addition on top of the existing bid/assignment system, not a replacement for it.
+
+### 3.3 Camera-ready as its own workflow stage, with copyright-transfer collection
+
+**Finding:** in every tool checked, "camera-ready" is explicitly a **separate stage** from the original submission, triggered only after acceptance — with materially different requirements: strict template/formatting compliance (exact conference template, embedded fonts, no page numbers since the publisher adds them), often a PDF-validation step (e.g. IEEE PDF eXpress checks the file is "Xplore-compatible" before accepting it), and a **copyright transfer form** collected alongside the file, separate from the paper itself, which is what legally grants the publisher/institution the right to include the work in the proceedings and index it externally.
+
+**Gap:** this repo's `PaperStatus`/`PaperVersion` model has no camera-ready concept at all — accepted papers apparently flow straight into `ProceedingsService` (2.5) using whatever version was last uploaded during review, with no distinct "final formatted version + signed rights form" step in between.
+
+**Recommendation:**
+
+- Add a `CAMERA_READY_SUBMITTED` stage distinct from `ACCEPTED`: after a chair marks a paper `ACCEPTED`, the author gets a new upload action (reusing the existing `PaperVersion` versioning mechanism, tagged as the camera-ready version rather than a review revision) plus a required copyright-transfer acknowledgment (a simple "I agree" checkbox/timestamp is enough for a first version — full e-signature workflows are a bigger feature institutions can layer on if they need one, since requirements vary by publisher/institution).
+- `ProceedingsService` (2.5) should pull specifically the camera-ready version, not just "latest version," which also cleanly separates "still being revised during review" from "final, ready to publish" — directly relevant to 2.5 since generating real proceedings depends on knowing which version is actually final.
+- Institution-configurable formatting requirements (template name, page-limit, etc.) shown to authors at this stage is a nice-to-have, not required for a first version — the strict template-conformance *checking* IEEE PDF eXpress does is a genuinely large feature (PDF/A validation, font-embedding checks) worth explicitly deferring rather than attempting inline.
+
+### 3.4 Confirmed differentiator: this product's submission+review+registration combo is not the norm
+
+**Finding worth keeping, not a gap:** Microsoft CMT, the tool most similar in review-workflow sophistication to what's being built here, explicitly has **no registration, no payments, and no event website** — organizers running CMT still need a separate tool for those. EasyChair and others are similarly narrow. This validates a decision already implicit in this project (and confirmed earlier in this doc): building submission + review + registration/payment + public site + proceedings as one coherent product is a genuine gap in the market, not redundant effort — worth stating explicitly since it's easy to assume "surely someone already built this" when researching competitors, and the research says otherwise.
+
+---
+
 ## Summary: recommended order of work
 
 1. **Fix the domain-model split + package rename** (1.2, 2.7) — blocking, everything else builds on `User`/`Paper`/review entities, and doing the rename separately means touching every file twice.
 2. **Committee roles + chair-required-at-creation** (2.1, 2.11) — Chair/Co-Chair as conference-scoped roles selected/invited during conference creation, replacing both the implicit "`ADMIN` does everything" assumption and the disconnected `SteeringCommitteeMember` free-text role.
-3. **Reviewer decline + suggestion + chair-approved auto-invite** (2.2, 2.3) — the specific workflow you called out as special.
-4. **Reviewer paper access + feedback-to-author** (2.8) — depends on 1.2 (needs one real `User`/file-storage model) but not on 2.1–2.3.
+3. **Reviewer decline + suggestion + chair-approved auto-invite, + CoI-by-name declaration** (2.2, 2.3, 3.2) — the specific workflow you called out as special, extended with the standard-practice CoI-before-de-blinding step found in research.
+4. **Reviewer paper access + feedback-to-author + double-blind anonymization** (2.8, 3.1) — depends on 1.2 (needs one real `User`/file-storage model) but not on 2.1–2.3; blinding must be designed into this endpoint from the start, not retrofitted.
 5. **Multi-auth** (2.4) — magic link wiring + Google/ORCID/Zenodo as OAuth2 registrations, `UserIdentity` table.
 6. **Security/PDPA technical baseline** (2.10) — CSRF, default-credential fix; small and independent, can realistically be done anytime, but do it early since it's a live exposure, not a feature gap.
 7. **Payment credentials externalized + manual bank-slip workflow** (2.14) — independent of most other items; do early since it removes real (if currently dummy) secrets from the database.
 8. **Download + login audit log, duplicate detection, GeoLite2 wiring** (2.9, 2.12) — one shared access-log design covers both; hooks into the same file-storage consolidation as step 1; the hash-based duplicate check is cheap once storage is unified.
 9. **Plagiarism/similarity checking** (2.13) — internal-corpus check can ship early (no external dependency); external-provider integration depends on desk review (2.1) existing as the place results are shown.
 10. **Author-facing submission status dashboard** (2.15) — design alongside 2.1/2.2/2.8/2.14 since it consumes their output, but the aggregation view itself is straightforward once they exist.
-11. **Proceedings real implementation + Zenodo deposit** (2.5) — depends on 2.1 (chair sign-off) and 2.4 (ORCID metadata), so sequenced last.
-12. **Conference cloning UX** (2.6) — small, can slot in anytime, no dependencies.
+11. **Camera-ready stage + copyright-transfer collection** (3.3) — must exist before 2.5 can be correct, since proceedings need to pull the camera-ready version specifically, not just "latest."
+12. **Proceedings real implementation + Zenodo deposit** (2.5) — depends on 2.1 (chair sign-off), 2.4 (ORCID metadata), and 3.3 (camera-ready version to actually publish), so sequenced last.
+13. **Conference cloning UX** (2.6) — small, can slot in anytime, no dependencies.
+
+(3.4 is not an action item — it's a validated confirmation that the product's scope is a genuine market gap, not redundant effort.)
 
 Each numbered item above is sized to become its own brainstorm → spec → implementation-plan cycle, per the project's existing architectural workflow, rather than one combined plan.
