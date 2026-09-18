@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title, description)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <!-- Forces the CSRF token (and its session) to be created here, at the very top of the
+         response, instead of wherever a page first references _csrf (e.g. the subscribe form
+         near the bottom of news-detail.html). On a page whose body exceeds Tomcat's response
+         buffer, that late reference throws "Cannot create a session after the response has
+         been committed" because bytes have already started streaming to the client. -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <title th:text="${title} + ' | MERT LAB at AIT'">MERT LAB at AIT</title>
+    <meta name="description" th:content="${description ?: 'MERT LAB — Medical Engineering, Robotics Technology, and Artificial Intelligence research lab at the Asian Institute of Technology (AIT), Thailand.'}"/>
+    <meta property="og:title" th:content="${title} + ' | MERT LAB at AIT'"/>
+    <meta property="og:description" th:content="${description ?: 'MERT LAB — Medical Engineering, Robotics Technology, and Artificial Intelligence research lab at the Asian Institute of Technology (AIT), Thailand.'}"/>
+    <meta property="og:url" th:content="${canonicalUrl}"/>
+    <meta property="og:type" th:content="${ogType ?: 'website'}"/>
+    <meta property="og:image" th:content="${ogImage ?: baseUrl + '/images/logo.png'}"/>
+    <!-- Width/height only known for the site-wide fallback logo (custom per-page ogImage
+         values, e.g. a member's own uploaded photo, vary in size and are left unset rather
+         than guessed — crawlers re-check the actual file when these are omitted). -->
+    <th:block th:unless="${ogImage}">
+        <meta property="og:image:width" content="960"/>
+        <meta property="og:image:height" content="945"/>
+    </th:block>
+    <meta property="og:image:alt" content="MERT LAB at the Asian Institute of Technology"/>
+    <meta property="og:site_name" content="MERT LAB at AIT"/>
+    <meta property="og:locale" content="en_US"/>
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:title" th:content="${title} + ' | MERT LAB at AIT'"/>
+    <meta name="twitter:description" th:content="${description ?: 'MERT LAB — Medical Engineering, Robotics Technology, and Artificial Intelligence research lab at the Asian Institute of Technology (AIT), Thailand.'}"/>
+    <meta name="twitter:image" th:content="${ogImage ?: baseUrl + '/images/logo.png'}"/>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+    <link rel="icon" type="image/x-icon" href="/images/favicon/favicon.ico">
+   <link rel="manifest" href="/images/favicon/site.webmanifest" crossorigin="use-credentials">
+
+    <meta name="application-name" content="MERT LAB"/>
+    <meta name="apple-mobile-web-app-title" content="MERT LAB"/>
+
+    <link rel="canonical" th:if="${canonicalUrl}" th:href="${canonicalUrl}"/>
+    <!-- Overlaps DNS/TLS negotiation for these CDN origins with the rest of head parsing,
+         instead of only starting once the stylesheet <link> below is reached. -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin/>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin/>
+    <link rel="preconnect" href="https://code.jquery.com" crossorigin/>
+    <th:block th:replace="~{fragments/style_fragment :: styles}"></th:block>
+    <!-- Custom CSS -->
+    <link th:href="@{/css/main.css}" rel="stylesheet"/>
+    <!-- Site-wide grayscale toggle, set from /admin/settings -->
+    <style th:if="${grayscaleEnabled}">html { filter: grayscale(100%); }</style>
+    <!-- JSON-LD: ResearchOrganization -->
+    <script type="application/ld+json" th:inline="javascript">
+{
+  "@context": "https://schema.org",
+  "@type": "ResearchOrganization",
+  "name": "MERT LAB",
+  "alternateName": "Medical Engineering and Robotics Technology Lab",
+  "url": /*[[${baseUrl}]]*/ "",
+  "logo": /*[[${baseUrl + '/images/logo.png'}]]*/ "",
+  "description": "MERT LAB — Medical Engineering, Robotics Technology, and Artificial Intelligence research lab at the Asian Institute of Technology (AIT), Thailand.",
+  "parentOrganization": {
+    "@type": "CollegeOrUniversity",
+    "name": "Asian Institute of Technology",
+    "alternateName": "AIT",
+    "url": "https://ait.ac.th"
+  },
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "58 Moo 9, Km. 42, Paholyothin Highway, Klong Luang",
+    "addressLocality": "Pathum Thani",
+    "postalCode": "12120",
+    "addressCountry": "TH"
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "research",
+    "email": "info@mertlab.org",
+    "availableLanguage": ["English"]
+  }
+}
+</script>
+</head>
+</html>

@@ -53,15 +53,38 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
 }
 
+
 tasks.named('test') {
-  useJUnitPlatform()
+    useJUnitPlatform()
+}
+compileJava {
+    options.compilerArgs += '-parameters'
 }
 
-// Ensure Gradle's bootRun and bootJar pick the correct main class when multiple mains exist
-bootRun {
-  mainClass.set('com.icosiam.cms.ConferenceCmsApplication')
+compileTestJava {
+    options.compilerArgs += '-parameters'
+}
+
+tasks.named('test') {
+    // This suite has 280+ tests, most spinning up their own @SpringBootTest context + H2
+    // database (many aren't cacheable across classes since each specifies a distinct H2 DB
+    // name/URL in its @SpringBootTest properties) — Gradle's default test JVM heap isn't
+    // enough headroom for that many contexts accumulating over one run and was intermittently
+    // OOM-ing well into an unrelated later test class.
+    maxHeapSize = '2g'
+}
+
+tasks.named('bootJar') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 bootJar {
-  mainClass.set('com.icosiam.cms.ConferenceCmsApplication')
+    enabled = true
+}
+jar {
+    enabled = false
+}
+
+bootRun {
+    outputs.upToDateWhen { false }
 }

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<footer th:fragment="footer" class="site-footer mt-auto pt-5 pb-3">
+    <div class="container">
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <img src="/images/ait-logo-white.svg" alt="AIT" height="32" class="mb-3"/>
+                <h6 class="text-gold fw-bold mb-3">MERT LAB at AIT</h6>
+                <p class="text-light small mb-1">Medical Engineering &amp; Robotics Technology Lab</p>
+                <p class="text-light small mb-1">Asian Institute of Technology</p>
+                <p class="text-light small mb-3">58 Moo 9, Km. 42, Paholyothin Highway, Klong Luang, Pathum Thani 12120, Thailand</p>
+                <p class="text-light small">
+                    <i class="fa fa-envelope me-2 text-gold"></i>
+                    <a href="mailto:info@mertlab.org" class="text-light text-decoration-none">
+                        info@mertlab.org
+                    </a>
+                </p>
+                <p class="text-light small mb-3">
+                    <i class="fa fa-phone me-2 text-gold"></i>+66 2 524 5000
+                </p>
+                <a th:href="@{/contact}" class="btn btn-gold btn-sm px-3">
+                    <i class="fa fa-envelope me-1"></i>Get in Touch
+                </a>
+            </div>
+            <div class="col-lg-2 col-6">
+                <h6 class="text-white fw-semibold mb-3">Explore</h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-1"><a th:href="@{/about}" class="footer-link">Research</a></li>
+                    <li class="mb-1"><a th:href="@{/people}" class="footer-link">People</a></li>
+                    <li class="mb-1"><a th:href="@{/publications}" class="footer-link">Publications</a></li>
+                    <li class="mb-1"><a th:href="@{/projects}" class="footer-link">Projects</a></li>
+                    <li class="mb-1"><a th:href="@{/news}" class="footer-link">News</a></li>
+                    <li class="mb-1"><a th:href="@{/careers}" class="footer-link">Careers</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-2 col-6">
+                <h6 class="text-white fw-semibold mb-3">About</h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-1"><a th:href="@{/contact}" class="footer-link">Contact Us</a></li>
+                    <li class="mb-1"><a th:href="@{/privacy-policy}" class="footer-link">Privacy Policy</a></li>
+                    <li class="mb-1"><a th:href="@{/terms-of-use}" class="footer-link">Terms of Use</a></li>
+                    <li class="mb-1"><a href="https://ait.ac.th" target="_blank" rel="noopener" class="footer-link">AIT Website</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-2 col-6">
+                <h6 class="text-white fw-semibold mb-3">Follow</h6>
+                <ul class="list-unstyled small text-light">
+                    <li class="mb-1"><a href="https://www.facebook.com/AIT.AsianInstituteofTechnology" target="_blank" rel="noopener" class="footer-link"><i class="fa-brands fa-facebook me-1"></i>Facebook</a></li>
+                    <li class="mb-1"><a href="https://www.instagram.com/aitasia/" target="_blank" rel="noopener" class="footer-link"><i class="fa-brands fa-instagram me-1"></i>Instagram</a></li>
+                    <li class="mb-1"><a href="https://www.linkedin.com/school/asian-institute-of-technology/" target="_blank" rel="noopener" class="footer-link"><i class="fa-brands fa-linkedin me-1"></i>LinkedIn</a></li>
+                    <li class="mb-1"><a href="https://www.youtube.com/user/AITAsia" target="_blank" rel="noopener" class="footer-link"><i class="fa-brands fa-youtube me-1"></i>YouTube</a></li>
+                </ul>
+            </div>
+        </div>
+        <hr class="border-secondary"/>
+        <div class="row align-items-center">
+            <div class="col-lg-10">
+                <p class="small text-secondary mb-0">
+                    &copy; <span th:text="${#dates.year(#dates.createNow())}">2026</span>
+                    MERT LAB, Asian Institute of Technology. All Rights Reserved.
+                
+                    Created by
+                    <a href="https://lalithk90.github.io/" target="_blank" rel="noopener" class="text-secondary text-decoration-none">Lalith Kahatapitiya</a>
+                </p>
+            </div>
+            <div class="col-lg-2 text-lg-end mt-2 mt-lg-0">
+                <a th:href="@{/admin}" class="text-secondary small text-decoration-none" sec:authorize="isAuthenticated()">
+                    <i class="fa fa-gauge me-1"></i>Dashboard
+                </a>
+                <a th:href="@{/login}" class="text-secondary small text-decoration-none" sec:authorize="!isAuthenticated()">
+                    <i class="fa fa-lock me-1"></i>Login
+                </a>
+            </div>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

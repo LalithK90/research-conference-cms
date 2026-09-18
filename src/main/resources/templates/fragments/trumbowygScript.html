@@ -1,0 +1,44 @@
+
+    <div data-th-fragment="trumbowygScriptFragment">
+        <!-- Prism.js Core JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<!-- Optional: Line Highlight Plugin (matches the plugin's line highlight feature) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-highlight/prism-line-highlight.min.js"></script>
+        <script defer src="/dist/trumbowyg.min.js"></script>
+        <script defer src="/dist/plugins/allowtagsfrompaste/trumbowyg.allowtagsfrompaste.min.js"></script>
+        <script defer src="/dist/plugins/base64/trumbowyg.base64.min.js"></script>
+        <script defer src="/dist/plugins/cleanpaste/trumbowyg.cleanpaste.min.js"></script>
+        <script defer src="/dist/plugins/colors/trumbowyg.colors.js"></script>
+        <script defer src="/dist/plugins/emoji/trumbowyg.emoji.min.js"></script>
+        <script defer src="/dist/plugins/fontfamily/trumbowyg.fontfamily.min.js"></script>
+        <script defer src="/dist/plugins/fontsize/trumbowyg.fontsize.min.js"></script>
+        <script defer src="/dist/plugins/giphy/trumbowyg.giphy.min.js"></script>
+        <script defer src="/dist/plugins/highlight/trumbowyg.highlight.min.js"></script>
+        <script defer src="/dist/plugins/history/trumbowyg.history.min.js"></script>
+        <script defer src="/dist/plugins/indent/trumbowyg.indent.min.js"></script>
+        <script defer src="/dist/plugins/insertaudio/trumbowyg.insertaudio.min.js"></script>
+        <script defer src="/dist/plugins/lineheight/trumbowyg.lineheight.min.js"></script>
+        <script defer src="/dist/plugins/mathml/trumbowyg.mathml.min.js"></script>
+        <script defer src="/dist/plugins/mention/trumbowyg.mention.min.js"></script>
+        <script defer src="/dist/plugins/noembed/trumbowyg.noembed.min.js"></script>
+        <script defer src="/dist/plugins/pasteembed/trumbowyg.pasteembed.min.js"></script>
+        <script defer src="/dist/plugins/pasteimage/trumbowyg.pasteimage.min.js"></script>
+        <script defer src="/dist/plugins/preformatted/trumbowyg.preformatted.min.js"></script>
+        <script defer src="/dist/plugins/resizimg/trumbowyg.resizimg.min.js"></script>
+        <script defer src="/dist/plugins/ruby/trumbowyg.ruby.min.js"></script>
+        <script defer src="/dist/plugins/specialchars/trumbowyg.specialchars.min.js"></script>
+        <script defer src="/dist/plugins/speechrecognition/trumbowyg.speechrecognition.min.js"></script>
+        <script defer src="/dist/plugins/table/trumbowyg.table.min.js"></script>
+        <script defer src="/dist/plugins/tenor/trumbowyg.tenor.min.js"></script>
+        <script defer src="/dist/plugins/template/trumbowyg.template.min.js"></script>
+        <script defer src="/dist/plugins/upload/trumbowyg.upload.min.js"></script>
+
+        <!-- Import dependency for Resizimg (tested with version 0.35). For a production setup, follow install instructions here: https://github.com/RickStrahl/jquery-resizable -->
+        <script defer src="/dist/ex_js/resize.min.js"></script>
+        <!-- Import Trumbowyg MathJax at the end of <body>... -->
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+        <script defer th:src="@{/js/trumbowyg.js}"></script>
+    </div>

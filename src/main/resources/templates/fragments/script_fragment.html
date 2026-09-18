@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="scripts">
+    <div th:replace="~{fragments/cookie-consent :: cookieConsent}"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <!-- particles.js: subtle full-page ambient background on the public site only (gated on
+          .site-header, the public navbar's class — admin pages use fragments/admin-layout
+          instead and never get this container, since it'd be a distraction, not a feature,
+          behind dense CRUD forms). Colors sampled from the site's own green/gold palette
+          (main.css --navy/--saltire/--gold) so it reads as part of this project, not a
+          generic demo. Fixed position behind everything (see .particles-js-container) so
+          it never affects layout, scroll, or text readability. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+      (function () {
+        if (!document.querySelector('.site-header')) return;
+        var container = document.createElement('div');
+        container.id = 'particles-js';
+        container.className = 'particles-js-container';
+        document.body.insertBefore(container, document.body.firstChild);
+        particlesJS('particles-js', {
+          particles: {
+            number: { value: 46, density: { enable: true, value_area: 900 } },
+            color: { value: ['#3f6433', '#4e8221', '#a1be37'] },
+            shape: { type: 'circle' },
+            opacity: { value: 0.35, random: true },
+            size: { value: 3, random: true },
+            line_linked: { enable: true, distance: 140, color: '#4e8221', opacity: 0.18, width: 1 },
+            move: { enable: true, speed: 1.1, direction: 'none', random: true, straight: false, out_mode: 'out' }
+          },
+          interactivity: {
+            detect_on: 'window',
+            events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: false }, resize: true },
+            modes: { repulse: { distance: 110, duration: 0.4 } }
+          },
+          retina_detect: true
+        });
+      })();
+    </script>
+    <!-- WOW.js: reveals ".wow" elements as they scroll into view by adding animateClass,
+         which triggers whatever Animate.css class (e.g. animate__fadeInLeft) is already on
+         the element. animateClass is overridden because WOW.js's "animated" default is
+         Animate.css v3 naming; this project loads v4, which prefixes classes with animate__.
+         Site-wide so any section can opt in without extra script tags. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wow/1.1.2/wow.min.js"></script>
+    <script>
+      new WOW({ animateClass: 'animate__animated' }).init();
+    </script>
+    <script>
+      // Drop-in SweetAlert2 replacement for a form's onsubmit="return confirm('…')" —
+      // wire onsubmit="return mertConfirmSubmit(event, 'message here')" instead. Always
+      // returns false to block the native (synchronous) submit; Swal.fire resolving
+      // "confirmed" submits the form itself once the user actually clicks through.
+      function mertConfirmSubmit(event, message, opts) {
+        event.preventDefault();
+        var form = event.target;
+        Swal.fire(Object.assign({
+          text: message,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes',
+          confirmButtonColor: '#3f6433',
+          cancelButtonText: 'Cancel'
+        }, opts || {})).then(function (result) {
+          if (result.isConfirmed) form.submit();
+        });
+        return false;
+      }
+
+      // Blocks submit of a form containing a hidden #photoUrl field until it has a value —
+      // used wherever the profile photo upload is compulsory (photoUrl is a hidden input
+      // filled in by the upload script, so the browser's own "required" attribute can't
+      // apply to it directly).
+      function mertRequirePhoto(event) {
+        var photoUrl = document.getElementById('photoUrl');
+        if (photoUrl && !photoUrl.value) {
+          event.preventDefault();
+          Swal.fire({
+            icon: 'warning',
+            text: 'Please upload a profile photo (.webp) before saving.',
+            confirmButtonColor: '#3f6433'
+          });
+          return false;
+        }
+        return true;
+      }
+
+      // Cookie consent banner: shows once until the visitor accepts or rejects, remembered
+      // in localStorage (no cookie itself needed to remember a "no cookies" choice).
+      (function () {
+        var STORAGE_KEY = 'mertCookieConsent';
+        if (localStorage.getItem(STORAGE_KEY)) return;
+        var banner = document.getElementById('cookieConsent');
+        if (banner) banner.classList.remove('d-none');
+      })();
+
+      function mertCookieConsent(choice) {
+        localStorage.setItem('mertCookieConsent', choice);
+        var banner = document.getElementById('cookieConsent');
+        if (banner) banner.classList.add('d-none');
+        mertCookieConsentHideDetails();
+      }
+
+      function mertCookieConsentShowDetails() {
+        var modal = document.getElementById('cookieConsentDetails');
+        if (modal) modal.classList.remove('d-none');
+      }
+
+      function mertCookieConsentHideDetails() {
+        var modal = document.getElementById('cookieConsentDetails');
+        if (modal) modal.classList.add('d-none');
+      }
+
+      // Live character counter for any <textarea data-maxlength="N">: injects a
+      // "123 / N characters" hint below it that updates on input and turns red past the
+      // limit. Soft limit only (no maxlength attribute set) — some of these fields (e.g.
+      // Summary/Abstract) have no real DB cap, so typing isn't blocked, just discouraged
+      // past the recommended length.
+      document.querySelectorAll('textarea[data-maxlength]').forEach(function (el) {
+        var max = parseInt(el.getAttribute('data-maxlength'), 10);
+        var counter = document.createElement('div');
+        counter.className = 'form-text text-end mt-1';
+        el.insertAdjacentElement('afterend', counter);
+
+        function update() {
+          var len = el.value.length;
+          counter.textContent = len + ' / ' + max + ' characters';
+          counter.classList.toggle('text-danger', len > max);
+        }
+
+        el.addEventListener('input', update);
+        update();
+      });
+
+      // Checks every [data-role-group] checkbox group in a form has at least one box
+      // checked — plain checkboxes have no native "at least one of these N must be
+      // checked" constraint the way a single required checkbox does, so form.checkValidity()
+      // alone can't catch an empty "Roles (Permissions)" submission. Toggles a sibling
+      // .invalid-feedback (hidden by default via d-none, per Bootstrap's own convention)
+      // so the same red-text feedback style applies here too.
+      function mertRoleGroupsValid(form) {
+        var groups = form.querySelectorAll('[data-role-group]');
+        var allValid = true;
+        Array.prototype.slice.call(groups).forEach(function (group) {
+          var anyChecked = group.querySelector('input[type=checkbox]:checked') !== null;
+          var feedback = group.parentElement.querySelector('.invalid-feedback');
+          if (feedback) feedback.classList.toggle('d-none', anyChecked);
+          if (!anyChecked) allValid = false;
+        });
+        return allValid;
+      }
+
+      // Bootstrap's own client-side validation pattern (see Bootstrap docs "How it works"):
+      // any <form class="needs-validation" novalidate> gets its native required/pattern/type
+      // constraints enforced on submit — invalid fields get Bootstrap's :invalid styling and
+      // any sibling .invalid-feedback text, without a round trip to the server. novalidate
+      // suppresses the browser's own validation bubbles so only Bootstrap's styling shows.
+      // This is purely a client-side nicety; it doesn't replace server-side validation,
+      // which still runs (and still must) on submit regardless of what this catches first.
+      (function () {
+        var forms = document.querySelectorAll('form.needs-validation');
+        Array.prototype.slice.call(forms).forEach(function (form) {
+          form.addEventListener('submit', function (event) {
+            var rolesValid = mertRoleGroupsValid(form);
+            if (!form.checkValidity() || !rolesValid) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+          }, false);
+        });
+      })();
+    </script>
+</div>
+</body>
+</html>

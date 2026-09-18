@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Included from fragments/script_fragment.html so every page gets the banner without a
+     second th:replace edit across all 27 templates. -->
+<div th:fragment="cookieConsent">
+    <div id="cookieConsent" class="cookie-consent d-none">
+        <div class="cookie-consent-inner">
+            <div class="cookie-consent-text">
+                <h6 class="fw-bold text-white mb-2">We value your privacy</h6>
+                <p class="small text-light mb-0">
+                    We use a session cookie to keep you signed in and a browser storage flag to remember this
+                    choice. We don't use analytics or advertising cookies. See our
+                    <a th:href="@{/privacy-policy}" class="text-gold text-decoration-underline">Privacy Policy</a> for details.
+                </p>
+            </div>
+            <div class="cookie-consent-actions">
+                <button type="button" class="btn btn-outline-light btn-sm" onclick="mertCookieConsentShowDetails()">Customize</button>
+                <button type="button" class="btn btn-outline-light btn-sm" onclick="mertCookieConsent('reject')">Reject All</button>
+                <button type="button" class="btn btn-gold btn-sm" onclick="mertCookieConsent('accept')">Accept All</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cookieConsentDetails" class="cookie-consent-modal d-none">
+        <div class="cookie-consent-modal-dialog">
+            <div class="cookie-consent-modal-header">
+                <h6 class="fw-bold text-white mb-0">Cookie preferences</h6>
+                <button type="button" class="btn-close btn-close-white" aria-label="Close" onclick="mertCookieConsentHideDetails()"></button>
+            </div>
+            <div class="cookie-consent-modal-body">
+                <p class="small text-light">
+                    MERT LAB's website only uses what's strictly required to run — there are no analytics,
+                    advertising, or third-party tracking cookies on this site.
+                </p>
+                <div class="cookie-consent-category">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold text-white">Necessary</span>
+                        <span class="small text-gold">Always active</span>
+                    </div>
+                    <p class="small text-light mb-2">Required to keep the site secure and functional; cannot be disabled.</p>
+                    <ul class="small text-light cookie-consent-list">
+                        <li><strong>JSESSIONID</strong> — session cookie that keeps you signed in (cleared when you close your browser).</li>
+                        <li><strong>mertCookieConsent</strong> — browser storage that remembers your Accept/Reject choice on this banner.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="cookie-consent-modal-footer">
+                <button type="button" class="btn btn-outline-light btn-sm" onclick="mertCookieConsent('reject')">Reject All</button>
+                <button type="button" class="btn btn-gold btn-sm" onclick="mertCookieConsent('accept')">Accept All</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

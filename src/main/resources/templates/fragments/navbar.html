@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="navbar" class="site-header">
+
+    <!-- Top bar: institution identity, matches the reference lab site's crest + faculty name -->
+    <div class="header-top">
+        <div class="container d-flex align-items-center justify-content-between">
+            <a th:href="@{/}" class="d-flex align-items-center gap-3 text-decoration-none">
+                <img src="/images/ait-logo-color.svg" alt="AIT" class="header-crest"/>
+                <span class="header-divider d-none d-sm-block"></span>
+                <span class="header-school-name d-none d-sm-flex fs-3 fw-bold">
+                    <span>Medical Engineering &amp; Robotics Technology</span>
+                </span>
+            </a>
+            <a href="https://ait.ac.th/program/biomedical-engineering-bme/" target="_blank" rel="noopener" class="d-none d-md-block">
+                <img src="/images/logo.png" alt="MERT Lab" class="header-crest-lab"/>
+            </a>
+        </div>
+    </div>
+
+    <!-- Bottom bar: lab name + section nav -->
+    <nav class="navbar navbar-expand-lg header-bottom sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" th:href="@{/}">MERT LAB</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navMenu" aria-controls="navMenu"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu" th:with="uri=${currentPath}">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}"
+                           th:classappend="${uri == '/'} ? 'active'"
+                           th:attr="aria-current=${uri == '/'} ? 'page'">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/about}"
+                           th:classappend="${uri == '/about'} ? 'active'"
+                           th:attr="aria-current=${uri == '/about'} ? 'page'">Research</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/people}"
+                           th:classappend="${uri == '/people' or #strings.startsWith(uri, '/people/')} ? 'active'"
+                           th:attr="aria-current=${uri == '/people'} ? 'page'">People</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/publications}"
+                           th:classappend="${#strings.startsWith(uri, '/publications')} ? 'active'"
+                           th:attr="aria-current=${#strings.startsWith(uri, '/publications')} ? 'page'">Publications</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/projects}"
+                           th:classappend="${#strings.startsWith(uri, '/projects')} ? 'active'"
+                           th:attr="aria-current=${#strings.startsWith(uri, '/projects')} ? 'page'">Projects</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/news}"
+                           th:classappend="${#strings.startsWith(uri, '/news')} ? 'active'"
+                           th:attr="aria-current=${#strings.startsWith(uri, '/news')} ? 'page'">News</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/careers}"
+                           th:classappend="${uri == '/careers'} ? 'active'"
+                           th:attr="aria-current=${uri == '/careers'} ? 'page'">Careers</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+</body>
+</html>
