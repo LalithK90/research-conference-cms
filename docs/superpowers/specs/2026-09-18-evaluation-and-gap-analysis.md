@@ -14,6 +14,10 @@
 
 A Spring Boot 3.5 / Java 21 monolith (Thymeleaf + MySQL/H2 + JPA) already covers a meaningful slice of the lifecycle:
 
+need to update today version 
+  id 'org.springframework.boot' version '4.1.1'
+  id 'io.spring.dependency-management' version '1.1.7'
+
 | Area | What's implemented |
 |---|---|
 | Conference | `Conference` entity with title/venue/dates/logo/active-flag, sub-themes, steering committee, one payment config |
@@ -143,15 +147,65 @@ This reuses existing email infrastructure and the existing magic-link token patt
 
 **Recommendation:** add a "Clone from previous conference" action when creating a new `Conference`, copying committee roles, sub-themes, and payment config as a starting point — the main real friction for frequent (quarterly) recurrence, not a structural change.
 
+### 2.7 Package/group id must not stay `com.icosiam`
+
+**Requirement (confirmed):** since this is meant to be sold/distributed generically, the codebase can't stay under an institution-specific name.
+
+**Finding:** `group = "com.icosiam"` in `build.gradle` and every Java package (`com.icosiam.cms.*`) carries the origin institution's name. For a distributable product this should be a vendor-neutral identifier (e.g. `org.confcms` / whatever brand the product ships under) — the same way "conference_cms"-style generic naming already appears in the DB URL default (`brain_boost` is actually the opposite problem — an unrelated placeholder name that should also be reconsidered).
+
+**Recommendation:** a mechanical, IDE-assisted rename (package rename across all Java files + `build.gradle` group + DB name default), done in the *same* pass as the domain-model consolidation (1.2), since both touch every file anyway — doing them separately means touching every file twice.
+
+### 2.8 Reviewer paper access + feedback delivery to authors
+
+**Requirement (confirmed):** reviewers must be able to view the actual paper in-browser, submit feedback through a proper template, and that feedback must reach the author(s).
+
+**Gap (verified in code):** `ReviewRestController` exposes `/review/my` (list assignments) and `/review/submit` (score + comments + confidentialComments), but there is **no endpoint that serves the paper file to a reviewer** — a reviewer can see they have an assignment but nothing wires them to the PDF itself. `ReviewService.submitReview` persists the `Review` and marks the assignment `COMPLETED`, but nothing ever reads `comments` back out to notify the author — the two existing email templates (`submission_confirmation.txt`, `acceptance_notification.txt`) don't cover "here is reviewer feedback on your paper." `confidentialComments` is stored but nothing enforces that it's chair-only-visible versus `comments` being author-visible — that split exists only in field naming, not in access control.
+
+**Recommendation:**
+
+- Add a reviewer-scoped paper-view endpoint (e.g. `GET /review/assignment/{id}/paper`) that checks the requesting user actually holds that `ReviewAssignment` before streaming the file — this is also where download-audit logging (2.9) hooks in naturally, since "reviewer opens the paper" is itself a download event worth recording.
+- Add a `email/review_feedback.txt` template (matching the existing pattern in `templates/email/`) and, on `submitReview` (or on chair sign-off if you want a chair gate before feedback goes out — worth deciding, see below), send it via the existing `EmailQueueService` using only `comments` (never `confidentialComments`) plus paper title/track.
+- Enforce the confidential/author-visible split as an actual authorization rule, not just naming: an `AUTHOR`-facing view/endpoint must reject any attempt to read `confidentialComments`; only `CHAIR`/`CO_CHAIR`/`ADMIN` can see it.
+- **Open question to decide before implementation:** should feedback email to the author go out automatically the moment a reviewer submits, or only after the chair/co-chair has seen all reviews and made a decision (bundling feedback with the decision notice)? The existing `acceptance_notification.txt` template suggests decisions are already communicated as a batch — feedback likely belongs in that same notification rather than one email per reviewer completing independently, to avoid an author getting 3 separate emails before knowing the outcome. Recommend bundling with the decision notice; flag if you want per-review-immediate instead.
+
+### 2.9 Paper download audit log + duplicate/prior-submission detection
+
+**Requirement (confirmed):** record every download of a research paper so that, if the same paper turns up submitted elsewhere later, there's a record. Two distinct capabilities, both wanted.
+
+**Gap (verified in code):** neither `FileStorageService` (there are, again, **two** — `com.icosiam.cms.service.FileStorageService` and `com.icosiam.cms.core.service.FileStorageService`, the same duplicate-package problem as 1.2, now found a third time) has any download-tracking hook. There is no audit table anywhere in the schema.
+
+**Recommendation — split into the two capabilities, since they have different designs:**
+
+*(a) Access/download audit log* — a `PaperDownloadLog` (or generically `FileAccessLog`, since reviewers viewing papers in 2.8 is the same kind of event) entity: `paper_id` (or `paper_version_id`, to know exactly which revision), `user_id`, `downloaded_at`, `ip_address`. Written from one place — inside `FileStorageService.load()` (once consolidated to one class per 1.2/2.7) or a thin wrapper around it — so every download path (reviewer view, author re-download, admin export, proceedings generation) is captured without each caller remembering to log it themselves. This is a pure audit trail; no business logic needed beyond "write a row."
+
+*(b) Duplicate/prior-submission detection* — a materially different problem: comparing a *newly submitted* paper against everything previously submitted (in this conference, and potentially across conferences if the same institution runs several). Cheapest useful version: hash the uploaded PDF content (e.g. SHA-256) and store it on `PaperVersion`; on new submission, check for existing rows with the same hash and flag an exact-duplicate match to the chair for review. This catches literal re-uploads cheaply. **Note:** true "resubmitted to a different journal with edits" detection (not byte-identical) needs text-similarity comparison, which is a meaningfully bigger feature (extract text, compare against a corpus) — recommend shipping the hash-based exact-match check first, and treating similarity-based detection as a separate future item rather than bundling it in now.
+
+### 2.10 PDPA / personal-data protection — technical baseline
+
+**Requirement (confirmed):** prioritize the concrete technical gaps now; treat consent/retention policy as a later, separate item.
+
+**Gap (already identified in 1.3, restated here under its actual driver):** CSRF is disabled; the default admin password is published in plaintext in the README; no field-level encryption exists for sensitive personal data (payment details already go through Stripe/PayPal so card data itself isn't stored — good — but things like national ID-style fields if any institution adds them, or raw email addresses used for the new download-audit log in 2.9, are stored as plain columns).
+
+**Recommendation (technical baseline only, per your scope choice):**
+
+- Re-enable CSRF in `SecurityConfig` (currently explicitly disabled) — this alone is the single highest-value fix, since it's a real, exploitable gap today, not a future risk.
+- Replace the published static default admin credential with a forced first-run setup flow (generate a random password on first boot, print it once to the server log or require setting one during initial DB seed, never in the README).
+- Enforce TLS at the deployment/reverse-proxy layer (document this as a deployment requirement for self-hosting institutions, since the app itself can't force HTTPS if it's behind a customer's own proxy).
+- Encrypt at rest any personal-data column beyond what's already delegated to Stripe/PayPal — the download-audit log's `ip_address` (2.9) is itself personal data under PDPA and should have a documented retention limit, not be kept forever by default.
+- This is explicitly the *technical* baseline; consent capture, retention/deletion workflows, and breach-notification process are noted here as a real future requirement but out of scope for this pass, per your answer.
+
 ---
 
 ## Summary: recommended order of work
 
-1. **Fix the domain-model split** (1.2) — blocking, everything else builds on `User`/`Paper`/review entities.
+1. **Fix the domain-model split + package rename** (1.2, 2.7) — blocking, everything else builds on `User`/`Paper`/review entities, and doing the rename separately means touching every file twice.
 2. **Committee roles** (2.1) — Chair/Co-Chair as conference-scoped roles, replacing the implicit assumption that `ADMIN` does everything.
 3. **Reviewer decline + suggestion + chair-approved auto-invite** (2.2, 2.3) — the specific workflow you called out as special.
-4. **Multi-auth** (2.4) — magic link wiring + Google/ORCID/Zenodo as OAuth2 registrations, `UserIdentity` table.
-5. **Proceedings real implementation + Zenodo deposit** (2.5) — depends on 2.1 (chair sign-off) and 2.4 (ORCID metadata), so sequenced last.
-6. **Conference cloning UX** (2.6) — small, can slot in anytime, no dependencies.
+4. **Reviewer paper access + feedback-to-author** (2.8) — depends on 1.2 (needs one real `User`/file-storage model) but not on 2.1–2.3.
+5. **Multi-auth** (2.4) — magic link wiring + Google/ORCID/Zenodo as OAuth2 registrations, `UserIdentity` table.
+6. **Security/PDPA technical baseline** (2.10) — CSRF, default-credential fix; small and independent, can realistically be done anytime, but do it early since it's a live exposure, not a feature gap.
+7. **Download audit log + duplicate detection** (2.9) — hooks into the same file-storage consolidation as step 1; the hash-based duplicate check is cheap once storage is unified.
+8. **Proceedings real implementation + Zenodo deposit** (2.5) — depends on 2.1 (chair sign-off) and 2.4 (ORCID metadata), so sequenced last.
+9. **Conference cloning UX** (2.6) — small, can slot in anytime, no dependencies.
 
 Each numbered item above is sized to become its own brainstorm → spec → implementation-plan cycle, per the project's existing architectural workflow, rather than one combined plan.
