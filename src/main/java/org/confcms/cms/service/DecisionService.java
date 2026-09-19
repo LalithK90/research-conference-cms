@@ -1,5 +1,7 @@
 package org.confcms.cms.service;
 
+import org.confcms.cms.domain.User;
+import org.confcms.cms.core.security.Role;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;
 import org.confcms.cms.submission.repository.PaperRepository;
@@ -19,6 +21,9 @@ public class DecisionService {
     private final ReviewRepository reviewRepository;
     private final PaperRepository paperRepository;
     private final EmailService emailService;
+    private final CommitteeService committeeService;
+
+    public enum DeskDecision { SEND_TO_REVIEW, DESK_REJECT }
 
     public static class DecisionSuggestion {
         public Long paperId;
@@ -58,9 +63,35 @@ public class DecisionService {
                 .collect(Collectors.toList());
     }
 
+    private void requireChairOrAdmin(User actingUser, Paper paper) {
+        boolean isAdmin = actingUser.getRole() == Role.ADMIN;
+        if (!isAdmin && !committeeService.isChairOrCoChair(actingUser, paper.getConference())) {
+            throw new SecurityException("Not authorized to make decisions for this conference's papers");
+        }
+    }
+
     @Transactional
-    public Paper applyDecision(Long paperId, String decision) {
+    public Paper deskReview(User actingUser, Long paperId, DeskDecision decision) {
         Paper paper = paperRepository.findById(paperId).orElseThrow(() -> new IllegalArgumentException("Paper not found"));
+        requireChairOrAdmin(actingUser, paper);
+
+        if (decision == DeskDecision.SEND_TO_REVIEW) {
+            paper.setStatus(PaperStatus.UNDER_REVIEW);
+        } else {
+            paper.setStatus(PaperStatus.DESK_REJECTED);
+            try {
+                emailService.sendSimpleEmail(paper.getSubmitter().getEmail(), "Paper decision",
+                        "We regret to inform you that your paper '" + paper.getTitle() + "' did not pass desk review.");
+            } catch (Exception ignored) {}
+        }
+
+        return paperRepository.save(paper);
+    }
+
+    @Transactional
+    public Paper applyDecision(User actingUser, Long paperId, String decision) {
+        Paper paper = paperRepository.findById(paperId).orElseThrow(() -> new IllegalArgumentException("Paper not found"));
+        requireChairOrAdmin(actingUser, paper);
 
         if ("ACCEPT".equalsIgnoreCase(decision)) {
             paper.setStatus(PaperStatus.ACCEPTED);
@@ -90,10 +121,10 @@ public class DecisionService {
     }
 
     @Transactional
-    public List<Paper> applyBulkDecision(List<Long> paperIds, String decision) {
+    public List<Paper> applyBulkDecision(User actingUser, List<Long> paperIds, String decision) {
         List<Paper> updated = new ArrayList<>();
         for (Long id : paperIds) {
-            updated.add(applyDecision(id, decision));
+            updated.add(applyDecision(actingUser, id, decision));
         }
         return updated;
     }
