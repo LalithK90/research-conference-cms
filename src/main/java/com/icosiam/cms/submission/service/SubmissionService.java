@@ -1,7 +1,7 @@
 package com.icosiam.cms.submission.service;
 
 import com.icosiam.cms.domain.User;
-import com.icosiam.cms.core.service.FileStorageService;
+import com.icosiam.cms.service.FileStorageService;
 import com.icosiam.cms.service.EmailService;
 import com.icosiam.cms.submission.domain.*;
 import com.icosiam.cms.submission.repository.PaperRepository;

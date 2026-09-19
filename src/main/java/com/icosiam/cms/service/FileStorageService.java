@@ -16,7 +16,7 @@ public class FileStorageService {
 
     private final Path rootLocation;
 
-    public FileStorageService(@Value("${app.storage.location}") String storageLocation) {
+    public FileStorageService(@Value("${app.storage.location:uploads}") String storageLocation) {
         this.rootLocation = Paths.get(storageLocation);
         init();
     }
@@ -29,19 +29,16 @@ public class FileStorageService {
         }
     }
 
-    public String store(MultipartFile file, String conferenceId) {
+    public String store(MultipartFile file) {
         try {
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("Cannot store empty file");
             }
 
-            Path confPath = rootLocation.resolve(conferenceId);
-            Files.createDirectories(confPath);
-
             String filename = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            Path destinationFile = confPath.resolve(filename).normalize().toAbsolutePath();
+            Path destinationFile = rootLocation.resolve(filename).normalize().toAbsolutePath();
 
-            if (!destinationFile.getParent().equals(confPath.toAbsolutePath())) {
+            if (!destinationFile.getParent().equals(rootLocation.toAbsolutePath())) {
                 throw new SecurityException("Cannot store file outside designated directory");
             }
 

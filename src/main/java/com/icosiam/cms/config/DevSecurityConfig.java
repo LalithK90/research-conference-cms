@@ -38,10 +38,6 @@ public class DevSecurityConfig {
                 .defaultSuccessUrl("/dashboard", true)
                 .permitAll()
             )
-            .oauth2Login(oauth -> oauth
-                .loginPage("/login")
-                .defaultSuccessUrl("/dashboard", true)
-            )
             .logout(logout -> logout
                 .logoutSuccessUrl("/")
                 .permitAll()

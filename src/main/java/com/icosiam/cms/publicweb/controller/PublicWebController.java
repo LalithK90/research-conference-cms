@@ -62,4 +62,9 @@ public class PublicWebController {
     public String contact(Model model) {
         return "public/contact";
     }
+
+    @GetMapping("/login")
+    public String login() {
+        return "login";
+    }
 }

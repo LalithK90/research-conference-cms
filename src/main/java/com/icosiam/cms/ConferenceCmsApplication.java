@@ -17,8 +17,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class ConferenceCmsApplication {
 
     public static void main(String[] args) {
-        org.springframework.boot.SpringApplication app = new org.springframework.boot.SpringApplication(ConferenceCmsApplication.class);
-        app.setAllowBeanDefinitionOverriding(true);
-        app.run(args);
+        SpringApplication.run(ConferenceCmsApplication.class, args);
     }
 }
