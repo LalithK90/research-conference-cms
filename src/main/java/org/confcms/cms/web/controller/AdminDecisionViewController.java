@@ -1,10 +1,15 @@
 package org.confcms.cms.web.controller;
 
+import org.confcms.cms.core.security.Role;
+import org.confcms.cms.domain.User;
+import org.confcms.cms.repository.UserRepository;
 import org.confcms.cms.review.repository.ReviewRepository;
+import org.confcms.cms.service.CommitteeService;
 import org.confcms.cms.service.DecisionService;
 import org.confcms.cms.submission.repository.PaperRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +25,13 @@ public class AdminDecisionViewController {
     private final DecisionService decisionService;
     private final PaperRepository paperRepository;
     private final ReviewRepository reviewRepository;
+    private final CommitteeService committeeService;
+    private final UserRepository userRepository;
+
+    private User actingUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
+    }
 
     @GetMapping("/ui")
     public String ui(Model model) {
@@ -36,6 +48,14 @@ public class AdminDecisionViewController {
         }
 
         var paper = paperOpt.get();
+
+        User actingUser = actingUser();
+        boolean isAdmin = actingUser.getRole() == Role.ADMIN;
+        if (!isAdmin && !committeeService.isChairOrCoChair(actingUser, paper.getConference())) {
+            model.addAttribute("error", "Not authorized to view this paper");
+            return "admin/paper_detail";
+        }
+
         var reviews = reviewRepository.findByPaperId(id);
 
         model.addAttribute("paper", paper);
