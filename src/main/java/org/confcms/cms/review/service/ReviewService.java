@@ -21,9 +21,13 @@ public class ReviewService {
     private final PaperRepository paperRepository;
 
     @Transactional
-    public Review submitReview(Long assignmentId, Integer score, String comments, String confidentialComments) {
+    public Review submitReview(User reviewer, Long assignmentId, Integer score, String comments, String confidentialComments) {
         ReviewAssignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Assignment not found"));
+
+        if (!assignment.getReviewer().getId().equals(reviewer.getId())) {
+            throw new SecurityException("Not authorized to submit a review for this assignment");
+        }
 
         if (assignment.getStatus() == AssignmentStatus.COMPLETED) {
             throw new IllegalStateException("Review already submitted");

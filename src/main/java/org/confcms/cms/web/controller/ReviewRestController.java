@@ -60,8 +60,14 @@ public class ReviewRestController {
                                           @RequestParam Integer score,
                                           @RequestParam(required = false) String comments,
                                           @RequestParam(required = false) String confidentialComments) {
-        Review review = reviewService.submitReview(assignmentId, score, comments, confidentialComments);
-        return ResponseEntity.ok(review);
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User reviewer = userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
+        try {
+            Review review = reviewService.submitReview(reviewer, assignmentId, score, comments, confidentialComments);
+            return ResponseEntity.ok(review);
+        } catch (SecurityException se) {
+            return ResponseEntity.status(403).body(se.getMessage());
+        }
     }
 
     @GetMapping("/paper/{paperId}/reviews")
