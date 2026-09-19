@@ -7,9 +7,12 @@ import org.confcms.cms.review.domain.AssignmentStatus;
 import org.confcms.cms.review.domain.BidType;
 import org.confcms.cms.review.domain.ReviewAssignment;
 import org.confcms.cms.review.domain.ReviewBid;
+import org.confcms.cms.review.domain.ReviewDecline;
 import org.confcms.cms.review.repository.ReviewAssignmentRepository;
 import org.confcms.cms.review.repository.ReviewBidRepository;
+import org.confcms.cms.review.repository.ReviewDeclineRepository;
 import org.confcms.cms.service.CommitteeService;
+import org.confcms.cms.service.PersonInvitationService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;
 import org.confcms.cms.submission.repository.PaperRepository;
@@ -32,6 +35,8 @@ public class ReviewAssignmentService {
     private final PaperRepository paperRepository;
     private final ReviewBidRepository bidRepository;
     private final CommitteeService committeeService;
+    private final ReviewDeclineRepository reviewDeclineRepository;
+    private final PersonInvitationService personInvitationService;
 
     private void requireChairOrAdmin(User actingUser, Paper paper) {
         boolean isAdmin = actingUser.getRole() == Role.ADMIN;
@@ -54,6 +59,55 @@ public class ReviewAssignmentService {
         bid.setConflictReason(conflictReason);
 
         bidRepository.save(bid);
+    }
+
+    @Transactional
+    public ReviewDecline declineAssignment(User actingUser, Long assignmentId, String reason,
+                                            Long suggestedUserId, String suggestedName, String suggestedEmail) {
+        ReviewAssignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Assignment not found"));
+
+        if (!assignment.getReviewer().getId().equals(actingUser.getId())) {
+            throw new SecurityException("Not authorized to decline this assignment");
+        }
+
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("A reason is required to decline an assignment");
+        }
+
+        boolean hasExistingUserSuggestion = suggestedUserId != null;
+        boolean hasExternalSuggestion = suggestedName != null && !suggestedName.isBlank()
+                && suggestedEmail != null && !suggestedEmail.isBlank();
+
+        if (hasExistingUserSuggestion == hasExternalSuggestion) {
+            throw new IllegalArgumentException(
+                    "Exactly one of an existing reviewer or a name+email suggestion is required");
+        }
+
+        assignment.setStatus(AssignmentStatus.DECLINED);
+        assignmentRepository.save(assignment);
+
+        ReviewDecline decline = new ReviewDecline();
+        decline.setAssignment(assignment);
+        decline.setReason(reason);
+
+        if (hasExistingUserSuggestion) {
+            User suggestedUser = userRepository.findById(suggestedUserId)
+                    .orElseThrow(() -> new IllegalArgumentException("Suggested reviewer not found"));
+            decline.setSuggestedUser(suggestedUser);
+        } else {
+            decline.setSuggestedName(suggestedName);
+            decline.setSuggestedEmail(suggestedEmail);
+        }
+
+        ReviewDecline saved = reviewDeclineRepository.save(decline);
+
+        if (hasExternalSuggestion) {
+            personInvitationService.createReviewerSuggestionInvitation(
+                    saved, assignment.getPaper().getConference(), suggestedName, suggestedEmail);
+        }
+
+        return saved;
     }
 
     @Transactional
