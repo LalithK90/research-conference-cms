@@ -6,6 +6,7 @@ import org.confcms.cms.repository.UserRepository;
 import org.confcms.cms.domain.User;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperAuthor;
+import org.confcms.cms.submission.dto.AuthorRequestDto;
 import org.confcms.cms.submission.service.SubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +38,15 @@ public class SubmissionRestController {
         List<PaperAuthor> authors = Collections.emptyList();
         try {
             if (authorsJson != null && !authorsJson.isBlank()) {
-                authors = objectMapper.readValue(authorsJson, new TypeReference<List<PaperAuthor>>(){});
+                List<AuthorRequestDto> authorDtos = objectMapper.readValue(authorsJson, new TypeReference<List<AuthorRequestDto>>(){});
+                authors = authorDtos.stream().map(dto -> {
+                    PaperAuthor author = new PaperAuthor();
+                    author.setFullName(dto.getFullName());
+                    author.setEmail(dto.getEmail());
+                    author.setAffiliation(dto.getAffiliation());
+                    author.setPresenter(dto.isPresenter());
+                    return author;
+                }).toList();
             }
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Invalid authors JSON");
