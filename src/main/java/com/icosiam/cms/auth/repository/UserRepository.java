@@ -1,7 +1,7 @@
 package com.icosiam.cms.auth.repository;
 
 import com.icosiam.cms.domain.User;
-import com.icosiam.cms.domain.Role;
+import com.icosiam.cms.core.security.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

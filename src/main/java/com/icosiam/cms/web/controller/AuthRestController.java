@@ -31,7 +31,7 @@ public class AuthRestController {
                                       @RequestParam String password,
                                       @RequestParam String fullName,
                                       @RequestParam(required = false, defaultValue = "AUTHOR") String role) {
-        User user = authService.registerUser(email, password, fullName, com.icosiam.cms.domain.Role.valueOf(role));
+        User user = authService.registerUser(email, password, fullName, com.icosiam.cms.core.security.Role.valueOf(role));
         return ResponseEntity.ok(user);
     }
 

@@ -97,7 +97,7 @@ public class SubmissionService {
 
         // Only submitter or ADMIN can upload new versions
         boolean isOwner = paper.getSubmitter().getId().equals(requester.getId());
-        boolean isAdmin = requester.getRole() == com.icosiam.cms.domain.Role.ADMIN;
+        boolean isAdmin = requester.getRole() == com.icosiam.cms.core.security.Role.ADMIN;
         if (!isOwner && !isAdmin) {
             throw new SecurityException("Not authorized to upload new version");
         }
@@ -135,7 +135,7 @@ public class SubmissionService {
 
         // Only submitter or ADMIN can withdraw
         boolean isOwner = paper.getSubmitter().getId().equals(requester.getId());
-        boolean isAdmin = requester.getRole() == com.icosiam.cms.domain.Role.ADMIN;
+        boolean isAdmin = requester.getRole() == com.icosiam.cms.core.security.Role.ADMIN;
         if (!isOwner && !isAdmin) {
             throw new SecurityException("Not authorized to withdraw this paper");
         }

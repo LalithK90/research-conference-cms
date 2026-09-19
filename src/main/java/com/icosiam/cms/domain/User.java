@@ -1,6 +1,7 @@
 package com.icosiam.cms.domain;
 
 import com.icosiam.cms.core.domain.BaseEntity;
+import com.icosiam.cms.core.security.Role;
 
 import jakarta.persistence.*;
 import lombok.Getter;

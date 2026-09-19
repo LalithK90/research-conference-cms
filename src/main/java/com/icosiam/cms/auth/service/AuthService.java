@@ -2,7 +2,7 @@ package com.icosiam.cms.auth.service;
 
 import com.icosiam.cms.domain.User;
 import com.icosiam.cms.auth.repository.UserRepository;
-import com.icosiam.cms.domain.Role;
+import com.icosiam.cms.core.security.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

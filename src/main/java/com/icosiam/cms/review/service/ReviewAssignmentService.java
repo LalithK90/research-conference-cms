@@ -2,7 +2,7 @@ package com.icosiam.cms.review.service;
 
 import com.icosiam.cms.domain.User;
 import com.icosiam.cms.repository.UserRepository;
-import com.icosiam.cms.domain.Role;
+import com.icosiam.cms.core.security.Role;
 import com.icosiam.cms.review.domain.AssignmentStatus;
 import com.icosiam.cms.review.domain.BidType;
 import com.icosiam.cms.review.domain.ReviewAssignment;
