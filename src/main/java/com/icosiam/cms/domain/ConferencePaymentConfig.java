@@ -1,5 +1,7 @@
 package com.icosiam.cms.domain;
 
+import com.icosiam.cms.core.domain.BaseEntity;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

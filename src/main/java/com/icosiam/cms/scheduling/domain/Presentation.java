@@ -1,6 +1,6 @@
 package com.icosiam.cms.scheduling.domain;
 
-import com.icosiam.cms.domain.BaseEntity;
+import com.icosiam.cms.core.domain.BaseEntity;
 import com.icosiam.cms.submission.domain.Paper;
 import jakarta.persistence.*;
 import lombok.Getter;
