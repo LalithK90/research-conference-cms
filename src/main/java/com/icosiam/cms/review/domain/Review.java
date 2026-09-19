@@ -29,4 +29,7 @@ public class Review extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String confidentialComments;
+
+    @Enumerated(EnumType.STRING)
+    private ReviewDecision decision;
 }

@@ -1,4 +1,4 @@
-package com.icosiam.cms.domain;
+package com.icosiam.cms.review.domain;
 
 public enum ReviewDecision {
     STRONG_ACCEPT,
