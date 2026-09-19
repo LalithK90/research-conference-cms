@@ -29,9 +29,11 @@ public class AuthRestController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestParam String email,
                                       @RequestParam String password,
-                                      @RequestParam String fullName,
-                                      @RequestParam(required = false, defaultValue = "AUTHOR") String role) {
-        User user = authService.registerUser(email, password, fullName, com.icosiam.cms.core.security.Role.valueOf(role));
+                                      @RequestParam String fullName) {
+        // Public self-registration must never accept a caller-supplied role: this endpoint is
+        // permitAll() in SecurityConfig, so honoring a "role" parameter here would let anyone
+        // register themselves as ADMIN. Elevated roles are granted separately by an admin.
+        User user = authService.registerUser(email, password, fullName, com.icosiam.cms.core.security.Role.AUTHOR);
         return ResponseEntity.ok(user);
     }
 
