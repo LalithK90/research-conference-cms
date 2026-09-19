@@ -13,4 +13,5 @@ public interface ConferenceCommitteeRoleRepository extends JpaRepository<Confere
     List<ConferenceCommitteeRole> findByConferenceId(Long conferenceId);
     Optional<ConferenceCommitteeRole> findByConferenceIdAndUserIdAndRole(Long conferenceId, Long userId, CommitteeRole role);
     Optional<ConferenceCommitteeRole> findByConferenceIdAndRole(Long conferenceId, CommitteeRole role);
+    boolean existsByConferenceIdAndUserId(Long conferenceId, Long userId);
 }

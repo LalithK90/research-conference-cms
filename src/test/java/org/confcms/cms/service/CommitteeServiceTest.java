@@ -89,4 +89,18 @@ class CommitteeServiceTest {
 
         assertThat(service.getCommitteeForConference(conference)).isEqualTo(roles);
     }
+
+    @Test
+    void hasAnyCommitteeRoleTrueWhenAnyRoleExists() {
+        when(repository.existsByConferenceIdAndUserId(1L, 10L)).thenReturn(true);
+
+        assertThat(service.hasAnyCommitteeRole(user, conference)).isTrue();
+    }
+
+    @Test
+    void hasAnyCommitteeRoleFalseWhenNoRoleExists() {
+        when(repository.existsByConferenceIdAndUserId(1L, 10L)).thenReturn(false);
+
+        assertThat(service.hasAnyCommitteeRole(user, conference)).isFalse();
+    }
 }

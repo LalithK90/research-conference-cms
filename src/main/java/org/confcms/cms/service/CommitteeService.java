@@ -25,6 +25,10 @@ public class CommitteeService {
         return hasRole(user, conference, CommitteeRole.CHAIR) || hasRole(user, conference, CommitteeRole.CO_CHAIR);
     }
 
+    public boolean hasAnyCommitteeRole(User user, Conference conference) {
+        return repository.existsByConferenceIdAndUserId(conference.getId(), user.getId());
+    }
+
     public List<ConferenceCommitteeRole> getCommitteeForConference(Conference conference) {
         return repository.findByConferenceId(conference.getId());
     }
