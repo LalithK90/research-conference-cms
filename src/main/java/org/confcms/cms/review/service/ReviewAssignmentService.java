@@ -9,6 +9,7 @@ import org.confcms.cms.review.domain.ReviewAssignment;
 import org.confcms.cms.review.domain.ReviewBid;
 import org.confcms.cms.review.repository.ReviewAssignmentRepository;
 import org.confcms.cms.review.repository.ReviewBidRepository;
+import org.confcms.cms.service.CommitteeService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;
 import org.confcms.cms.submission.repository.PaperRepository;
@@ -30,27 +31,36 @@ public class ReviewAssignmentService {
     private final UserRepository userRepository;
     private final PaperRepository paperRepository;
     private final ReviewBidRepository bidRepository;
+    private final CommitteeService committeeService;
+
+    private void requireChairOrAdmin(User actingUser, Paper paper) {
+        boolean isAdmin = actingUser.getRole() == Role.ADMIN;
+        if (!isAdmin && !committeeService.isChairOrCoChair(actingUser, paper.getConference())) {
+            throw new SecurityException("Not authorized to manage reviewer assignments for this conference");
+        }
+    }
 
     @Transactional
     public void submitBid(User reviewer, Long paperId, BidType bidType, String conflictReason) {
         Paper paper = paperRepository.findById(paperId)
                 .orElseThrow(() -> new IllegalArgumentException("Paper not found"));
-        
+
         ReviewBid bid = bidRepository.findByReviewerIdAndPaperId(reviewer.getId(), paperId)
                 .orElse(new ReviewBid());
-        
+
         bid.setReviewer(reviewer);
         bid.setPaper(paper);
         bid.setBidType(bidType);
         bid.setConflictReason(conflictReason);
-        
+
         bidRepository.save(bid);
     }
 
     @Transactional
-    public void autoAssignReviewers(Long paperId) {
+    public void autoAssignReviewers(User actingUser, Long paperId) {
         Paper paper = paperRepository.findById(paperId)
                 .orElseThrow(() -> new IllegalArgumentException("Paper not found"));
+        requireChairOrAdmin(actingUser, paper);
 
         if (paper.getStatus() != PaperStatus.SUBMITTED) {
             throw new IllegalStateException("Paper must be in SUBMITTED state to assign reviewers");
@@ -73,7 +83,7 @@ public class ReviewAssignmentService {
         int assignedCount = 0;
         for (User reviewer : reviewers) {
             if (assignedCount >= 2) break;
-            
+
             // Skip if conflict or not willing
             BidType bid = reviewerBids.get(reviewer.getId());
             if (bid == BidType.CONFLICT || bid == BidType.NOT_WILLING) continue;
@@ -81,13 +91,13 @@ public class ReviewAssignmentService {
             // Check if already assigned
             boolean alreadyAssigned = assignmentRepository.findByPaperId(paperId).stream()
                     .anyMatch(a -> a.getReviewer().getId().equals(reviewer.getId()));
-            
+
             if (!alreadyAssigned) {
-                assignReviewer(paper, reviewer);
+                assignReviewerInternal(paper, reviewer);
                 assignedCount++;
             }
         }
-        
+
         paper.setStatus(PaperStatus.UNDER_REVIEW);
         paperRepository.save(paper);
     }
@@ -103,16 +113,21 @@ public class ReviewAssignmentService {
                 case CONFLICT -> score -= 1000;
             }
         }
-        
+
         // Load balancing penalty
         int currentLoad = assignmentRepository.findByReviewerId(reviewer.getId()).size();
         score -= (currentLoad * 2);
-        
+
         return score;
     }
 
     @Transactional
-    public void assignReviewer(Paper paper, User reviewer) {
+    public void assignReviewer(User actingUser, Paper paper, User reviewer) {
+        requireChairOrAdmin(actingUser, paper);
+        assignReviewerInternal(paper, reviewer);
+    }
+
+    private void assignReviewerInternal(Paper paper, User reviewer) {
         ReviewAssignment assignment = new ReviewAssignment();
         assignment.setPaper(paper);
         assignment.setReviewer(reviewer);

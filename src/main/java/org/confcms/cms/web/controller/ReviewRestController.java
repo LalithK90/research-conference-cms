@@ -29,20 +29,33 @@ public class ReviewRestController {
     private final UserRepository userRepository;
     private final PaperRepository paperRepository;
 
+    private User actingUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
+    }
+
     @PostMapping("/assign/auto")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','REVIEWER')")
     public ResponseEntity<?> autoAssign(@RequestParam Long paperId) {
-        assignmentService.autoAssignReviewers(paperId);
-        return ResponseEntity.ok("Auto-assigned reviewers");
+        try {
+            assignmentService.autoAssignReviewers(actingUser(), paperId);
+            return ResponseEntity.ok("Auto-assigned reviewers");
+        } catch (SecurityException se) {
+            return ResponseEntity.status(403).body(se.getMessage());
+        }
     }
 
     @PostMapping("/assign/manual")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','REVIEWER')")
     public ResponseEntity<?> manualAssign(@RequestParam Long paperId, @RequestParam Long reviewerId) {
         var paper = paperRepository.findById(paperId).orElseThrow(() -> new IllegalArgumentException("Paper not found"));
         User reviewer = userRepository.findById(reviewerId).orElseThrow(() -> new IllegalArgumentException("Reviewer not found"));
-        assignmentService.assignReviewer(paper, reviewer);
-        return ResponseEntity.ok("Reviewer assigned");
+        try {
+            assignmentService.assignReviewer(actingUser(), paper, reviewer);
+            return ResponseEntity.ok("Reviewer assigned");
+        } catch (SecurityException se) {
+            return ResponseEntity.status(403).body(se.getMessage());
+        }
     }
 
     @GetMapping("/my")
