@@ -69,6 +69,26 @@
 
                     <hr>
 
+                    <!-- Committee -->
+                    <h5 class="mb-3">Committee</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Conference Chair (required)</label>
+                            <select class="form-select" th:field="*{chairUserId}" required>
+                                <option value="">-- Select Chair --</option>
+                                <option th:each="u : ${allUsers}" th:value="${u.id}" th:text="${u.fullName}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Co-Chairs (optional, hold Ctrl/Cmd to select multiple)</label>
+                            <select class="form-select" th:field="*{coChairUserIds}" multiple>
+                                <option th:each="u : ${allUsers}" th:value="${u.id}" th:text="${u.fullName}"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr>
+
                     <!-- Payment Configuration -->
                     <h5 class="mb-3">Payment Configuration</h5>
                     <p class="text-muted small">Select a payment provider for registration fees. Refunds are handled
