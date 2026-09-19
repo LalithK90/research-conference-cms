@@ -29,11 +29,11 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/home", "/about", "/committee", "/speakers", "/schedule", "/venue", "/contact", "/register", "/login", "/magic-link/**").permitAll()
+                .requestMatchers("/", "/home", "/about", "/committee", "/speakers", "/schedule", "/venue", "/contact", "/register", "/login", "/magic-link/**", "/auth/**").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/reviewer/**").hasRole("REVIEWER")
-                .requestMatchers("/author/**").hasAnyRole("AUTHOR", "ADMIN")
+                .requestMatchers("/review/**").hasRole("REVIEWER")
+                .requestMatchers("/submission/**").hasAnyRole("AUTHOR", "ADMIN")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
