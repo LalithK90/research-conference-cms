@@ -15,8 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.math.BigDecimal;
-
 @Controller
 @RequiredArgsConstructor
 public class RegistrationController {
@@ -44,9 +42,8 @@ public class RegistrationController {
 
     @PostMapping("/register")
     public String processRegistration(@RequestParam String ticketType,
-                                      @RequestParam(defaultValue = "0") BigDecimal amount,
                                       @AuthenticationPrincipal UserDetails userDetails) {
-        
+
         if (userDetails == null) {
             return "redirect:/login";
         }
@@ -54,7 +51,7 @@ public class RegistrationController {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        registrationService.register(user, ticketType, amount);
+        registrationService.register(user, ticketType);
 
         return "redirect:/dashboard?registered=true";
     }
