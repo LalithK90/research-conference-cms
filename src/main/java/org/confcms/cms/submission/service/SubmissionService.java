@@ -1,6 +1,7 @@
 package org.confcms.cms.submission.service;
 
 import org.confcms.cms.domain.User;
+import org.confcms.cms.service.ConferenceService;
 import org.confcms.cms.service.FileStorageService;
 import org.confcms.cms.service.EmailService;
 import org.confcms.cms.submission.domain.*;
@@ -19,10 +20,12 @@ public class SubmissionService {
     private final PaperRepository paperRepository;
     private final FileStorageService fileStorageService;
     private final EmailService emailService;
+    private final ConferenceService conferenceService;
 
     @Transactional
     public Paper submitPaper(User submitter, String title, String abstractText, String track, MultipartFile file, List<PaperAuthor> authors) {
         Paper paper = new Paper();
+        paper.setConference(conferenceService.getActiveConference());
         paper.setSubmitter(submitter);
         paper.setTitle(title);
         paper.setAbstractText(abstractText);

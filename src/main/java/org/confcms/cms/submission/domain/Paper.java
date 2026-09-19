@@ -1,5 +1,6 @@
 package org.confcms.cms.submission.domain;
 
+import org.confcms.cms.domain.Conference;
 import org.confcms.cms.domain.User;
 import org.confcms.cms.core.domain.BaseEntity;
 import jakarta.persistence.*;
@@ -14,6 +15,10 @@ import java.util.List;
 @Getter
 @Setter
 public class Paper extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "conference_id", nullable = false)
+    private Conference conference;
 
     @Column(nullable = false)
     private String title;
