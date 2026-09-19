@@ -38,7 +38,7 @@ public class Conference extends BaseEntity {
     private List<SubTheme> subThemes = new ArrayList<>();
 
     @OneToMany(mappedBy = "conference", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SteeringCommitteeMember> steeringCommittee = new ArrayList<>();
+    private List<ConferenceCommitteeRole> committeeRoles = new ArrayList<>();
 
     @OneToOne(mappedBy = "conference", cascade = CascadeType.ALL, orphanRemoval = true)
     private ConferencePaymentConfig paymentConfig;
