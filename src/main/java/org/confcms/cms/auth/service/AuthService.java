@@ -1,7 +1,7 @@
 package org.confcms.cms.auth.service;
 
 import org.confcms.cms.domain.User;
-import org.confcms.cms.auth.repository.UserRepository;
+import org.confcms.cms.repository.UserRepository;
 import org.confcms.cms.core.security.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
