@@ -1,6 +1,7 @@
 package org.confcms.cms.publicweb.controller;
 
 import org.confcms.cms.domain.Conference;
+import org.confcms.cms.service.CommitteeService;
 import org.confcms.cms.service.ConferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 public class PublicWebController {
 
     private final ConferenceService conferenceService;
+    private final CommitteeService committeeService;
 
     @ModelAttribute("conference")
     public Conference addConferenceToModel() {
@@ -40,6 +42,8 @@ public class PublicWebController {
 
     @GetMapping("/committee")
     public String committee(Model model) {
+        Conference activeConference = conferenceService.getActiveConference();
+        model.addAttribute("committee", committeeService.getCommitteeForConference(activeConference));
         return "public/committee";
     }
 
