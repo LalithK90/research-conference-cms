@@ -5,12 +5,18 @@ import org.confcms.cms.repository.UserRepository;
 import org.confcms.cms.review.domain.Review;
 import org.confcms.cms.review.domain.ReviewAssignment;
 import org.confcms.cms.review.domain.ReviewDecline;
+import org.confcms.cms.review.dto.PaperReviewView;
 import org.confcms.cms.review.service.ReviewAssignmentService;
 import org.confcms.cms.review.service.ReviewService;
 import org.confcms.cms.review.repository.ReviewAssignmentRepository;
 import org.confcms.cms.review.repository.ReviewRepository;
+import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.repository.PaperRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,6 +35,7 @@ public class ReviewRestController {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final PaperRepository paperRepository;
+    private final org.confcms.cms.service.FileStorageService fileStorageService;
 
     private User actingUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -103,6 +110,45 @@ public class ReviewRestController {
             return ResponseEntity.ok(decline);
         } catch (SecurityException se) {
             return ResponseEntity.status(403).body(se.getMessage());
+        }
+    }
+
+    @GetMapping("/assignment/{assignmentId}/paper")
+    @PreAuthorize("hasRole('REVIEWER')")
+    public ResponseEntity<?> getPaperForReview(@PathVariable Long assignmentId) {
+        try {
+            var assignmentOpt = assignmentRepository.findById(assignmentId);
+            if (assignmentOpt.isEmpty()) {
+                return ResponseEntity.status(404).body("Assignment not found");
+            }
+            Paper paper = reviewService.getPaperForAssignment(actingUser(), assignmentId);
+            PaperReviewView view = reviewService.toReviewView(paper, assignmentOpt.get());
+            return ResponseEntity.ok(view);
+        } catch (SecurityException se) {
+            return ResponseEntity.status(403).body(se.getMessage());
+        }
+    }
+
+    @GetMapping("/assignment/{assignmentId}/paper/file")
+    @PreAuthorize("hasRole('REVIEWER')")
+    public ResponseEntity<?> downloadPaperForReview(@PathVariable Long assignmentId) {
+        try {
+            Paper paper = reviewService.getPaperForAssignment(actingUser(), assignmentId);
+            String filePath;
+            try {
+                filePath = reviewService.getLatestVersionFilePath(paper);
+            } catch (IllegalArgumentException iae) {
+                return ResponseEntity.status(404).body(iae.getMessage());
+            }
+            Resource resource = new UrlResource(fileStorageService.load(filePath).toUri());
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"paper.pdf\"")
+                    .body(resource);
+        } catch (SecurityException se) {
+            return ResponseEntity.status(403).body(se.getMessage());
+        } catch (java.net.MalformedURLException e) {
+            return ResponseEntity.status(404).body("File not found");
         }
     }
 }
