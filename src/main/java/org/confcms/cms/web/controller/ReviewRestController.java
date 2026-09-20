@@ -4,6 +4,7 @@ import org.confcms.cms.domain.User;
 import org.confcms.cms.repository.UserRepository;
 import org.confcms.cms.review.domain.Review;
 import org.confcms.cms.review.domain.ReviewAssignment;
+import org.confcms.cms.review.domain.ReviewDecline;
 import org.confcms.cms.review.service.ReviewAssignmentService;
 import org.confcms.cms.review.service.ReviewService;
 import org.confcms.cms.review.repository.ReviewAssignmentRepository;
@@ -88,5 +89,20 @@ public class ReviewRestController {
     public ResponseEntity<?> reviewsForPaper(@PathVariable Long paperId) {
         List<Review> reviews = reviewRepository.findAll().stream().filter(r -> r.getPaper().getId().equals(paperId)).toList();
         return ResponseEntity.ok(reviews);
+    }
+
+    @PostMapping("/decline")
+    @PreAuthorize("hasRole('REVIEWER')")
+    public ResponseEntity<?> declineAssignment(@RequestParam Long assignmentId,
+                                               @RequestParam String reason,
+                                               @RequestParam(required = false) Long suggestedUserId,
+                                               @RequestParam(required = false) String suggestedName,
+                                               @RequestParam(required = false) String suggestedEmail) {
+        try {
+            ReviewDecline decline = assignmentService.declineAssignment(actingUser(), assignmentId, reason, suggestedUserId, suggestedName, suggestedEmail);
+            return ResponseEntity.ok(decline);
+        } catch (SecurityException se) {
+            return ResponseEntity.status(403).body(se.getMessage());
+        }
     }
 }
