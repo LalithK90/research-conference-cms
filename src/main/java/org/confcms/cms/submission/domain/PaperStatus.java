@@ -6,5 +6,7 @@ public enum PaperStatus {
     ACCEPTED,
     REJECTED,
     DESK_REJECTED,
-    WITHDRAWN
+    WITHDRAWN,
+    MINOR_REVISION,
+    MAJOR_REVISION
 }

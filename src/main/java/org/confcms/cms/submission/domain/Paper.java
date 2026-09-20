@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,4 +43,6 @@ public class Paper extends BaseEntity {
 
     @OneToMany(mappedBy = "paper", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PaperAuthor> authors = new ArrayList<>();
+
+    private LocalDate revisionDueDate; // nullable; set when status becomes MINOR_REVISION/MAJOR_REVISION
 }
