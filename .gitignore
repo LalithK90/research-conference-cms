@@ -44,3 +44,6 @@ uploads/
 logs/
 *.log
 secrets.properties
+
+### Worktrees ###
+.worktrees/
