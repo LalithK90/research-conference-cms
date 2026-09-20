@@ -29,7 +29,7 @@ public class DevSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/home", "/about", "/committee", "/speakers", "/schedule", "/venue", "/contact", "/register", "/login", "/css/**", "/js/**", "/images/**", "/uploads/**", "/auth/**").permitAll()
+                .requestMatchers("/", "/home", "/about", "/committee", "/speakers", "/schedule", "/venue", "/contact", "/register", "/login", "/css/**", "/js/**", "/images/**", "/uploads/**", "/auth/**", "/invitations/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/review/**").hasRole("REVIEWER")
                 .requestMatchers("/submission/**").hasAnyRole("AUTHOR", "ADMIN")

@@ -9,7 +9,7 @@ import org.confcms.cms.review.domain.ReviewDecline;
 import org.confcms.cms.review.service.ReviewAssignmentService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperAuthor;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class PersonInvitationService {
 
     private static final int MAX_RESEND_COUNT = 5;
@@ -30,6 +29,26 @@ public class PersonInvitationService {
     private final AuthService authService;
     private final UserRepository userRepository;
     private final ReviewAssignmentService reviewAssignmentService;
+
+    // Explicit constructor (not @RequiredArgsConstructor) so @Lazy reliably lands on
+    // the reviewAssignmentService parameter: it breaks the ReviewAssignmentService <->
+    // PersonInvitationService circular dependency (declineAssignment needs to create an
+    // invitation; acceptInvitation needs to create the resulting assignment). Only this
+    // side is lazy since acceptInvitation calls it just once per REVIEWER_SUGGESTION
+    // accept, versus ReviewAssignmentService.declineAssignment being the more central path.
+    public PersonInvitationService(PersonInvitationRepository repository,
+                                    CommitteeService committeeService,
+                                    EmailService emailService,
+                                    AuthService authService,
+                                    UserRepository userRepository,
+                                    @Lazy ReviewAssignmentService reviewAssignmentService) {
+        this.repository = repository;
+        this.committeeService = committeeService;
+        this.emailService = emailService;
+        this.authService = authService;
+        this.userRepository = userRepository;
+        this.reviewAssignmentService = reviewAssignmentService;
+    }
 
     private void requireChairOrAdmin(User actingUser, Conference conference) {
         boolean isAdmin = actingUser.getRole() == Role.ADMIN;
