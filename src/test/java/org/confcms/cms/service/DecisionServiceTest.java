@@ -8,7 +8,11 @@ import org.confcms.cms.review.domain.Review;
 import org.confcms.cms.review.repository.ReviewRepository;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;
+import org.confcms.cms.submission.domain.RevisionResolution;
 import org.confcms.cms.submission.repository.PaperRepository;
+import org.confcms.cms.review.domain.ReviewAssignment;
+import org.confcms.cms.review.domain.AssignmentStatus;
+import org.confcms.cms.review.repository.ReviewAssignmentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +44,8 @@ class DecisionServiceTest {
     private EmailService emailService;
     @Mock
     private CommitteeService committeeService;
+    @Mock
+    private ReviewAssignmentRepository reviewAssignmentRepository;
 
     private DecisionService service;
     private Conference conference;
@@ -48,7 +55,7 @@ class DecisionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DecisionService(reviewRepository, paperRepository, emailService, committeeService);
+        service = new DecisionService(reviewRepository, paperRepository, emailService, committeeService, reviewAssignmentRepository);
 
         conference = new Conference();
         conference.setId(1L);
@@ -176,5 +183,96 @@ class DecisionServiceTest {
         service.applyDecision(admin, 5L, "REJECT");
 
         verify(emailService).sendTemplateEmail(any(), any(), eq("email/rejection_notification.txt"), anyMap());
+    }
+
+    @Test
+    void requestRevisionRejectsNonChairNonAdmin() {
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(committeeService.isChairOrCoChair(strangerUser, conference)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.requestRevision(strangerUser, 5L, PaperStatus.MINOR_REVISION, LocalDate.now().plusDays(14)))
+                .isInstanceOf(SecurityException.class);
+    }
+
+    @Test
+    void requestRevisionRejectsNonRevisionStatus() {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+
+        assertThatThrownBy(() -> service.requestRevision(admin, 5L, PaperStatus.ACCEPTED, LocalDate.now().plusDays(14)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void requestRevisionSetsStatusAndDueDateAndSendsEmail() {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(reviewRepository.findByPaperId(5L)).thenReturn(List.of());
+
+        Paper result = service.requestRevision(admin, 5L, PaperStatus.MAJOR_REVISION, dueDate);
+
+        assertThat(result.getStatus()).isEqualTo(PaperStatus.MAJOR_REVISION);
+        assertThat(result.getRevisionDueDate()).isEqualTo(dueDate);
+        verify(emailService).sendTemplateEmail(any(), any(), eq("email/revision_requested_notification.txt"), anyMap());
+    }
+
+    @Test
+    void resolveRevisionRejectsWhenNotInRevisionStatus() {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+        paper.setStatus(PaperStatus.SUBMITTED);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        assertThatThrownBy(() -> service.resolveRevision(admin, 5L, RevisionResolution.ACCEPT_DIRECTLY))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void resolveRevisionAcceptDirectlySetsAccepted() {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+        paper.setStatus(PaperStatus.MINOR_REVISION);
+        paper.setRevisionDueDate(LocalDate.now().plusDays(5));
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(reviewRepository.findByPaperId(5L)).thenReturn(List.of());
+
+        Paper result = service.resolveRevision(admin, 5L, RevisionResolution.ACCEPT_DIRECTLY);
+
+        assertThat(result.getStatus()).isEqualTo(PaperStatus.ACCEPTED);
+        assertThat(result.getRevisionDueDate()).isNull();
+    }
+
+    @Test
+    void resolveRevisionSendBackResetsOriginalAssignmentsToPending() {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+        paper.setStatus(PaperStatus.MAJOR_REVISION);
+
+        ReviewAssignment originalAssignment = new ReviewAssignment();
+        originalAssignment.setId(200L);
+        originalAssignment.setPaper(paper);
+        originalAssignment.setStatus(AssignmentStatus.COMPLETED);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(reviewAssignmentRepository.findByPaperId(5L)).thenReturn(List.of(originalAssignment));
+        when(reviewAssignmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Paper result = service.resolveRevision(admin, 5L, RevisionResolution.SEND_BACK_TO_REVIEWERS);
+
+        assertThat(result.getStatus()).isEqualTo(PaperStatus.UNDER_REVIEW);
+        assertThat(originalAssignment.getStatus()).isEqualTo(AssignmentStatus.PENDING);
     }
 }

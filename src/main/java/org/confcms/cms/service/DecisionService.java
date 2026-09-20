@@ -4,13 +4,18 @@ import org.confcms.cms.domain.User;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;
+import org.confcms.cms.submission.domain.RevisionResolution;
 import org.confcms.cms.submission.repository.PaperRepository;
+import org.confcms.cms.review.domain.AssignmentStatus;
 import org.confcms.cms.review.domain.Review;
+import org.confcms.cms.review.domain.ReviewAssignment;
+import org.confcms.cms.review.repository.ReviewAssignmentRepository;
 import org.confcms.cms.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,6 +27,7 @@ public class DecisionService {
     private final PaperRepository paperRepository;
     private final EmailService emailService;
     private final CommitteeService committeeService;
+    private final ReviewAssignmentRepository reviewAssignmentRepository;
 
     public enum DeskDecision { SEND_TO_REVIEW, DESK_REJECT }
 
@@ -161,5 +167,67 @@ public class DecisionService {
             updated.add(applyDecision(actingUser, id, decision));
         }
         return updated;
+    }
+
+    @Transactional
+    public Paper requestRevision(User actingUser, Long paperId, PaperStatus revisionType, LocalDate dueDate) {
+        if (revisionType != PaperStatus.MINOR_REVISION && revisionType != PaperStatus.MAJOR_REVISION) {
+            throw new IllegalArgumentException("revisionType must be MINOR_REVISION or MAJOR_REVISION");
+        }
+
+        Paper paper = paperRepository.findById(paperId).orElseThrow(() -> new IllegalArgumentException("Paper not found"));
+        requireChairOrAdmin(actingUser, paper);
+
+        paper.setStatus(revisionType);
+        paper.setRevisionDueDate(dueDate);
+        Paper saved = paperRepository.save(paper);
+
+        try {
+            Map<String, Object> model = new HashMap<>();
+            model.put("submitterName", paper.getSubmitter().getFullName());
+            model.put("paperTitle", paper.getTitle());
+            model.put("revisionType", revisionType == PaperStatus.MINOR_REVISION ? "minor revision" : "major revision");
+            model.put("dueDate", dueDate);
+            model.put("feedback", buildAnonymizedFeedback(paperId));
+            emailService.sendTemplateEmail(paper.getSubmitter().getEmail(), "Revision requested", "email/revision_requested_notification.txt", model);
+        } catch (Exception ignored) {}
+
+        return saved;
+    }
+
+    @Transactional
+    public Paper resolveRevision(User actingUser, Long paperId, RevisionResolution resolution) {
+        Paper paper = paperRepository.findById(paperId).orElseThrow(() -> new IllegalArgumentException("Paper not found"));
+        requireChairOrAdmin(actingUser, paper);
+
+        if (paper.getStatus() != PaperStatus.MINOR_REVISION && paper.getStatus() != PaperStatus.MAJOR_REVISION) {
+            throw new IllegalStateException("Paper is not currently awaiting a revision resolution");
+        }
+
+        if (resolution == RevisionResolution.ACCEPT_DIRECTLY) {
+            paper.setStatus(PaperStatus.ACCEPTED);
+            paper.setRevisionDueDate(null);
+            Paper saved = paperRepository.save(paper);
+            try {
+                Map<String, Object> model = new HashMap<>();
+                model.put("submitterName", paper.getSubmitter().getFullName());
+                model.put("paperTitle", paper.getTitle());
+                model.put("feedback", buildAnonymizedFeedback(paperId));
+                emailService.sendTemplateEmail(paper.getSubmitter().getEmail(), "Paper accepted", "email/acceptance_notification.txt", model);
+            } catch (Exception ignored) {}
+            return saved;
+        } else {
+            paper.setStatus(PaperStatus.UNDER_REVIEW);
+            paper.setRevisionDueDate(null);
+            Paper saved = paperRepository.save(paper);
+
+            List<ReviewAssignment> originalAssignments = reviewAssignmentRepository.findByPaperId(paperId);
+            for (ReviewAssignment assignment : originalAssignments) {
+                assignment.setStatus(AssignmentStatus.PENDING);
+                reviewAssignmentRepository.save(assignment);
+            }
+
+            return saved;
+        }
     }
 }

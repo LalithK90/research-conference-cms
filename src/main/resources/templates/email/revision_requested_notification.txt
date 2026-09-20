@@ -1,0 +1,18 @@
+Hello [[${submitterName}]],
+
+Your paper titled:
+
+"[[${paperTitle}]]"
+
+requires a [[${revisionType}]] before a final decision can be made.
+
+Please upload a corrected version addressing the feedback below by [[${dueDate}]]. Submissions after this date will be automatically rejected.
+
+Reviewer feedback:
+[# th:each="item : ${feedback}"]
+Reviewer [[${item.index}]] (score: [[${item.score}]]):
+[[${item.comments}]]
+
+[/]
+Regards,
+Conference Committee
