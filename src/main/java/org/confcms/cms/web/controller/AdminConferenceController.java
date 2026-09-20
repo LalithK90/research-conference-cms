@@ -54,6 +54,7 @@ public class AdminConferenceController {
         conference.setStartDate(form.getStartDate());
         conference.setEndDate(form.getEndDate());
         conference.setActive(form.isActive());
+        conference.setBlindReview(form.isBlindReview());
         conference.setLogoUrl(form.getLogoUrl());
         conference.setContactEmail(form.getContactEmail());
 
@@ -92,6 +93,7 @@ public class AdminConferenceController {
         private LocalDate startDate;
         private LocalDate endDate;
         private boolean active;
+        private boolean blindReview;
         private String logoUrl;
         private String contactEmail;
 

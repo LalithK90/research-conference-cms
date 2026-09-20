@@ -76,4 +76,31 @@ class AdminConferenceControllerTest {
 
         org.mockito.Mockito.verify(committeeService).assignChair(any(), org.mockito.Mockito.eq(chairUser));
     }
+
+    @Test
+    void saveConferenceSetsBlindReviewFlag() {
+        AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
+        form.setTitle("Test Conf");
+        form.setVenue("Venue");
+        form.setStartDate(LocalDate.now());
+        form.setEndDate(LocalDate.now().plusDays(1));
+        form.setContactEmail("a@b.com");
+        form.setPaymentProvider(PaymentProvider.FREE);
+        form.setChairUserId(7L);
+        form.setBlindReview(true);
+
+        User chairUser = new User();
+        chairUser.setId(7L);
+        when(userRepository.findById(7L)).thenReturn(Optional.of(chairUser));
+        when(conferenceService.saveConference(any())).thenAnswer(inv -> {
+            Conference c = inv.getArgument(0);
+            c.setId(1L);
+            return c;
+        });
+
+        controller.saveConference(form);
+
+        org.mockito.Mockito.verify(conferenceService).saveConference(
+                org.mockito.ArgumentMatchers.argThat(Conference::isBlindReview));
+    }
 }

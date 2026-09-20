@@ -31,6 +31,9 @@ public class Conference extends BaseEntity {
     @Column(nullable = false)
     private boolean isActive;
 
+    @Column(nullable = false)
+    private boolean blindReview = false;
+
     private String logoUrl;
     private String contactEmail;
 
