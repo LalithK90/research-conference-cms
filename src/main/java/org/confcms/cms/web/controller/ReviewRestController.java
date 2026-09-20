@@ -117,15 +117,13 @@ public class ReviewRestController {
     @PreAuthorize("hasRole('REVIEWER')")
     public ResponseEntity<?> getPaperForReview(@PathVariable Long assignmentId) {
         try {
-            var assignmentOpt = assignmentRepository.findById(assignmentId);
-            if (assignmentOpt.isEmpty()) {
-                return ResponseEntity.status(404).body("Assignment not found");
-            }
-            Paper paper = reviewService.getPaperForAssignment(actingUser(), assignmentId);
-            PaperReviewView view = reviewService.toReviewView(paper, assignmentOpt.get());
+            ReviewAssignment assignment = reviewService.getOwnedAssignment(actingUser(), assignmentId);
+            PaperReviewView view = reviewService.toReviewView(assignment.getPaper(), assignment);
             return ResponseEntity.ok(view);
         } catch (SecurityException se) {
             return ResponseEntity.status(403).body(se.getMessage());
+        } catch (IllegalArgumentException iae) {
+            return ResponseEntity.status(404).body(iae.getMessage());
         }
     }
 
@@ -133,13 +131,8 @@ public class ReviewRestController {
     @PreAuthorize("hasRole('REVIEWER')")
     public ResponseEntity<?> downloadPaperForReview(@PathVariable Long assignmentId) {
         try {
-            Paper paper = reviewService.getPaperForAssignment(actingUser(), assignmentId);
-            String filePath;
-            try {
-                filePath = reviewService.getLatestVersionFilePath(paper);
-            } catch (IllegalArgumentException iae) {
-                return ResponseEntity.status(404).body(iae.getMessage());
-            }
+            Paper paper = reviewService.getOwnedAssignment(actingUser(), assignmentId).getPaper();
+            String filePath = reviewService.getLatestVersionFilePath(paper);
             Resource resource = new UrlResource(fileStorageService.load(filePath).toUri());
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)
@@ -147,6 +140,8 @@ public class ReviewRestController {
                     .body(resource);
         } catch (SecurityException se) {
             return ResponseEntity.status(403).body(se.getMessage());
+        } catch (IllegalArgumentException iae) {
+            return ResponseEntity.status(404).body(iae.getMessage());
         } catch (java.net.MalformedURLException e) {
             return ResponseEntity.status(404).body("File not found");
         }

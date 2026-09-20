@@ -66,7 +66,12 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public Paper getPaperForAssignment(User actingUser, Long assignmentId) {
-        return loadOwnedAssignment(actingUser, assignmentId).getPaper();
+        return getOwnedAssignment(actingUser, assignmentId).getPaper();
+    }
+
+    @Transactional(readOnly = true)
+    public ReviewAssignment getOwnedAssignment(User actingUser, Long assignmentId) {
+        return loadOwnedAssignment(actingUser, assignmentId);
     }
 
     @Transactional(readOnly = true)

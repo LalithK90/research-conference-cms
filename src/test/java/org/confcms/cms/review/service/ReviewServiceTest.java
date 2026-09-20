@@ -104,6 +104,35 @@ class ReviewServiceTest {
     }
 
     @Test
+    void getOwnedAssignmentRejectsNonOwningReviewer() {
+        User stranger = new User();
+        stranger.setId(99L);
+
+        when(assignmentRepository.findById(100L)).thenReturn(Optional.of(assignment));
+
+        assertThatThrownBy(() -> service.getOwnedAssignment(stranger, 100L))
+                .isInstanceOf(SecurityException.class);
+    }
+
+    @Test
+    void getOwnedAssignmentThrowsWhenAssignmentNotFound() {
+        when(assignmentRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getOwnedAssignment(reviewer, 999L))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void getOwnedAssignmentReturnsAssignmentForOwningReviewer() {
+        when(assignmentRepository.findById(100L)).thenReturn(Optional.of(assignment));
+
+        ReviewAssignment result = service.getOwnedAssignment(reviewer, 100L);
+
+        assertThat(result).isEqualTo(assignment);
+        assertThat(result.getPaper()).isEqualTo(paper);
+    }
+
+    @Test
     void toReviewViewHidesAuthorNamesWhenBlind() {
         conference.setBlindReview(true);
 
