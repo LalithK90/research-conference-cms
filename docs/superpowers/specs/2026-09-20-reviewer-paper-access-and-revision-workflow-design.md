@@ -209,3 +209,6 @@ There is no background job. The single enforcement point is the deadline check i
 - Download audit logging (evaluation-doc item 2.9).
 - A real scheduled background job for proactive (not lazy) auto-rejection of overdue revisions.
 - Reviewer specialist-field tagging and assignment filtering (carried over from the previous feature's deferred list, still not designed).
+- HTML email templates (raised mid-design; requires converting `EmailService`/`EmailQueueService` from `SimpleMailMessage` to `MimeMessage`, a cross-cutting change affecting every existing email this app sends, not just this feature's new templates — confirmed both classes hard-code plain text today).
+- Caching strategy (e.g. Ehcache) — raised mid-design, entirely unscoped; needs its own investigation into what's actually hot/slow before picking an approach.
+- SEO strategy for the public-facing pages — raised mid-design, unrelated to the authenticated reviewer/chair flows this spec covers; needs its own investigation into which public pages/metadata matter.
