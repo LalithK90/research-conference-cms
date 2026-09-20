@@ -89,6 +89,9 @@ public class PersonInvitationService {
         if (invitation.getPurpose() != InvitationPurpose.REVIEWER_SUGGESTION) {
             throw new IllegalStateException("Only reviewer-suggestion invitations require approval");
         }
+        if (invitation.getStatus() != InvitationStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("Only pending invitations can be approved");
+        }
         requireChairOrAdmin(actingUser, invitation.getConference());
 
         invitation.setStatus(InvitationStatus.INVITED);
@@ -108,6 +111,9 @@ public class PersonInvitationService {
         if (invitation.getPurpose() != InvitationPurpose.REVIEWER_SUGGESTION) {
             throw new IllegalStateException("Only reviewer-suggestion invitations can be rejected");
         }
+        if (invitation.getStatus() != InvitationStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("Only pending invitations can be rejected");
+        }
         requireChairOrAdmin(actingUser, invitation.getConference());
 
         invitation.setStatus(InvitationStatus.REJECTED);
@@ -118,6 +124,10 @@ public class PersonInvitationService {
     public PersonInvitation resend(User actingUser, Long invitationId) {
         PersonInvitation invitation = repository.findById(invitationId)
                 .orElseThrow(() -> new IllegalArgumentException("Invitation not found"));
+
+        if (invitation.getStatus() != InvitationStatus.INVITED) {
+            throw new IllegalStateException("Only invitations that have been sent can be resent");
+        }
 
         boolean authorized = switch (invitation.getPurpose()) {
             case REVIEWER_SUGGESTION -> actingUser.getRole() == Role.ADMIN
@@ -158,6 +168,9 @@ public class PersonInvitationService {
 
         if (invitation.isUsed()) {
             throw new IllegalArgumentException("This invitation has already been used");
+        }
+        if (invitation.getStatus() != InvitationStatus.INVITED) {
+            throw new IllegalArgumentException("This invitation is not currently valid to accept");
         }
         if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("This invitation has expired");

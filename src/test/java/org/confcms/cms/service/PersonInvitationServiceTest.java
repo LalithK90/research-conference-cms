@@ -151,6 +151,60 @@ class PersonInvitationServiceTest {
     }
 
     @Test
+    void approveRejectsInvitationNotInPendingApproval() {
+        PersonInvitation invitation = pendingInvitation();
+        invitation.setStatus(InvitationStatus.REJECTED);
+        when(repository.findById(100L)).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> service.approve(chairUser, 100L))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void rejectRejectsInvitationNotInPendingApproval() {
+        PersonInvitation invitation = pendingInvitation();
+        invitation.setStatus(InvitationStatus.ACCEPTED);
+        when(repository.findById(100L)).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> service.reject(chairUser, 100L, "reason"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void resendRejectsInvitationStillPendingApproval() {
+        PersonInvitation invitation = pendingInvitation();
+        // status is PENDING_APPROVAL from pendingInvitation() -- never approved, so not resendable
+        when(repository.findById(100L)).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> service.resend(chairUser, 100L))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void acceptInvitationRejectsPendingApprovalInvitation() {
+        PersonInvitation invitation = pendingInvitation();
+        invitation.setToken("tok-789");
+        invitation.setExpiresAt(LocalDateTime.now().plusHours(1));
+        // status is PENDING_APPROVAL -- was never approved by a chair, so must not be acceptable
+        when(repository.findByToken("tok-789")).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> service.acceptInvitation("tok-789", "password123"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void acceptInvitationRejectsAlreadyAcceptedInvitation() {
+        PersonInvitation invitation = pendingInvitation();
+        invitation.setStatus(InvitationStatus.ACCEPTED);
+        invitation.setToken("tok-999");
+        invitation.setExpiresAt(LocalDateTime.now().plusHours(1));
+        when(repository.findByToken("tok-999")).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> service.acceptInvitation("tok-999", "password123"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void acceptInvitationRejectsExpiredToken() {
         PersonInvitation invitation = pendingInvitation();
         invitation.setStatus(InvitationStatus.INVITED);
