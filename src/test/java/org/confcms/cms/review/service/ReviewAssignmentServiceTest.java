@@ -12,6 +12,7 @@ import org.confcms.cms.review.repository.ReviewAssignmentRepository;
 import org.confcms.cms.review.repository.ReviewBidRepository;
 import org.confcms.cms.review.repository.ReviewDeclineRepository;
 import org.confcms.cms.service.CommitteeService;
+import org.confcms.cms.service.ConflictDeclarationService;
 import org.confcms.cms.service.PersonInvitationService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;
@@ -46,6 +47,8 @@ class ReviewAssignmentServiceTest {
     private ReviewDeclineRepository reviewDeclineRepository;
     @Mock
     private PersonInvitationService personInvitationService;
+    @Mock
+    private ConflictDeclarationService conflictDeclarationService;
 
     private ReviewAssignmentService service;
     private Conference conference;
@@ -53,7 +56,7 @@ class ReviewAssignmentServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ReviewAssignmentService(assignmentRepository, userRepository, paperRepository, bidRepository, committeeService, reviewDeclineRepository, personInvitationService);
+        service = new ReviewAssignmentService(assignmentRepository, userRepository, paperRepository, bidRepository, committeeService, reviewDeclineRepository, personInvitationService, conflictDeclarationService);
 
         conference = new Conference();
         conference.setId(1L);

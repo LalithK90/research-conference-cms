@@ -12,6 +12,7 @@ import org.confcms.cms.review.repository.ReviewAssignmentRepository;
 import org.confcms.cms.review.repository.ReviewBidRepository;
 import org.confcms.cms.review.repository.ReviewDeclineRepository;
 import org.confcms.cms.service.CommitteeService;
+import org.confcms.cms.service.ConflictDeclarationService;
 import org.confcms.cms.service.PersonInvitationService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;
@@ -37,6 +38,7 @@ public class ReviewAssignmentService {
     private final CommitteeService committeeService;
     private final ReviewDeclineRepository reviewDeclineRepository;
     private final PersonInvitationService personInvitationService;
+    private final ConflictDeclarationService conflictDeclarationService;
 
     private void requireChairOrAdmin(User actingUser, Paper paper) {
         boolean isAdmin = actingUser.getRole() == Role.ADMIN;
@@ -141,6 +143,15 @@ public class ReviewAssignmentService {
             // Skip if conflict or not willing
             BidType bid = reviewerBids.get(reviewer.getId());
             if (bid == BidType.CONFLICT || bid == BidType.NOT_WILLING) continue;
+
+            // Skip if the reviewer has declared a conflict against any author on this paper
+            boolean hasDeclaredConflict = paper.getAuthors().stream()
+                    .anyMatch(paperAuthor -> {
+                        var authorUser = userRepository.findByEmail(paperAuthor.getEmail());
+                        return authorUser.isPresent()
+                                && conflictDeclarationService.hasConflict(reviewer, paper.getConference(), authorUser.get());
+                    });
+            if (hasDeclaredConflict) continue;
 
             // Check if already assigned
             boolean alreadyAssigned = assignmentRepository.findByPaperId(paperId).stream()
