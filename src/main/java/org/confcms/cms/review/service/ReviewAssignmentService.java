@@ -181,6 +181,11 @@ public class ReviewAssignmentService {
         assignReviewerInternal(paper, reviewer);
     }
 
+    @Transactional
+    public void assignReviewerFromInvitation(Paper paper, User reviewer) {
+        assignReviewerInternal(paper, reviewer);
+    }
+
     private void assignReviewerInternal(Paper paper, User reviewer) {
         ReviewAssignment assignment = new ReviewAssignment();
         assignment.setPaper(paper);
