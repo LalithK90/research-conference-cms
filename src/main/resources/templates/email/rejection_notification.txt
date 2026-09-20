@@ -1,10 +1,10 @@
 Hello [[${submitterName}]],
 
-Congratulations — your paper titled:
+Thank you for your submission titled:
 
 "[[${paperTitle}]]"
 
-has been accepted to the conference.
+After careful review, we regret to inform you that your paper was not accepted for this conference.
 
 Reviewer feedback:
 [# th:each="item : ${feedback}"]
@@ -12,7 +12,7 @@ Reviewer [[${item.index}]] (score: [[${item.score}]]):
 [[${item.comments}]]
 
 [/]
-Please follow the instructions in your author dashboard for camera-ready submission and registration.
+We encourage you to consider this feedback for future submissions.
 
 Regards,
 Conference Committee

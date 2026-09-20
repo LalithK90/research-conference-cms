@@ -70,6 +70,37 @@ public class DecisionService {
         }
     }
 
+    // Structurally excludes reviewer identity and confidentialComments -- the returned
+    // list's element type has no field capable of holding either, so no downstream
+    // template can accidentally render them.
+    public static class AnonymizedFeedbackItem {
+        public int index;
+        public Integer score;
+        public String comments;
+
+        public AnonymizedFeedbackItem(int index, Integer score, String comments) {
+            this.index = index;
+            this.score = score;
+            this.comments = comments;
+        }
+
+        @Override
+        public String toString() {
+            return "AnonymizedFeedbackItem{index=" + index + ", score=" + score + ", comments=" + comments + "}";
+        }
+    }
+
+    private List<AnonymizedFeedbackItem> buildAnonymizedFeedback(Long paperId) {
+        List<Review> reviews = reviewRepository.findByPaperId(paperId);
+        List<AnonymizedFeedbackItem> feedback = new ArrayList<>();
+        int index = 1;
+        for (Review review : reviews) {
+            feedback.add(new AnonymizedFeedbackItem(index, review.getScore(), review.getComments()));
+            index++;
+        }
+        return feedback;
+    }
+
     @Transactional
     public Paper deskReview(User actingUser, Long paperId, DeskDecision decision) {
         Paper paper = paperRepository.findById(paperId).orElseThrow(() -> new IllegalArgumentException("Paper not found"));
@@ -96,19 +127,22 @@ public class DecisionService {
         if ("ACCEPT".equalsIgnoreCase(decision)) {
             paper.setStatus(PaperStatus.ACCEPTED);
             paperRepository.save(paper);
-            // send acceptance email (templated)
             try {
-                java.util.Map<String, Object> model = new java.util.HashMap<>();
+                Map<String, Object> model = new HashMap<>();
                 model.put("submitterName", paper.getSubmitter().getFullName());
                 model.put("paperTitle", paper.getTitle());
+                model.put("feedback", buildAnonymizedFeedback(paperId));
                 emailService.sendTemplateEmail(paper.getSubmitter().getEmail(), "Paper accepted", "email/acceptance_notification.txt", model);
             } catch (Exception ignored) {}
         } else if ("REJECT".equalsIgnoreCase(decision)) {
             paper.setStatus(PaperStatus.REJECTED);
             paperRepository.save(paper);
             try {
-                emailService.sendSimpleEmail(paper.getSubmitter().getEmail(), "Paper decision",
-                        "We regret to inform you that your paper '" + paper.getTitle() + "' was not accepted.");
+                Map<String, Object> model = new HashMap<>();
+                model.put("submitterName", paper.getSubmitter().getFullName());
+                model.put("paperTitle", paper.getTitle());
+                model.put("feedback", buildAnonymizedFeedback(paperId));
+                emailService.sendTemplateEmail(paper.getSubmitter().getEmail(), "Paper decision", "email/rejection_notification.txt", model);
             } catch (Exception ignored) {}
         } else if ("BORDERLINE".equalsIgnoreCase(decision)) {
             paper.setStatus(PaperStatus.UNDER_REVIEW);
