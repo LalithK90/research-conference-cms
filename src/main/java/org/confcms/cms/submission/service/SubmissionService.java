@@ -1,9 +1,11 @@
 package org.confcms.cms.submission.service;
 
 import org.confcms.cms.domain.User;
+import org.confcms.cms.repository.UserRepository;
 import org.confcms.cms.service.ConferenceService;
 import org.confcms.cms.service.FileStorageService;
 import org.confcms.cms.service.EmailService;
+import org.confcms.cms.service.PersonInvitationService;
 import org.confcms.cms.submission.domain.*;
 import org.confcms.cms.submission.repository.PaperRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,8 @@ public class SubmissionService {
     private final FileStorageService fileStorageService;
     private final EmailService emailService;
     private final ConferenceService conferenceService;
+    private final PersonInvitationService personInvitationService;
+    private final UserRepository userRepository;
 
     @Transactional
     public Paper submitPaper(User submitter, String title, String abstractText, String track, MultipartFile file, List<PaperAuthor> authors) {
@@ -47,6 +51,13 @@ public class SubmissionService {
         for (PaperAuthor author : authors) {
             author.setPaper(paper);
             paper.getAuthors().add(author);
+        }
+
+        // Invite any co-author who isn't already a registered User
+        for (PaperAuthor author : authors) {
+            if (userRepository.findByEmail(author.getEmail()).isEmpty()) {
+                personInvitationService.inviteCoAuthor(paper, author);
+            }
         }
 
         Paper saved = paperRepository.save(paper);
