@@ -6,8 +6,11 @@ import org.confcms.cms.domain.UserIdentity;
 import org.confcms.cms.repository.UserIdentityRepository;
 import org.confcms.cms.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -19,12 +22,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+
+    private static final String NAME_ATTRIBUTE_KEY = "email";
 
     private final UserRepository userRepository;
     private final UserIdentityRepository userIdentityRepository;
@@ -38,8 +44,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         User localUser = resolveLocalUser(provider, attributes);
 
+        // The principal name must always be an email: every other authenticated call site in
+        // this codebase (controllers, REST endpoints) does
+        // SecurityContextHolder...getAuthentication().getName() and feeds the result straight
+        // into userRepository.findByEmail(...). Google's attributes already contain "email", but
+        // ORCID's never do (see orcidAttributesFromTokenResponse) -- so a fresh map carrying the
+        // resolved local user's real email is used unconditionally for both providers, instead of
+        // branching per-provider on whatever attribute the OAuth2 provider happens to supply.
+        Map<String, Object> principalAttributes = new HashMap<>(attributes);
+        principalAttributes.put(NAME_ATTRIBUTE_KEY, localUser.getEmail());
+
         GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + localUser.getRole().name());
-        return new DefaultOAuth2User(Collections.singletonList(authority), attributes, emailAttributeKey(provider));
+        return new DefaultOAuth2User(Collections.singletonList(authority), principalAttributes, NAME_ATTRIBUTE_KEY);
     }
 
     /**
@@ -72,9 +88,28 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             return existingIdentity.get().getUser();
         }
 
+        // An already-logged-in user clicking "Connect Google"/"Connect ORCID" from /account
+        // re-enters this exact same OAuth2 flow. That request carries a real authenticated
+        // session, so the new UserIdentity must link to THAT session's user -- not to whichever
+        // account happens to share the provider-supplied email (Google), and not be rejected
+        // outright for lacking one (ORCID). This is checked before either the ORCID rejection or
+        // the Google by-email auto-link/auto-create logic, since it applies identically to both
+        // providers and takes priority over them.
+        User currentSessionUser = currentAuthenticatedUser();
+        if (currentSessionUser != null) {
+            UserIdentity identity = new UserIdentity();
+            identity.setUser(currentSessionUser);
+            identity.setProvider(provider);
+            identity.setProviderUserId(providerUserId);
+            identity.setLinkedAt(LocalDateTime.now());
+            userIdentityRepository.save(identity);
+            return currentSessionUser;
+        }
+
         // ORCID's basic /authenticate grant never supplies an email, so there is nothing to
-        // auto-link or auto-create a User by/from (User.email is NOT NULL UNIQUE). A first-time
-        // ORCID login must instead be linked explicitly from an existing account.
+        // auto-link or auto-create a User by/from (User.email is NOT NULL UNIQUE). A first-time,
+        // cold ORCID login (no existing session) must instead be linked explicitly from an
+        // existing account (handled by the already-authenticated branch above).
         if ("orcid".equals(provider)) {
             throw new OAuth2AuthenticationException(new OAuth2Error("orcid_not_linked"),
                     "ORCID login requires an existing account. Log in with your password or Google account first, then link ORCID from your account settings.");
@@ -114,17 +149,23 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return (String) attributes.get("sub");
     }
 
-    // DefaultOAuth2User#getName() resolves to attributes.get(nameAttributeKey) and requires the
-    // key to be present (Assert.notNull) -- so this can't just be "email" for every provider.
-    // Google's userinfo response does include "email", so "email" is a reasonable (if
-    // semantically odd -- "sub" would be the conventional choice) key to use as the principal
-    // name there. ORCID's attributes never contain "email" (see orcidAttributesFromTokenResponse)
-    // -- using "email" here would throw IllegalArgumentException on every ORCID login. ORCID's
-    // attributes always contain "orcid-identifier", so that's used as its name key instead.
-    private String emailAttributeKey(String provider) {
-        if ("orcid".equals(provider)) {
-            return "orcid-identifier";
+    // Mirrors the "who is the acting user" check every controller in this codebase performs via
+    // SecurityContextHolder...getAuthentication().getName() + userRepository.findByEmail(...).
+    // Here the intent is different: rather than requiring an authenticated user (those call
+    // sites all run behind an authenticated route), this needs to distinguish "there IS a real,
+    // already-authenticated session" (an authenticated user clicked Connect Google/ORCID from
+    // /account) from "there is no session at all" (a cold OAuth2 login), returning null for the
+    // latter so the existing cold-login logic below is unaffected. AnonymousAuthenticationToken
+    // is what Spring Security's anonymousAuthenticationFilter installs for unauthenticated
+    // requests by default, so it must be excluded explicitly -- Authentication#isAuthenticated()
+    // alone returns true for anonymous tokens too.
+    private User currentAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            return null;
         }
-        return "email";
+        return userRepository.findByEmail(authentication.getName()).orElse(null);
     }
 }
