@@ -180,6 +180,108 @@ class SubmissionServiceTest {
     }
 
     @Test
+    void uploadRevisionAutoRejectClearsRevisionDueDate() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.MINOR_REVISION);
+        paper.setRevisionDueDate(LocalDate.now().minusDays(1));
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        MockMultipartFile file = new MockMultipartFile("file", "revised.pdf", "application/pdf", "%PDF-1.4".getBytes());
+
+        assertThatThrownBy(() -> service.uploadRevision(submitter, 5L, file))
+                .isInstanceOf(IllegalStateException.class);
+
+        assertThat(paper.getRevisionDueDate()).isNull();
+    }
+
+    @Test
+    void uploadNewVersionBypassBlockedPastRevisionDeadline() {
+        // Fix 2: the plain /version upload path (uploadNewVersion) must be subject to the same
+        // revision-deadline enforcement as uploadRevision, otherwise an author could dodge the
+        // auto-reject by calling the older endpoint instead of the new revision-specific one.
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.MAJOR_REVISION);
+        paper.setRevisionDueDate(LocalDate.now().minusDays(1));
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        MockMultipartFile file = new MockMultipartFile("file", "revised.pdf", "application/pdf", "%PDF-1.4".getBytes());
+
+        assertThatThrownBy(() -> service.uploadNewVersion(submitter, 5L, file))
+                .isInstanceOf(IllegalStateException.class);
+
+        assertThat(paper.getStatus()).isEqualTo(PaperStatus.REJECTED);
+        assertThat(paper.getRevisionDueDate()).isNull();
+        verify(fileStorageService, never()).store(any());
+    }
+
+    @Test
+    void uploadNewVersionStillBlocksWithdrawnPapers() {
+        // Fix 2 must not change uploadNewVersion's existing WITHDRAWN-blocking behavior.
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.WITHDRAWN);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        MockMultipartFile file = new MockMultipartFile("file", "revised.pdf", "application/pdf", "%PDF-1.4".getBytes());
+
+        assertThatThrownBy(() -> service.uploadNewVersion(submitter, 5L, file))
+                .isInstanceOf(IllegalStateException.class);
+
+        verify(fileStorageService, never()).store(any());
+    }
+
+    @Test
+    void uploadNewVersionUnaffectedForNormalStatus() {
+        // Fix 2 must not change uploadNewVersion's behavior for statuses other than
+        // WITHDRAWN/MINOR_REVISION/MAJOR_REVISION.
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.SUBMITTED);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(fileStorageService.store(any())).thenReturn("/uploads/v2.pdf");
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        MockMultipartFile file = new MockMultipartFile("file", "v2.pdf", "application/pdf", "%PDF-1.4".getBytes());
+
+        Paper result = service.uploadNewVersion(submitter, 5L, file);
+
+        assertThat(result.getStatus()).isEqualTo(PaperStatus.SUBMITTED);
+        assertThat(result.getVersions()).hasSize(1);
+    }
+
+    @Test
     void uploadRevisionSucceedsBeforeDeadline() {
         SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
 

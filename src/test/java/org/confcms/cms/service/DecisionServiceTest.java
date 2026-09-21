@@ -8,6 +8,7 @@ import org.confcms.cms.review.domain.Review;
 import org.confcms.cms.review.repository.ReviewRepository;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;
+import org.confcms.cms.submission.domain.PaperVersion;
 import org.confcms.cms.submission.domain.RevisionResolution;
 import org.confcms.cms.submission.repository.PaperRepository;
 import org.confcms.cms.review.domain.ReviewAssignment;
@@ -30,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -242,6 +244,9 @@ class DecisionServiceTest {
         admin.setRole(Role.ADMIN);
         paper.setStatus(PaperStatus.MINOR_REVISION);
         paper.setRevisionDueDate(LocalDate.now().plusDays(5));
+        paper.setRevisionRequestedAtVersionCount(1);
+        paper.getVersions().add(new PaperVersion());
+        paper.getVersions().add(new PaperVersion()); // revision uploaded since request
 
         when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
         when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -251,6 +256,7 @@ class DecisionServiceTest {
 
         assertThat(result.getStatus()).isEqualTo(PaperStatus.ACCEPTED);
         assertThat(result.getRevisionDueDate()).isNull();
+        assertThat(result.getRevisionRequestedAtVersionCount()).isNull();
     }
 
     @Test
@@ -259,6 +265,9 @@ class DecisionServiceTest {
         admin.setId(40L);
         admin.setRole(Role.ADMIN);
         paper.setStatus(PaperStatus.MAJOR_REVISION);
+        paper.setRevisionRequestedAtVersionCount(1);
+        paper.getVersions().add(new PaperVersion());
+        paper.getVersions().add(new PaperVersion()); // revision uploaded since request
 
         ReviewAssignment originalAssignment = new ReviewAssignment();
         originalAssignment.setId(200L);
@@ -274,5 +283,167 @@ class DecisionServiceTest {
 
         assertThat(result.getStatus()).isEqualTo(PaperStatus.UNDER_REVIEW);
         assertThat(originalAssignment.getStatus()).isEqualTo(AssignmentStatus.PENDING);
+    }
+
+    @Test
+    void resolveRevisionSendBackDoesNotResurrectDeclinedOrTouchPendingAssignments() {
+        // Fix 3: only COMPLETED assignments (the reviewers who actually reviewed the pre-revision
+        // version) get reset to PENDING. DECLINED reviewers explicitly opted out and must stay
+        // DECLINED; already-PENDING assignments are left alone.
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+        paper.setStatus(PaperStatus.MAJOR_REVISION);
+        paper.setRevisionRequestedAtVersionCount(1);
+        paper.getVersions().add(new PaperVersion());
+        paper.getVersions().add(new PaperVersion());
+
+        ReviewAssignment completed = new ReviewAssignment();
+        completed.setId(200L);
+        completed.setPaper(paper);
+        completed.setStatus(AssignmentStatus.COMPLETED);
+
+        ReviewAssignment declined = new ReviewAssignment();
+        declined.setId(201L);
+        declined.setPaper(paper);
+        declined.setStatus(AssignmentStatus.DECLINED);
+
+        ReviewAssignment pending = new ReviewAssignment();
+        pending.setId(202L);
+        pending.setPaper(paper);
+        pending.setStatus(AssignmentStatus.PENDING);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(reviewAssignmentRepository.findByPaperId(5L)).thenReturn(List.of(completed, declined, pending));
+        when(reviewAssignmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.resolveRevision(admin, 5L, RevisionResolution.SEND_BACK_TO_REVIEWERS);
+
+        assertThat(completed.getStatus()).isEqualTo(AssignmentStatus.PENDING);
+        assertThat(declined.getStatus()).isEqualTo(AssignmentStatus.DECLINED);
+        assertThat(pending.getStatus()).isEqualTo(AssignmentStatus.PENDING);
+        verify(reviewAssignmentRepository, never()).save(declined);
+    }
+
+    @Test
+    void resolveRevisionRejectsWhenNoRevisionUploadedYet() {
+        // Fix 4: resolveRevision must require that a new PaperVersion has actually arrived since
+        // requestRevision was called, not just that the status is a revision status.
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+        paper.setStatus(PaperStatus.MINOR_REVISION);
+        paper.setRevisionRequestedAtVersionCount(1);
+        paper.getVersions().add(new PaperVersion()); // still only the original version
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        assertThatThrownBy(() -> service.resolveRevision(admin, 5L, RevisionResolution.ACCEPT_DIRECTLY))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void requestRevisionRejectsPastDueDate() {
+        // Fix 6
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+
+        assertThatThrownBy(() -> service.requestRevision(admin, 5L, PaperStatus.MINOR_REVISION, LocalDate.now().minusDays(1)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void requestRevisionRejectsTodayAsDueDate() {
+        // Fix 6: "today" does not count as a valid future due date
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+
+        assertThatThrownBy(() -> service.requestRevision(admin, 5L, PaperStatus.MINOR_REVISION, LocalDate.now()))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void requestRevisionRejectsNullDueDate() {
+        // Fix 6
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+
+        assertThatThrownBy(() -> service.requestRevision(admin, 5L, PaperStatus.MINOR_REVISION, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void requestRevisionCapturesVersionCountAtRequestTime() {
+        // Fix 4 write-side: requestRevision must snapshot the current version count.
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+        paper.getVersions().add(new PaperVersion());
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(reviewRepository.findByPaperId(5L)).thenReturn(List.of());
+
+        Paper result = service.requestRevision(admin, 5L, PaperStatus.MINOR_REVISION, LocalDate.now().plusDays(14));
+
+        assertThat(result.getRevisionRequestedAtVersionCount()).isEqualTo(1);
+    }
+
+    @Test
+    void suggestDecisionsExtendedWithRevisionBands() {
+        // Fix 5: with acceptThreshold=3.5, rejectThreshold=2.5 (span=1.0), the new bands split
+        // the middle third at minorRevisionThreshold=3.5-1/3=3.1667 and
+        // majorRevisionThreshold=2.5+1/3=2.8333. So: ~3.33 -> MINOR_REVISION, 3.0 -> BORDERLINE,
+        // ~2.67 -> MAJOR_REVISION, while ACCEPT/REJECT at the extremes are unchanged.
+        Paper acceptPaper = paperWithId(101L);
+        Paper minorPaper = paperWithId(102L);
+        Paper borderlinePaper = paperWithId(103L);
+        Paper majorPaper = paperWithId(104L);
+        Paper rejectPaper = paperWithId(105L);
+
+        when(paperRepository.findAll()).thenReturn(List.of(acceptPaper, minorPaper, borderlinePaper, majorPaper, rejectPaper));
+        when(reviewRepository.findByPaperId(101L)).thenReturn(reviewsAveraging(4.0));
+        when(reviewRepository.findByPaperId(102L)).thenReturn(reviewsAveraging(3.3));
+        when(reviewRepository.findByPaperId(103L)).thenReturn(reviewsAveraging(3.0));
+        when(reviewRepository.findByPaperId(104L)).thenReturn(reviewsAveraging(2.7));
+        when(reviewRepository.findByPaperId(105L)).thenReturn(reviewsAveraging(1.0));
+
+        List<DecisionService.DecisionSuggestion> suggestions = service.suggestDecisions(3.5, 2.5);
+
+        assertThat(suggestionFor(suggestions, 101L).suggestion).isEqualTo("ACCEPT");
+        assertThat(suggestionFor(suggestions, 102L).suggestion).isEqualTo("MINOR_REVISION");
+        assertThat(suggestionFor(suggestions, 103L).suggestion).isEqualTo("BORDERLINE");
+        assertThat(suggestionFor(suggestions, 104L).suggestion).isEqualTo("MAJOR_REVISION");
+        assertThat(suggestionFor(suggestions, 105L).suggestion).isEqualTo("REJECT");
+    }
+
+    private Paper paperWithId(Long id) {
+        Paper p = new Paper();
+        p.setId(id);
+        p.setTitle("Paper " + id);
+        return p;
+    }
+
+    // Reviews whose integer scores average to exactly the given value (Review.score is an
+    // Integer), using thirds so results like 3.3333 (= 10/3) land precisely.
+    private List<Review> reviewsAveraging(double average) {
+        int totalOverThree = (int) Math.round(average * 3);
+        int base = totalOverThree / 3;
+        int remainder = totalOverThree - base * 3;
+        List<Review> reviews = new java.util.ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            Review r = new Review();
+            r.setScore(base + (i < remainder ? 1 : 0));
+            reviews.add(r);
+        }
+        return reviews;
+    }
+
+    private DecisionService.DecisionSuggestion suggestionFor(List<DecisionService.DecisionSuggestion> suggestions, Long paperId) {
+        return suggestions.stream().filter(s -> s.paperId.equals(paperId)).findFirst().orElseThrow();
     }
 }

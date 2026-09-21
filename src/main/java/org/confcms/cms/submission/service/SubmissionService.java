@@ -121,6 +121,8 @@ public class SubmissionService {
             throw new IllegalStateException("Cannot upload versions for withdrawn paper");
         }
 
+        enforceRevisionDeadline(paper);
+
         validatePdf(file);
         String filePath = fileStorageService.store(file);
 
@@ -141,6 +143,21 @@ public class SubmissionService {
         }
 
         return saved;
+    }
+
+    // If the paper is currently awaiting a revision (MINOR/MAJOR_REVISION) and its due date has
+    // passed, auto-reject it and refuse the upload. Shared by uploadNewVersion and uploadRevision
+    // so the deadline can't be bypassed by calling the "wrong" endpoint (the plain version-upload
+    // endpoint predates the revision workflow and would otherwise skip this check entirely).
+    private void enforceRevisionDeadline(Paper paper) {
+        boolean awaitingRevision = paper.getStatus() == PaperStatus.MINOR_REVISION || paper.getStatus() == PaperStatus.MAJOR_REVISION;
+        if (awaitingRevision && paper.getRevisionDueDate() != null && paper.getRevisionDueDate().isBefore(LocalDate.now())) {
+            paper.setStatus(PaperStatus.REJECTED);
+            paper.setRevisionDueDate(null);
+            paper.setRevisionRequestedAtVersionCount(null);
+            paperRepository.save(paper);
+            throw new IllegalStateException("The revision deadline has passed; this paper has been rejected");
+        }
     }
 
     @Transactional
@@ -183,11 +200,7 @@ public class SubmissionService {
             throw new IllegalStateException("This paper is not currently awaiting a revision");
         }
 
-        if (paper.getRevisionDueDate() != null && paper.getRevisionDueDate().isBefore(LocalDate.now())) {
-            paper.setStatus(PaperStatus.REJECTED);
-            paperRepository.save(paper);
-            throw new IllegalStateException("The revision deadline has passed; this paper has been rejected");
-        }
+        enforceRevisionDeadline(paper);
 
         validatePdf(file);
         String filePath = fileStorageService.store(file);

@@ -49,6 +49,16 @@ public class DecisionService {
         List<Paper> papers = paperRepository.findAll();
         List<DecisionSuggestion> suggestions = new ArrayList<>();
 
+        // Band scheme (highest to lowest average score): ACCEPT > MINOR_REVISION > BORDERLINE >
+        // MAJOR_REVISION > REJECT. Rather than adding new threshold parameters (which would break
+        // the existing 2-arg call sites in AdminDecisionController.suggestions and
+        // AdminDecisionViewController.ui), the existing [rejectThreshold, acceptThreshold] gap is
+        // split into equal thirds to derive the two new revision bands around the original
+        // BORDERLINE middle third.
+        double span = acceptThreshold - rejectThreshold;
+        double minorRevisionThreshold = acceptThreshold - span / 3.0;
+        double majorRevisionThreshold = rejectThreshold + span / 3.0;
+
         for (Paper paper : papers) {
             List<Review> reviews = reviewRepository.findByPaperId(paper.getId());
             double avg = 0.0;
@@ -56,9 +66,12 @@ public class DecisionService {
                 avg = reviews.stream().mapToDouble(Review::getScore).average().orElse(0.0);
             }
 
-            String suggestion = "BORDERLINE";
+            String suggestion;
             if (avg >= acceptThreshold) suggestion = "ACCEPT";
             else if (avg <= rejectThreshold) suggestion = "REJECT";
+            else if (avg >= minorRevisionThreshold) suggestion = "MINOR_REVISION";
+            else if (avg <= majorRevisionThreshold) suggestion = "MAJOR_REVISION";
+            else suggestion = "BORDERLINE";
 
             suggestions.add(new DecisionSuggestion(paper.getId(), paper.getTitle(), avg, suggestion));
         }
@@ -174,12 +187,18 @@ public class DecisionService {
         if (revisionType != PaperStatus.MINOR_REVISION && revisionType != PaperStatus.MAJOR_REVISION) {
             throw new IllegalArgumentException("revisionType must be MINOR_REVISION or MAJOR_REVISION");
         }
+        // "today" does not count as a valid due date -- a due date the author receives the
+        // notification email on and that is already "due" gives them no real window to act.
+        if (dueDate == null || !dueDate.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("dueDate must be a future date");
+        }
 
         Paper paper = paperRepository.findById(paperId).orElseThrow(() -> new IllegalArgumentException("Paper not found"));
         requireChairOrAdmin(actingUser, paper);
 
         paper.setStatus(revisionType);
         paper.setRevisionDueDate(dueDate);
+        paper.setRevisionRequestedAtVersionCount(paper.getVersions().size());
         Paper saved = paperRepository.save(paper);
 
         try {
@@ -204,9 +223,15 @@ public class DecisionService {
             throw new IllegalStateException("Paper is not currently awaiting a revision resolution");
         }
 
+        Integer requestedAtCount = paper.getRevisionRequestedAtVersionCount();
+        if (requestedAtCount == null || paper.getVersions().size() <= requestedAtCount) {
+            throw new IllegalStateException("No revised version has been uploaded yet for this paper");
+        }
+
         if (resolution == RevisionResolution.ACCEPT_DIRECTLY) {
             paper.setStatus(PaperStatus.ACCEPTED);
             paper.setRevisionDueDate(null);
+            paper.setRevisionRequestedAtVersionCount(null);
             Paper saved = paperRepository.save(paper);
             try {
                 Map<String, Object> model = new HashMap<>();
@@ -219,12 +244,18 @@ public class DecisionService {
         } else {
             paper.setStatus(PaperStatus.UNDER_REVIEW);
             paper.setRevisionDueDate(null);
+            paper.setRevisionRequestedAtVersionCount(null);
             Paper saved = paperRepository.save(paper);
 
+            // Only reset assignments for reviewers who actually reviewed the pre-revision version
+            // (COMPLETED). Reviewers who DECLINED explicitly opted out and must not be resurrected;
+            // already-PENDING assignments need no change.
             List<ReviewAssignment> originalAssignments = reviewAssignmentRepository.findByPaperId(paperId);
             for (ReviewAssignment assignment : originalAssignments) {
-                assignment.setStatus(AssignmentStatus.PENDING);
-                reviewAssignmentRepository.save(assignment);
+                if (assignment.getStatus() == AssignmentStatus.COMPLETED) {
+                    assignment.setStatus(AssignmentStatus.PENDING);
+                    reviewAssignmentRepository.save(assignment);
+                }
             }
 
             return saved;

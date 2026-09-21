@@ -44,5 +44,10 @@ public class Paper extends BaseEntity {
     @OneToMany(mappedBy = "paper", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PaperAuthor> authors = new ArrayList<>();
 
-    private LocalDate revisionDueDate; // nullable; set when status becomes MINOR_REVISION/MAJOR_REVISION
+    private LocalDate revisionDueDate; // nullable; set when status becomes MINOR_REVISION/MAJOR_REVISION, cleared on resolution/auto-reject
+
+    // nullable; snapshot of paper.versions.size() taken when requestRevision() is called, so
+    // resolveRevision() can tell whether a new PaperVersion has actually arrived since then.
+    // Cleared alongside revisionDueDate on resolution/auto-reject.
+    private Integer revisionRequestedAtVersionCount;
 }

@@ -4,12 +4,16 @@ import org.confcms.cms.domain.User;
 import org.confcms.cms.repository.UserRepository;
 import org.confcms.cms.service.DecisionService;
 import org.confcms.cms.submission.domain.Paper;
+import org.confcms.cms.submission.domain.PaperStatus;
+import org.confcms.cms.submission.domain.RevisionResolution;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -59,6 +63,34 @@ public class AdminDecisionController {
             return ResponseEntity.ok(p);
         } catch (SecurityException se) {
             return ResponseEntity.status(403).body(se.getMessage());
+        }
+    }
+
+    @PostMapping("/{paperId}/request-revision")
+    public ResponseEntity<?> requestRevision(@PathVariable Long paperId,
+                                              @RequestParam PaperStatus revisionType,
+                                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDate) {
+        try {
+            Paper p = decisionService.requestRevision(actingUser(), paperId, revisionType, dueDate);
+            return ResponseEntity.ok(p);
+        } catch (SecurityException se) {
+            return ResponseEntity.status(403).body(se.getMessage());
+        } catch (IllegalArgumentException iae) {
+            return ResponseEntity.status(400).body(iae.getMessage());
+        }
+    }
+
+    @PostMapping("/{paperId}/resolve-revision")
+    public ResponseEntity<?> resolveRevision(@PathVariable Long paperId, @RequestParam RevisionResolution resolution) {
+        try {
+            Paper p = decisionService.resolveRevision(actingUser(), paperId, resolution);
+            return ResponseEntity.ok(p);
+        } catch (SecurityException se) {
+            return ResponseEntity.status(403).body(se.getMessage());
+        } catch (IllegalArgumentException iae) {
+            return ResponseEntity.status(400).body(iae.getMessage());
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.status(409).body(ise.getMessage());
         }
     }
 }
