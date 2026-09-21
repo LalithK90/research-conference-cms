@@ -9,6 +9,7 @@ import org.confcms.cms.service.FileStorageService;
 import org.confcms.cms.service.PersonInvitationService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperAuthor;
+import org.confcms.cms.submission.domain.PaperStatus;
 import org.confcms.cms.submission.repository.PaperRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -131,5 +133,74 @@ class SubmissionServiceTest {
         service.submitPaper(submitter, "Title", "Abstract", "Track A", file, List.of(coAuthor));
 
         verify(personInvitationService, never()).inviteCoAuthor(any(), any());
+    }
+
+    @Test
+    void uploadRevisionRejectsWhenNotInRevisionStatus() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.SUBMITTED);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        MockMultipartFile file = new MockMultipartFile("file", "revised.pdf", "application/pdf", "%PDF-1.4".getBytes());
+
+        assertThatThrownBy(() -> service.uploadRevision(submitter, 5L, file))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void uploadRevisionAutoRejectsAndBlocksUploadWhenDeadlinePassed() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.MINOR_REVISION);
+        paper.setRevisionDueDate(LocalDate.now().minusDays(1));
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        MockMultipartFile file = new MockMultipartFile("file", "revised.pdf", "application/pdf", "%PDF-1.4".getBytes());
+
+        assertThatThrownBy(() -> service.uploadRevision(submitter, 5L, file))
+                .isInstanceOf(IllegalStateException.class);
+
+        assertThat(paper.getStatus()).isEqualTo(PaperStatus.REJECTED);
+    }
+
+    @Test
+    void uploadRevisionSucceedsBeforeDeadline() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.MAJOR_REVISION);
+        paper.setRevisionDueDate(LocalDate.now().plusDays(5));
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(fileStorageService.store(any())).thenReturn("/uploads/revised.pdf");
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        MockMultipartFile file = new MockMultipartFile("file", "revised.pdf", "application/pdf", "%PDF-1.4".getBytes());
+
+        Paper result = service.uploadRevision(submitter, 5L, file);
+
+        assertThat(result.getStatus()).isEqualTo(PaperStatus.MAJOR_REVISION);
+        assertThat(result.getVersions()).hasSize(1);
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -166,6 +167,41 @@ public class SubmissionService {
 
         return saved;
         }
+
+    @Transactional
+    public Paper uploadRevision(User requester, Long paperId, MultipartFile file) {
+        Paper paper = paperRepository.findById(paperId)
+                .orElseThrow(() -> new IllegalArgumentException("Paper not found"));
+
+        boolean isOwner = paper.getSubmitter().getId().equals(requester.getId());
+        boolean isAdmin = requester.getRole() == org.confcms.cms.core.security.Role.ADMIN;
+        if (!isOwner && !isAdmin) {
+            throw new SecurityException("Not authorized to upload a revision for this paper");
+        }
+
+        if (paper.getStatus() != PaperStatus.MINOR_REVISION && paper.getStatus() != PaperStatus.MAJOR_REVISION) {
+            throw new IllegalStateException("This paper is not currently awaiting a revision");
+        }
+
+        if (paper.getRevisionDueDate() != null && paper.getRevisionDueDate().isBefore(LocalDate.now())) {
+            paper.setStatus(PaperStatus.REJECTED);
+            paperRepository.save(paper);
+            throw new IllegalStateException("The revision deadline has passed; this paper has been rejected");
+        }
+
+        validatePdf(file);
+        String filePath = fileStorageService.store(file);
+
+        int newVersionNumber = paper.getVersions().size() + 1;
+        PaperVersion version = new PaperVersion();
+        version.setPaper(paper);
+        version.setVersionNumber(newVersionNumber);
+        version.setFilePath(filePath);
+        version.setOriginalFilename(file.getOriginalFilename());
+        paper.getVersions().add(version);
+
+        return paperRepository.save(paper);
+    }
 
     }
 

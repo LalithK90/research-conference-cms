@@ -75,6 +75,20 @@ public class SubmissionRestController {
         }
     }
 
+    @PostMapping(path = "/{id}/revision", consumes = "multipart/form-data")
+    public ResponseEntity<?> uploadRevision(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
+        try {
+            Paper saved = submissionService.uploadRevision(user, id, file);
+            return ResponseEntity.ok(saved);
+        } catch (SecurityException se) {
+            return ResponseEntity.status(403).body(se.getMessage());
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.status(409).body(ise.getMessage());
+        }
+    }
+
     @PostMapping("/{id}/withdraw")
     public ResponseEntity<?> withdraw(@PathVariable Long id) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
