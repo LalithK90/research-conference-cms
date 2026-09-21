@@ -25,8 +25,7 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Role role;
 
-    private String provider; // google, microsoft, local
-    private String providerId;
+    private String orcidId; // nullable; populated on ORCID OAuth2 login/link, denormalized from UserIdentity for cheap author-disambiguation lookups later
 
     @Column(nullable = false)
     private boolean enabled = true;

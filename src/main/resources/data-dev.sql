@@ -23,8 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255),
   full_name VARCHAR(255) NOT NULL,
   role VARCHAR(50) NOT NULL,
-  provider VARCHAR(50),
-  provider_id VARCHAR(255),
+  orcid_id VARCHAR(255),
   enabled BOOLEAN NOT NULL,
   created_at TIMESTAMP,
   updated_at TIMESTAMP
@@ -34,11 +33,11 @@ CREATE TABLE IF NOT EXISTS users (
 -- admin@example.com / admin
 -- reviewer@example.com / reviewer
 -- author@example.com / author
-INSERT INTO users (email, password_hash, full_name, role, provider, enabled, created_at, updated_at)
+INSERT INTO users (email, password_hash, full_name, role, enabled, created_at, updated_at)
 VALUES
-('admin@example.com', '$2a$10$QxQmTnWb0k1uL3s4R6zQ5e8l7OqUu3R2m3tv5U6wOeJcT3r2A1y2K', 'Dev Admin', 'ADMIN', 'local', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-('reviewer@example.com', '$2a$10$1PjvYwHkS8dV9bQe4r7uKuVfQeKX8f2rAqKQ7m1pWnYvT3b5Zc6rS', 'Dev Reviewer', 'REVIEWER', 'local', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-('author@example.com', '$2a$10$wZxYvQpL9mBnC3dE7tFhYu6pQeR8tU1lM2nO5pQzR7sT8uV1wXyZa', 'Dev Author', 'AUTHOR', 'local', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+('admin@example.com', '$2a$10$QxQmTnWb0k1uL3s4R6zQ5e8l7OqUu3R2m3tv5U6wOeJcT3r2A1y2K', 'Dev Admin', 'ADMIN', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+('reviewer@example.com', '$2a$10$1PjvYwHkS8dV9bQe4r7uKuVfQeKX8f2rAqKQ7m1pWnYvT3b5Zc6rS', 'Dev Reviewer', 'REVIEWER', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+('author@example.com', '$2a$10$wZxYvQpL9mBnC3dE7tFhYu6pQeR8tU1lM2nO5pQzR7sT8uV1wXyZa', 'Dev Author', 'AUTHOR', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
 -- Sub-themes and steering committee for the sample conference
 CREATE TABLE IF NOT EXISTS sub_themes (
@@ -195,11 +194,11 @@ SELECT c.id, 'Dr. P. Example', 'Organizing Chair', 'Organizer for 2024.', '', CU
 FROM conferences c WHERE c.title='Research Conference 2024';
 
 -- More users (for assignments and richer demo)
-INSERT INTO users (email, password_hash, full_name, role, provider, enabled, created_at, updated_at)
+INSERT INTO users (email, password_hash, full_name, role, enabled, created_at, updated_at)
 VALUES
-('chair@example.com', '', 'Track Chair', 'ADMIN', 'local', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-('author2@example.com', '', 'Second Author', 'AUTHOR', 'local', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-('reviewer2@example.com', '', 'Second Reviewer', 'REVIEWER', 'local', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+('chair@example.com', '', 'Track Chair', 'ADMIN', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+('author2@example.com', '', 'Second Author', 'AUTHOR', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+('reviewer2@example.com', '', 'Second Reviewer', 'REVIEWER', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
 -- Additional papers by authors
 INSERT INTO papers (title, abstract_text, submitter_id, status, track, created_at, updated_at)
