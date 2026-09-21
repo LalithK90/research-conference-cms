@@ -31,13 +31,36 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        OAuth2User oauth2User = super.loadUser(userRequest);
         String provider = userRequest.getClientRegistration().getRegistrationId();
+        Map<String, Object> attributes = "orcid".equals(provider)
+                ? orcidAttributesFromTokenResponse(userRequest)
+                : super.loadUser(userRequest).getAttributes();
 
-        User localUser = resolveLocalUser(provider, oauth2User.getAttributes());
+        User localUser = resolveLocalUser(provider, attributes);
 
         GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + localUser.getRole().name());
-        return new DefaultOAuth2User(Collections.singletonList(authority), oauth2User.getAttributes(), emailAttributeKey(provider));
+        return new DefaultOAuth2User(Collections.singletonList(authority), attributes, emailAttributeKey(provider));
+    }
+
+    /**
+     * ORCID has no fixed userinfo endpoint: its public per-user profile data lives at
+     * /v3.0/{orcid}/person, a path templated on the user's own ORCID iD, which isn't known
+     * until after the token exchange -- Spring's DefaultOAuth2UserService only supports a
+     * fixed userInfoUri and would call it unconditionally, so it can't be used here (confirmed
+     * against ORCID's OAuth2 documentation: token endpoint tutorial at
+     * https://info.orcid.org/documentation/api-tutorials/api-tutorial-get-and-authenticated-orcid-id/).
+     * ORCID's token response already includes the "orcid" and "name" fields directly, so they're
+     * read from the additional parameters Spring preserves on OAuth2UserRequest, avoiding a
+     * second HTTP call entirely. ORCID's basic OAuth2 grant does not return an email address at
+     * all (Member API email scope is a separate, more privileged grant this integration does not
+     * request), so no "email"/"email_verified" keys are present for this provider.
+     */
+    private Map<String, Object> orcidAttributesFromTokenResponse(OAuth2UserRequest userRequest) {
+        Map<String, Object> additionalParameters = userRequest.getAdditionalParameters();
+        Map<String, Object> attributes = new java.util.HashMap<>();
+        attributes.put("orcid-identifier", additionalParameters.get("orcid"));
+        attributes.put("name", additionalParameters.get("name"));
+        return attributes;
     }
 
     @Transactional
@@ -87,7 +110,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return (String) attributes.get("sub");
     }
 
+    // DefaultOAuth2User#getName() resolves to attributes.get(nameAttributeKey) and requires the
+    // key to be present (Assert.notNull) -- so this can't just be "email" for every provider.
+    // Google's userinfo response does include "email", so "email" is a reasonable (if
+    // semantically odd -- "sub" would be the conventional choice) key to use as the principal
+    // name there. ORCID's attributes never contain "email" (see orcidAttributesFromTokenResponse)
+    // -- using "email" here would throw IllegalArgumentException on every ORCID login. ORCID's
+    // attributes always contain "orcid-identifier", so that's used as its name key instead.
     private String emailAttributeKey(String provider) {
+        if ("orcid".equals(provider)) {
+            return "orcid-identifier";
+        }
         return "email";
     }
 }

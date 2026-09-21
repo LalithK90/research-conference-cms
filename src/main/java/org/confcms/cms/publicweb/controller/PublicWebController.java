@@ -4,6 +4,7 @@ import org.confcms.cms.domain.Conference;
 import org.confcms.cms.service.CommitteeService;
 import org.confcms.cms.service.ConferenceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +16,7 @@ public class PublicWebController {
 
     private final ConferenceService conferenceService;
     private final CommitteeService committeeService;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
     @ModelAttribute("conference")
     public Conference addConferenceToModel() {
@@ -68,7 +70,9 @@ public class PublicWebController {
     }
 
     @GetMapping("/login")
-    public String login() {
+    public String login(Model model) {
+        model.addAttribute("googleEnabled", clientRegistrationRepository.findByRegistrationId("google") != null);
+        model.addAttribute("orcidEnabled", clientRegistrationRepository.findByRegistrationId("orcid") != null);
         return "login";
     }
 }

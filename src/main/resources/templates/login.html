@@ -44,21 +44,18 @@
                                     <li><code>reviewer@example.com</code> / <code>reviewer</code> — role: REVIEWER</li>
                                     <li><code>author@example.com</code> / <code>author</code> — role: AUTHOR</li>
                                 </ul>
-                                <p class="mb-0 mt-2">If OAuth providers (Google/Microsoft) are configured in `application.properties`, those login options will also appear.</p>
+                                <p class="mb-0 mt-2">If OAuth providers (Google/ORCID) are configured in `application.properties`, those login options will also appear.</p>
                             </div>
                         </div>
 
-                        <div class="text-center mt-4">
+                        <div class="text-center mt-4" th:if="${googleEnabled} or ${orcidEnabled}">
                             <p>Or login with:</p>
-                            <!-- OAuth2 buttons (commented out by default) -->
-                            <!--
-                            <a href="/oauth2/authorization/google" class="btn btn-outline-danger w-100 mb-2">
+                            <a th:if="${googleEnabled}" th:href="@{/oauth2/authorization/google}" class="btn btn-outline-danger w-100 mb-2">
                                 Login with Google
                             </a>
-                            <a href="/oauth2/authorization/azure" class="btn btn-outline-primary w-100">
-                                Login with Microsoft
+                            <a th:if="${orcidEnabled}" th:href="@{/oauth2/authorization/orcid}" class="btn btn-outline-success w-100">
+                                Login with ORCID
                             </a>
-                            -->
                         </div>
 
                         <div class="text-center mt-3">

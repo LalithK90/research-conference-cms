@@ -1,5 +1,6 @@
 package org.confcms.cms.config;
 
+import org.confcms.cms.security.CustomOAuth2UserService;
 import org.confcms.cms.security.CustomUserDetailsService;
 import org.confcms.cms.security.MagicLinkAuthenticationFilter;
 import org.confcms.cms.security.MagicLinkAuthenticationProvider;
@@ -17,6 +18,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -29,6 +31,8 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final MagicLinkAuthenticationProvider magicLinkAuthenticationProvider;
+    private final ClientRegistrationRepository clientRegistrationRepository;
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -60,6 +64,20 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/")
                 .permitAll()
             );
+
+        // Only register oauth2Login when at least one provider (Google/ORCID) is actually
+        // configured. InMemoryClientRegistrationRepository throws on construction for an empty
+        // registrations list (see OAuth2ProviderConfig), so an empty-safe repository is used
+        // instead when nothing is configured -- guard on that here rather than registering a
+        // login mechanism that has no reachable providers.
+        boolean anyOAuth2ProviderConfigured = clientRegistrationRepository.findByRegistrationId("google") != null
+                || clientRegistrationRepository.findByRegistrationId("orcid") != null;
+        if (anyOAuth2ProviderConfigured) {
+            http.oauth2Login(oauth2 -> oauth2
+                .loginPage("/login")
+                .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+            );
+        }
 
         return http.build();
     }
