@@ -196,6 +196,15 @@ public class DecisionService {
         Paper paper = paperRepository.findById(paperId).orElseThrow(() -> new IllegalArgumentException("Paper not found"));
         requireChairOrAdmin(actingUser, paper);
 
+        // Only a paper that has been through review, or is already mid-revision (a second
+        // round), can be sent into a revision state -- otherwise a withdrawn/rejected/accepted
+        // paper could be dragged back into an active revision obligation.
+        if (paper.getStatus() != PaperStatus.UNDER_REVIEW
+                && paper.getStatus() != PaperStatus.MINOR_REVISION
+                && paper.getStatus() != PaperStatus.MAJOR_REVISION) {
+            throw new IllegalStateException("Paper must be under review or already awaiting revision to request a revision");
+        }
+
         paper.setStatus(revisionType);
         paper.setRevisionDueDate(dueDate);
         paper.setRevisionRequestedAtVersionCount(paper.getVersions().size());

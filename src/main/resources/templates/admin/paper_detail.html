@@ -75,7 +75,8 @@
             <button type="submit">Borderline</button>
         </form>
 
-        <form th:action="@{'/admin/decisions/' + ${paper.id} + '/request-revision'}" method="post">
+        <form th:if="${paper.status.name() == 'UNDER_REVIEW' or paper.status.name() == 'MINOR_REVISION' or paper.status.name() == 'MAJOR_REVISION'}"
+              th:action="@{'/admin/decisions/' + ${paper.id} + '/request-revision'}" method="post">
             <select name="revisionType">
                 <option value="MINOR_REVISION">Minor Revision</option>
                 <option value="MAJOR_REVISION">Major Revision</option>

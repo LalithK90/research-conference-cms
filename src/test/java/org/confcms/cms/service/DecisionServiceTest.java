@@ -211,6 +211,7 @@ class DecisionServiceTest {
         User admin = new User();
         admin.setId(40L);
         admin.setRole(Role.ADMIN);
+        paper.setStatus(PaperStatus.UNDER_REVIEW);
 
         LocalDate dueDate = LocalDate.now().plusDays(14);
         when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
@@ -222,6 +223,36 @@ class DecisionServiceTest {
         assertThat(result.getStatus()).isEqualTo(PaperStatus.MAJOR_REVISION);
         assertThat(result.getRevisionDueDate()).isEqualTo(dueDate);
         verify(emailService).sendTemplateEmail(any(), any(), eq("email/revision_requested_notification.txt"), anyMap());
+    }
+
+    @Test
+    void requestRevisionAllowsSecondRoundFromExistingRevisionStatus() {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+        paper.setStatus(PaperStatus.MINOR_REVISION);
+
+        LocalDate dueDate = LocalDate.now().plusDays(14);
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(reviewRepository.findByPaperId(5L)).thenReturn(List.of());
+
+        Paper result = service.requestRevision(admin, 5L, PaperStatus.MAJOR_REVISION, dueDate);
+
+        assertThat(result.getStatus()).isEqualTo(PaperStatus.MAJOR_REVISION);
+    }
+
+    @Test
+    void requestRevisionRejectsPaperNotUnderReview() {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+        paper.setStatus(PaperStatus.WITHDRAWN);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        assertThatThrownBy(() -> service.requestRevision(admin, 5L, PaperStatus.MINOR_REVISION, LocalDate.now().plusDays(14)))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -382,6 +413,7 @@ class DecisionServiceTest {
         User admin = new User();
         admin.setId(40L);
         admin.setRole(Role.ADMIN);
+        paper.setStatus(PaperStatus.UNDER_REVIEW);
         paper.getVersions().add(new PaperVersion());
 
         when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));

@@ -72,6 +72,8 @@ public class SubmissionRestController {
             return ResponseEntity.ok(saved);
         } catch (SecurityException se) {
             return ResponseEntity.status(403).body(se.getMessage());
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.status(409).body(ise.getMessage());
         }
     }
 
