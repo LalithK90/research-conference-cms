@@ -65,19 +65,28 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     @Transactional
     public User resolveLocalUser(String provider, Map<String, Object> attributes) {
+        String providerUserId = providerUserId(provider, attributes);
+
+        Optional<UserIdentity> existingIdentity = userIdentityRepository.findByProviderAndProviderUserId(provider, providerUserId);
+        if (existingIdentity.isPresent()) {
+            return existingIdentity.get().getUser();
+        }
+
+        // ORCID's basic /authenticate grant never supplies an email, so there is nothing to
+        // auto-link or auto-create a User by/from (User.email is NOT NULL UNIQUE). A first-time
+        // ORCID login must instead be linked explicitly from an existing account.
+        if ("orcid".equals(provider)) {
+            throw new OAuth2AuthenticationException(new OAuth2Error("orcid_not_linked"),
+                    "ORCID login requires an existing account. Log in with your password or Google account first, then link ORCID from your account settings.");
+        }
+
         Boolean verified = (Boolean) attributes.get("email_verified");
         if (verified == null || !verified) {
             throw new OAuth2AuthenticationException(new OAuth2Error("email_not_verified"),
                     "Provider did not return a verified email address");
         }
 
-        String providerUserId = providerUserId(provider, attributes);
         String email = (String) attributes.get("email");
-
-        Optional<UserIdentity> existingIdentity = userIdentityRepository.findByProviderAndProviderUserId(provider, providerUserId);
-        if (existingIdentity.isPresent()) {
-            return existingIdentity.get().getUser();
-        }
 
         User user = userRepository.findByEmail(email).orElseGet(() -> {
             User created = new User();
@@ -87,11 +96,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             created.setEnabled(true);
             return userRepository.save(created);
         });
-
-        if ("orcid".equals(provider)) {
-            user.setOrcidId(providerUserId);
-            userRepository.save(user);
-        }
 
         UserIdentity identity = new UserIdentity();
         identity.setUser(user);

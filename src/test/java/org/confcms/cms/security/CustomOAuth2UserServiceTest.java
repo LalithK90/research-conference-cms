@@ -67,10 +67,52 @@ class CustomOAuth2UserServiceTest {
         attrs.put("email", "author@example.com");
         attrs.put("email_verified", false);
 
+        when(userIdentityRepository.findByProviderAndProviderUserId("google", "google-sub-123")).thenReturn(Optional.empty());
+
         assertThatThrownBy(() -> service.resolveLocalUser("google", attrs))
                 .isInstanceOf(org.springframework.security.oauth2.core.OAuth2AuthenticationException.class);
 
         verify(userRepository, never()).findByEmail(any());
+    }
+
+    @Test
+    void resolveRejectsFirstTimeOrcidLoginWithNoExistingIdentity() {
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put("orcid-identifier", "0000-0002-1825-0097");
+        attrs.put("name", "New Researcher");
+
+        when(userIdentityRepository.findByProviderAndProviderUserId("orcid", "0000-0002-1825-0097")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.resolveLocalUser("orcid", attrs))
+                .isInstanceOf(org.springframework.security.oauth2.core.OAuth2AuthenticationException.class);
+
+        verify(userRepository, never()).save(any());
+        verify(userRepository, never()).findByEmail(any());
+    }
+
+    @Test
+    void resolveReturningOrcidLoginSucceedsWithoutEmailAttributes() {
+        Map<String, Object> attrs = new HashMap<>();
+        attrs.put("orcid-identifier", "0000-0002-1825-0097");
+        attrs.put("name", "Returning Researcher");
+
+        User existing = new User();
+        existing.setId(1L);
+        existing.setEmail("researcher@example.com");
+        existing.setRole(Role.AUTHOR);
+
+        UserIdentity existingIdentity = new UserIdentity();
+        existingIdentity.setUser(existing);
+        existingIdentity.setProvider("orcid");
+        existingIdentity.setProviderUserId("0000-0002-1825-0097");
+
+        when(userIdentityRepository.findByProviderAndProviderUserId("orcid", "0000-0002-1825-0097")).thenReturn(Optional.of(existingIdentity));
+
+        User result = service.resolveLocalUser("orcid", attrs);
+
+        assertThat(result).isEqualTo(existing);
+        verify(userRepository, never()).findByEmail(any());
+        verify(userIdentityRepository, never()).save(any());
     }
 
     @Test
@@ -122,22 +164,12 @@ class CustomOAuth2UserServiceTest {
         verify(userRepository).save(any());
     }
 
-    @Test
-    void resolvePopulatesOrcidIdOnlyForOrcidProvider() {
-        Map<String, Object> attrs = new HashMap<>();
-        attrs.put("orcid-identifier", "0000-0002-1825-0097");
-        attrs.put("email", "researcher@example.com");
-        attrs.put("email_verified", true);
-
-        when(userIdentityRepository.findByProviderAndProviderUserId("orcid", "0000-0002-1825-0097")).thenReturn(Optional.empty());
-        when(userRepository.findByEmail("researcher@example.com")).thenReturn(Optional.empty());
-        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(userIdentityRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        User result = service.resolveLocalUser("orcid", attrs);
-
-        assertThat(result.getOrcidId()).isEqualTo("0000-0002-1825-0097");
-    }
+    // Formerly resolvePopulatesOrcidIdOnlyForOrcidProvider: asserted that a first-time ORCID
+    // login (no existing UserIdentity) auto-creates a User and populates orcidId. That behavior
+    // is superseded by the ORCID-no-email fix: a first-time ORCID login is now rejected instead
+    // (see resolveRejectsFirstTimeOrcidLoginWithNoExistingIdentity above), since ORCID never
+    // supplies an email to auto-create a User from. This test is intentionally removed rather
+    // than kept, as its assertion directly contradicts the new required behavior.
 
     @Test
     void resolveShortCircuitsOnRepeatLoginByExistingIdentity() {
