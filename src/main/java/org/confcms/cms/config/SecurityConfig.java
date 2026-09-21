@@ -31,7 +31,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/home", "/about", "/committee", "/speakers", "/schedule", "/venue", "/contact", "/register", "/login", "/magic-link/**", "/auth/**", "/invitations/**").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/admin/conference/**").hasRole("ADMIN")
                 .requestMatchers("/review/**").hasRole("REVIEWER")
                 .requestMatchers("/submission/**").hasAnyRole("AUTHOR", "ADMIN")
                 .anyRequest().authenticated()
