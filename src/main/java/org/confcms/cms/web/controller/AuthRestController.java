@@ -8,13 +8,7 @@ import org.confcms.cms.service.EmailService;
 import org.confcms.cms.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
@@ -51,30 +45,5 @@ public class AuthRestController {
         emailService.sendSimpleEmail(email, subject, body);
 
         return ResponseEntity.ok("Magic link sent if the account exists");
-    }
-
-    @GetMapping("/magic/verify")
-    public ResponseEntity<?> verifyMagicLink(@RequestParam String token) {
-        MagicLink link = magicLinkService.findByToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid magic link"));
-
-        if (link.isUsed()) {
-            return ResponseEntity.badRequest().body("This magic link has already been used");
-        }
-
-        if (link.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.badRequest().body("Magic link expired");
-        }
-
-        // Mark used
-        magicLinkService.markUsed(link);
-
-        // Authenticate the user by setting SecurityContext (session-based auth)
-        User user = link.getUser();
-        List<SimpleGrantedAuthority> auths = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user.getEmail(), null, auths);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        return ResponseEntity.ok("Authenticated");
     }
 }
