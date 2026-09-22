@@ -43,4 +43,23 @@ public class AuthService {
 
         return saved;
     }
+
+    @Transactional
+    public User createUserDirect(String email, String fullName, Role role) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("Email already in use");
+        }
+
+        User user = new User();
+        user.setEmail(email);
+        user.setFullName(fullName);
+        user.setRole(role);
+        user.setEnabled(true);
+        // passwordHash intentionally left null -- this user authenticates via
+        // Google, ORCID, or magic link first; a "local" UserIdentity is created
+        // lazily the same way PasswordResetService.resetPassword already does,
+        // the first time they actually set a password.
+
+        return userRepository.save(user);
+    }
 }

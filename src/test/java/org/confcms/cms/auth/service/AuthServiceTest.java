@@ -74,4 +74,35 @@ class AuthServiceTest {
         assertThat(captor.getValue().getUser()).isEqualTo(result);
         assertThat(captor.getValue().getLinkedAt()).isNotNull();
     }
+
+    @Test
+    void createUserDirectRejectsExistingEmail() {
+        when(userRepository.findByEmail("taken@example.com")).thenReturn(Optional.of(new User()));
+
+        assertThatThrownBy(() -> service.createUserDirect("taken@example.com", "Someone", Role.REVIEWER))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(userRepository, never()).save(any());
+        verify(userIdentityRepository, never()).save(any());
+    }
+
+    @Test
+    void createUserDirectCreatesUserWithNoPasswordAndNoIdentity() {
+        when(userRepository.findByEmail("newreviewer@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any())).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId(2L);
+            return u;
+        });
+
+        User result = service.createUserDirect("newreviewer@example.com", "New Reviewer", Role.REVIEWER);
+
+        assertThat(result.getEmail()).isEqualTo("newreviewer@example.com");
+        assertThat(result.getFullName()).isEqualTo("New Reviewer");
+        assertThat(result.getRole()).isEqualTo(Role.REVIEWER);
+        assertThat(result.getPasswordHash()).isNull();
+        assertThat(result.isEnabled()).isTrue();
+
+        verify(userIdentityRepository, never()).save(any());
+    }
 }
