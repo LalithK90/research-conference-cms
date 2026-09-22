@@ -4,6 +4,7 @@ import org.confcms.cms.security.CustomOAuth2UserService;
 import org.confcms.cms.security.CustomUserDetailsService;
 import org.confcms.cms.security.MagicLinkAuthenticationFilter;
 import org.confcms.cms.security.MagicLinkAuthenticationProvider;
+import org.confcms.cms.security.PasswordPromptAuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,6 +34,7 @@ public class DevSecurityConfig {
     private final MagicLinkAuthenticationProvider magicLinkAuthenticationProvider;
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final PasswordPromptAuthenticationSuccessHandler passwordPromptAuthenticationSuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -54,10 +56,10 @@ public class DevSecurityConfig {
                 .anyRequest().authenticated()
             )
             .authenticationProvider(magicLinkAuthenticationProvider)
-            .addFilterBefore(new MagicLinkAuthenticationFilter(magicLinkAuthenticationManager), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new MagicLinkAuthenticationFilter(magicLinkAuthenticationManager, passwordPromptAuthenticationSuccessHandler), UsernamePasswordAuthenticationFilter.class)
             .formLogin(form -> form
                 .loginPage("/login")
-                .defaultSuccessUrl("/dashboard", true)
+                .successHandler(passwordPromptAuthenticationSuccessHandler)
                 .permitAll()
             )
             .logout(logout -> logout
@@ -76,6 +78,7 @@ public class DevSecurityConfig {
             http.oauth2Login(oauth2 -> oauth2
                 .loginPage("/login")
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                .successHandler(passwordPromptAuthenticationSuccessHandler)
             );
         }
 

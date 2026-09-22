@@ -30,11 +30,17 @@ class MagicLinkAuthenticationFilterTest {
     @Mock
     private Authentication authenticatedResult;
 
+    @Mock
+    private org.confcms.cms.repository.UserRepository userRepository;
+
+    private PasswordPromptAuthenticationSuccessHandler passwordPromptHandler;
+
     private MagicLinkAuthenticationFilter filter;
 
     @BeforeEach
     void setUp() {
-        filter = new MagicLinkAuthenticationFilter(authenticationManager);
+        passwordPromptHandler = new PasswordPromptAuthenticationSuccessHandler(userRepository);
+        filter = new MagicLinkAuthenticationFilter(authenticationManager, passwordPromptHandler);
     }
 
     @AfterEach
@@ -135,5 +141,45 @@ class MagicLinkAuthenticationFilterTest {
 
         assertThat(request.getSession(false)).isNotNull();
         assertThat(response.getRedirectedUrl()).isEqualTo("/dashboard");
+    }
+
+    @Test
+    void validTokenSetsPasswordPromptForPasswordlessUser() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/auth/magic/verify");
+        request.setServletPath("/auth/magic/verify");
+        request.setParameter("token", "good-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        org.confcms.cms.domain.User passwordless = new org.confcms.cms.domain.User();
+        passwordless.setEmail("passwordless@example.com");
+        passwordless.setPasswordHash(null);
+        when(userRepository.findByEmail("passwordless@example.com")).thenReturn(java.util.Optional.of(passwordless));
+        when(authenticatedResult.getName()).thenReturn("passwordless@example.com");
+        when(authenticationManager.authenticate(any(MagicLinkAuthenticationToken.class)))
+                .thenReturn(authenticatedResult);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertThat(request.getSession(false).getAttribute("passwordPromptPending")).isEqualTo(true);
+    }
+
+    @Test
+    void validTokenDoesNotSetPasswordPromptForUserWithPassword() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/auth/magic/verify");
+        request.setServletPath("/auth/magic/verify");
+        request.setParameter("token", "good-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        org.confcms.cms.domain.User withPassword = new org.confcms.cms.domain.User();
+        withPassword.setEmail("hasone@example.com");
+        withPassword.setPasswordHash("hashed");
+        when(userRepository.findByEmail("hasone@example.com")).thenReturn(java.util.Optional.of(withPassword));
+        when(authenticatedResult.getName()).thenReturn("hasone@example.com");
+        when(authenticationManager.authenticate(any(MagicLinkAuthenticationToken.class)))
+                .thenReturn(authenticatedResult);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertThat(request.getSession(false).getAttribute("passwordPromptPending")).isNull();
     }
 }

@@ -19,10 +19,13 @@ public class MagicLinkAuthenticationFilter extends OncePerRequestFilter {
     private static final String VERIFY_PATH = "/auth/magic/verify";
 
     private final AuthenticationManager authenticationManager;
+    private final PasswordPromptAuthenticationSuccessHandler passwordPromptHandler;
     private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
-    public MagicLinkAuthenticationFilter(AuthenticationManager authenticationManager) {
+    public MagicLinkAuthenticationFilter(AuthenticationManager authenticationManager,
+                                          PasswordPromptAuthenticationSuccessHandler passwordPromptHandler) {
         this.authenticationManager = authenticationManager;
+        this.passwordPromptHandler = passwordPromptHandler;
     }
 
     @Override
@@ -58,6 +61,7 @@ public class MagicLinkAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.setContext(context);
             securityContextRepository.saveContext(context, request, response);
 
+            passwordPromptHandler.markPromptIfPasswordless(request, result.getName());
             response.sendRedirect("/dashboard");
         } catch (BadCredentialsException e) {
             response.sendRedirect("/login?error=magic-link-invalid");
