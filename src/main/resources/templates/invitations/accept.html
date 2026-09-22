@@ -22,7 +22,7 @@
                             <p>You've been invited to join <strong th:text="${invitation.conference.title}">Conference</strong>
                                 as a <span th:text="${invitation.purpose}">ROLE</span>.</p>
 
-                            <form method="post" action="/invitations/accept">
+                            <form method="post" th:action="@{/invitations/accept}">
                                 <input type="hidden" name="token" th:value="${token}">
                                 <div class="mb-3">
                                     <label class="form-label">Your Name</label>
