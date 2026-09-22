@@ -79,9 +79,18 @@ The system supports **multiple conferences** by allowing administrators to creat
 
 4.  **Access the System**
     *   Open your browser and go to: `http://localhost:8080`
-    *   **Default Admin Credentials** (seeded on first run — change this password immediately):
-        *   Email: `admin@example.org`
-        *   Password: `ChangeMe123!`
+    *   **First-run admin account**: on first boot (when no admin account exists yet), the
+        application generates a random password for `asakahatapitiya@gmail.com` and prints it
+        once to the server log:
+        ```
+        =====================================================
+         GENERATED ADMIN ACCOUNT (save this now, shown once)
+         Email:    asakahatapitiya@gmail.com
+         Password: <random>
+        =====================================================
+        ```
+        Copy the password from the log and log in immediately — it is never stored anywhere
+        else in plaintext. Change it right away via Account Settings -> Set/change password.
 
 ## 🛠️ Usage Workflow
 
@@ -90,6 +99,22 @@ The system supports **multiple conferences** by allowing administrators to creat
 3.  **Configure Payments**: Select your preferred payment method (e.g., Local Bank for internal testing).
 4.  **Activate**: Set the conference as "Active". The public homepage will now reflect this event.
 5.  **Invite Users**: Open registration or invite reviewers/authors.
+
+## 🔒 Security & Deployment
+
+This application handles personal data (names, emails, ORCID IDs, paper submissions) and
+should be deployed with the following in place:
+
+*   **TLS/HTTPS**: the application does not terminate TLS or redirect HTTP to HTTPS itself.
+    Run it behind a reverse proxy or load balancer (nginx, Caddy, a cloud load balancer) that
+    terminates TLS, in any deployment reachable over a public or untrusted network.
+*   **Database encryption at rest**: the application does not encrypt any column itself.
+    Enable encryption at rest at the database/infrastructure layer (cloud-managed database
+    encryption, or disk-level encryption for a self-hosted MySQL instance) for any deployment
+    handling real personal data.
+*   **First-run admin password**: retrieve it from the server log immediately after first boot
+    (see above) and change it via Account Settings. It is generated fresh per deployment and
+    never checked into source control or configuration files.
 
 ## 📜 Citation & Attribution
 
