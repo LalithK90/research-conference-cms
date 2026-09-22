@@ -1,5 +1,6 @@
 package org.confcms.cms.admin.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.confcms.cms.submission.service.SubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,8 +18,9 @@ public class AdminController {
     private final SubmissionService submissionService;
 
     @GetMapping("/dashboard")
-    public String dashboard(Model model) {
+    public String dashboard(HttpServletRequest request, Model model) {
         model.addAttribute("papers", submissionService.getAllPapers());
+        model.addAttribute("passwordPromptPending", request.getSession().getAttribute("passwordPromptPending") != null);
         return "admin/dashboard";
     }
     

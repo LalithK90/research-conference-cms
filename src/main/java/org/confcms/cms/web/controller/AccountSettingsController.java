@@ -1,5 +1,6 @@
 package org.confcms.cms.web.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.confcms.cms.domain.User;
 import org.confcms.cms.repository.UserIdentityRepository;
 import org.confcms.cms.repository.UserRepository;
@@ -22,10 +23,17 @@ public class AccountSettingsController {
     }
 
     @GetMapping("/account")
-    public String show(Model model) {
+    public String show(HttpServletRequest request, Model model) {
         User user = actingUser();
         model.addAttribute("user", user);
         model.addAttribute("identities", userIdentityRepository.findByUserId(user.getId()));
+        model.addAttribute("passwordPromptPending", request.getSession().getAttribute("passwordPromptPending") != null);
         return "account_settings";
+    }
+
+    @GetMapping("/account/dismiss-password-prompt")
+    public String dismissPasswordPrompt(HttpServletRequest request) {
+        request.getSession().removeAttribute("passwordPromptPending");
+        return "redirect:/account";
     }
 }

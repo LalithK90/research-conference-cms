@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.ExtendedModelMap;
@@ -58,11 +59,44 @@ class AccountSettingsControllerTest {
         when(userRepository.findByEmail("author@example.com")).thenReturn(Optional.of(user));
         when(userIdentityRepository.findByUserId(1L)).thenReturn(List.of(local, google));
 
+        MockHttpServletRequest request = new MockHttpServletRequest();
         Model model = new ExtendedModelMap();
-        String view = controller.show(model);
+        String view = controller.show(request, model);
 
         assertThat(view).isEqualTo("account_settings");
         assertThat(model.getAttribute("identities")).isEqualTo(List.of(local, google));
         assertThat(model.getAttribute("user")).isEqualTo(user);
+        assertThat(model.getAttribute("passwordPromptPending")).isEqualTo(false);
+    }
+
+    @Test
+    void showReportsPasswordPromptPendingWhenSessionFlagIsSet() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("author@example.com");
+        user.setRole(Role.AUTHOR);
+        authenticateAs(user);
+
+        when(userRepository.findByEmail("author@example.com")).thenReturn(Optional.of(user));
+        when(userIdentityRepository.findByUserId(1L)).thenReturn(List.of());
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.getSession(true).setAttribute("passwordPromptPending", true);
+        Model model = new ExtendedModelMap();
+
+        controller.show(request, model);
+
+        assertThat(model.getAttribute("passwordPromptPending")).isEqualTo(true);
+    }
+
+    @Test
+    void dismissPasswordPromptClearsTheSessionFlagAndRedirects() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.getSession(true).setAttribute("passwordPromptPending", true);
+
+        String view = controller.dismissPasswordPrompt(request);
+
+        assertThat(view).isEqualTo("redirect:/account");
+        assertThat(request.getSession(false).getAttribute("passwordPromptPending")).isNull();
     }
 }

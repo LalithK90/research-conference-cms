@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Conference CMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/app.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">Conference CMS</a>
+            <a class="btn btn-outline-light" href="/logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div th:if="${passwordPromptPending}" class="alert alert-warning d-flex justify-content-between align-items-center">
+            <span>You're using a temporary/passwordless login.</span>
+            <span>
+                <a th:href="@{/auth/forgot-password}" class="btn btn-sm btn-primary">Set a password now</a>
+                <a th:href="@{/account/dismiss-password-prompt}" class="btn btn-sm btn-outline-secondary">Skip for now</a>
+            </span>
+        </div>
+
+        <h2>Welcome, <span th:text="${user.fullName}"></span></h2>
+        <p class="text-muted" th:text="${user.role}"></p>
+        <a th:href="@{/account}">Account Settings</a>
+    </div>
+</body>
+
+</html>
