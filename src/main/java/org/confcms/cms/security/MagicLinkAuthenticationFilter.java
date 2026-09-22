@@ -43,6 +43,16 @@ public class MagicLinkAuthenticationFilter extends OncePerRequestFilter {
         try {
             Authentication result = authenticationManager.authenticate(new MagicLinkAuthenticationToken(rawToken));
 
+            // Session fixation protection: formLogin()/oauth2Login() get this for free from
+            // Spring Security's default SessionAuthenticationStrategy, but this filter persists
+            // the context manually and bypasses it entirely. Without renaming the session ID
+            // here, an attacker who plants a known (pre-auth) session ID on a victim -- e.g. via
+            // a non-HttpOnly leak or a shared subdomain cookie -- would have that same session ID
+            // become authenticated as the victim the moment the victim clicks a valid magic link.
+            if (request.getSession(false) != null) {
+                request.changeSessionId();
+            }
+
             var context = SecurityContextHolder.createEmptyContext();
             context.setAuthentication(result);
             SecurityContextHolder.setContext(context);
