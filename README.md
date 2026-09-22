@@ -79,9 +79,9 @@ The system supports **multiple conferences** by allowing administrators to creat
 
 4.  **Access the System**
     *   Open your browser and go to: `http://localhost:8080`
-    *   **Default Admin Credentials** (seeded on first run):
-        *   Email: `admin@icosiam.com`
-        *   Password: `admin`
+    *   **Default Admin Credentials** (seeded on first run — change this password immediately):
+        *   Email: `admin@example.org`
+        *   Password: `ChangeMe123!`
 
 ## 🛠️ Usage Workflow
 
