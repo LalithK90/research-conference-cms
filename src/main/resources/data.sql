@@ -14,9 +14,7 @@ INSERT INTO sub_themes (conference_id, name, description, created_at, updated_at
 (@conference_id, 'Track A', 'Replace with your conference''s first track/theme.', NOW(), NOW()),
 (@conference_id, 'Track B', 'Replace with your conference''s second track/theme.', NOW(), NOW());
 
--- Default admin account. CHANGE THIS PASSWORD IMMEDIATELY after first login --
--- password hash below is for 'ChangeMe123!' (freshly generated via BCryptPasswordEncoder,
--- not reused from any other seeded credential), included only so the seeded account is
--- usable on first boot, not as a credential meant to remain in production use.
-INSERT INTO users (email, password_hash, full_name, role, enabled, created_at, updated_at) VALUES
-('admin@example.org', '$2a$10$LxEtwjAhmgMiiCNTfiAQDeRij1FHBfgs4f7SBPy23.JmMUjXPN/fC', 'System Administrator', 'ADMIN', true, NOW(), NOW());
+-- Admin account is no longer seeded here. FirstRunAdminInitializer (see
+-- org.confcms.cms.security) creates asakahatapitiya@gmail.com with a randomly
+-- generated password on first boot when no ADMIN user exists yet, and logs the
+-- password once. See README.md for retrieval instructions.
