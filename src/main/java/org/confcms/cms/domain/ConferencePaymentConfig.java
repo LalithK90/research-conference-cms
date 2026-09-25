@@ -18,10 +18,14 @@ public class ConferencePaymentConfig extends BaseEntity {
 
     // Stripe
     private String stripePublishableKey;
+
+    @Convert(converter = PaymentSecretConverter.class)
     private String stripeSecretKey;
 
     // PayPal
     private String paypalClientId;
+
+    @Convert(converter = PaymentSecretConverter.class)
     private String paypalClientSecret;
 
     // Local Bank
