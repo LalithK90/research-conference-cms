@@ -14,6 +14,8 @@ import org.springframework.ui.Model;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,9 +33,7 @@ class AdminUserControllerTest {
 
     @Test
     void showFormReturnsTheCreateUserView() {
-        Model model = new ExtendedModelMap();
-
-        String view = controller.showForm(model);
+        String view = controller.showForm();
 
         assertThat(view).isEqualTo("admin/users_new");
     }
@@ -47,6 +47,19 @@ class AdminUserControllerTest {
         String view = controller.create("new@example.com", "New Person", Role.REVIEWER, model);
 
         assertThat(view).isEqualTo("redirect:/admin/users/new?created=true");
+    }
+
+    @Test
+    void createRejectsAdminRoleWithoutCallingAuthService() {
+        Model model = new ExtendedModelMap();
+
+        String view = controller.create("wouldbeadmin@example.com", "Someone", Role.ADMIN, model);
+
+        assertThat(view).isEqualTo("admin/users_new");
+        assertThat(model.getAttribute("error")).isEqualTo(
+                "Admin accounts cannot be created without a password. "
+                        + "Create the user as Author or Reviewer, then promote them separately.");
+        verify(authService, never()).createUserDirect(any(), any(), any());
     }
 
     @Test

@@ -20,13 +20,23 @@ public class AdminUserController {
     private final AuthService authService;
 
     @GetMapping("/new")
-    public String showForm(Model model) {
+    public String showForm() {
         return "admin/users_new";
     }
 
     @PostMapping("/new")
     public String create(@RequestParam String email, @RequestParam String fullName,
                           @RequestParam Role role, Model model) {
+        // ADMIN is deliberately not creatable through this passwordless flow: the only
+        // authentication path for a user with no password is the unthrottled magic-link
+        // endpoint, so a passwordless ADMIN account would be reachable by anyone with
+        // access to that inbox, with no record of who granted it. Promote an existing
+        // account to ADMIN by other means instead.
+        if (role == Role.ADMIN) {
+            model.addAttribute("error", "Admin accounts cannot be created without a password. "
+                    + "Create the user as Author or Reviewer, then promote them separately.");
+            return "admin/users_new";
+        }
         try {
             authService.createUserDirect(email, fullName, role);
             return "redirect:/admin/users/new?created=true";
