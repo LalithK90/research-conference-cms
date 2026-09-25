@@ -76,6 +76,22 @@ class AuthServiceTest {
     }
 
     @Test
+    void createUserDirectRejectsMalformedEmail() {
+        assertThatThrownBy(() -> service.createUserDirect("not-an-email", "Someone", Role.AUTHOR))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void createUserDirectRejectsBlankFullName() {
+        assertThatThrownBy(() -> service.createUserDirect("blank-name@example.com", "   ", Role.AUTHOR))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
     void createUserDirectRejectsExistingEmail() {
         when(userRepository.findByEmail("taken@example.com")).thenReturn(Optional.of(new User()));
 

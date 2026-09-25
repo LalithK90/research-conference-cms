@@ -11,10 +11,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    // Deliberately permissive (not RFC 5322): this only needs to reject obviously
+    // malformed input before it becomes an unreachable account, not fully validate
+    // email syntax -- the real check is whether the address actually receives mail.
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private final UserRepository userRepository;
     private final UserIdentityRepository userIdentityRepository;
@@ -46,6 +52,15 @@ public class AuthService {
 
     @Transactional
     public User createUserDirect(String email, String fullName, Role role) {
+        // This user has no password to fall back on -- their only path in is an
+        // exact-match lookup by this email (Google/ORCID/magic-link auto-link), so
+        // a malformed address here creates an account nobody can ever log into.
+        if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
+            throw new IllegalArgumentException("A valid email address is required");
+        }
+        if (fullName == null || fullName.isBlank()) {
+            throw new IllegalArgumentException("Full name is required");
+        }
         if (userRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email already in use");
         }
