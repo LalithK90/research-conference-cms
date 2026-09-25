@@ -99,4 +99,15 @@ class AccountSettingsControllerTest {
         assertThat(view).isEqualTo("redirect:/account");
         assertThat(request.getSession(false).getAttribute("passwordPromptPending")).isNull();
     }
+
+    @Test
+    void dismissPasswordPromptDoesNotCreateASessionWhenNoneExists() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        assertThat(request.getSession(false)).isNull();
+
+        String view = controller.dismissPasswordPrompt(request);
+
+        assertThat(view).isEqualTo("redirect:/account");
+        assertThat(request.getSession(false)).isNull();
+    }
 }

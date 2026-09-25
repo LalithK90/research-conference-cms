@@ -23,7 +23,8 @@ public class DashboardController {
             return "redirect:/admin/dashboard";
         }
         model.addAttribute("user", user);
-        model.addAttribute("passwordPromptPending", request.getSession().getAttribute("passwordPromptPending") != null);
+        var session = request.getSession(false);
+        model.addAttribute("passwordPromptPending", session != null && session.getAttribute("passwordPromptPending") != null);
         return "dashboard";
     }
 

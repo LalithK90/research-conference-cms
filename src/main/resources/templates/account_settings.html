@@ -25,7 +25,9 @@
                             <span>You're using a temporary/passwordless login.</span>
                             <span>
                                 <a th:href="@{/auth/forgot-password}" class="btn btn-sm btn-primary">Set a password now</a>
-                                <a th:href="@{/account/dismiss-password-prompt}" class="btn btn-sm btn-outline-secondary">Skip for now</a>
+                                <form method="post" th:action="@{/account/dismiss-password-prompt}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Skip for now</button>
+                                </form>
                             </span>
                         </div>
 

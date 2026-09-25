@@ -20,7 +20,8 @@ public class AdminController {
     @GetMapping("/dashboard")
     public String dashboard(HttpServletRequest request, Model model) {
         model.addAttribute("papers", submissionService.getAllPapers());
-        model.addAttribute("passwordPromptPending", request.getSession().getAttribute("passwordPromptPending") != null);
+        var session = request.getSession(false);
+        model.addAttribute("passwordPromptPending", session != null && session.getAttribute("passwordPromptPending") != null);
         return "admin/dashboard";
     }
     

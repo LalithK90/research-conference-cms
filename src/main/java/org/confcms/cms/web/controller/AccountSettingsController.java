@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
 @RequiredArgsConstructor
@@ -27,13 +28,20 @@ public class AccountSettingsController {
         User user = actingUser();
         model.addAttribute("user", user);
         model.addAttribute("identities", userIdentityRepository.findByUserId(user.getId()));
-        model.addAttribute("passwordPromptPending", request.getSession().getAttribute("passwordPromptPending") != null);
+        var session = request.getSession(false);
+        model.addAttribute("passwordPromptPending", session != null && session.getAttribute("passwordPromptPending") != null);
         return "account_settings";
     }
 
-    @GetMapping("/account/dismiss-password-prompt")
+    // POST, not GET: dismissal mutates session state, and a state-changing GET is
+    // link-prefetchable -- a browser or proxy prefetching the href could silently
+    // dismiss the prompt without the user ever clicking it.
+    @PostMapping("/account/dismiss-password-prompt")
     public String dismissPasswordPrompt(HttpServletRequest request) {
-        request.getSession().removeAttribute("passwordPromptPending");
+        var session = request.getSession(false);
+        if (session != null) {
+            session.removeAttribute("passwordPromptPending");
+        }
         return "redirect:/account";
     }
 }
