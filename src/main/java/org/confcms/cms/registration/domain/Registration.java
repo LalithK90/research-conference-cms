@@ -1,5 +1,6 @@
 package org.confcms.cms.registration.domain;
 
+import org.confcms.cms.domain.Conference;
 import org.confcms.cms.domain.User;
 import org.confcms.cms.core.domain.BaseEntity;
 import jakarta.persistence.*;
@@ -18,6 +19,10 @@ public class Registration extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "conference_id", nullable = false)
+    private Conference conference;
+
     @Column(nullable = false)
     private String ticketType;
 
@@ -29,4 +34,9 @@ public class Registration extends BaseEntity {
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
     private String invoicePath;
+    private String bankSlipPath;
+    private String bankSlipOriginalFilename;
+
+    @Column(columnDefinition = "TEXT")
+    private String rejectionReason;
 }
