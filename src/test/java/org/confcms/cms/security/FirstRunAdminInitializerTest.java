@@ -35,6 +35,9 @@ class FirstRunAdminInitializerTest {
     @BeforeEach
     void setUp() {
         initializer = new FirstRunAdminInitializer(userRepository, passwordEncoder);
+        // No Spring context in this pure-Mockito test, so the @Value-injected field
+        // needs to be set directly to what its default would resolve to.
+        org.springframework.test.util.ReflectionTestUtils.setField(initializer, "adminEmail", "asakahatapitiya@gmail.com");
     }
 
     @Test
@@ -63,5 +66,19 @@ class FirstRunAdminInitializerTest {
         assertThat(saved.getRole()).isEqualTo(Role.ADMIN);
         assertThat(saved.getPasswordHash()).isEqualTo("encoded-hash");
         assertThat(saved.isEnabled()).isTrue();
+    }
+
+    @Test
+    void usesTheConfiguredAdminEmailWhenOverridden() {
+        org.springframework.test.util.ReflectionTestUtils.setField(initializer, "adminEmail", "custom-admin@example.org");
+        when(userRepository.findByRole(Role.ADMIN)).thenReturn(List.of());
+        when(passwordEncoder.encode(any())).thenReturn("encoded-hash");
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        initializer.run(applicationArguments);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        assertThat(captor.getValue().getEmail()).isEqualTo("custom-admin@example.org");
     }
 }

@@ -80,8 +80,9 @@ The system supports **multiple conferences** by allowing administrators to creat
 4.  **Access the System**
     *   Open your browser and go to: `http://localhost:8080`
     *   **First-run admin account**: on first boot (when no admin account exists yet), the
-        application generates a random password for `asakahatapitiya@gmail.com` and prints it
-        once to the server log:
+        application generates a random password for the admin email — `asakahatapitiya@gmail.com`
+        by default, or whatever you set `app.bootstrap.admin-email` to — and prints it once to
+        the server log:
         ```
         =====================================================
          GENERATED ADMIN ACCOUNT (save this now, shown once)

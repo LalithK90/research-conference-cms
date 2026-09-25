@@ -6,6 +6,7 @@ import org.confcms.cms.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,10 +20,12 @@ import java.util.Base64;
 public class FirstRunAdminInitializer implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(FirstRunAdminInitializer.class);
-    private static final String ADMIN_EMAIL = "asakahatapitiya@gmail.com";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${app.bootstrap.admin-email:asakahatapitiya@gmail.com}")
+    private String adminEmail;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -33,7 +36,7 @@ public class FirstRunAdminInitializer implements ApplicationRunner {
         String generatedPassword = generateSecurePassword();
 
         User admin = new User();
-        admin.setEmail(ADMIN_EMAIL);
+        admin.setEmail(adminEmail);
         admin.setFullName("System Administrator");
         admin.setRole(Role.ADMIN);
         admin.setPasswordHash(passwordEncoder.encode(generatedPassword));
@@ -42,7 +45,7 @@ public class FirstRunAdminInitializer implements ApplicationRunner {
 
         log.info("=====================================================");
         log.info(" GENERATED ADMIN ACCOUNT (save this now, shown once)");
-        log.info(" Email:    {}", ADMIN_EMAIL);
+        log.info(" Email:    {}", adminEmail);
         log.info(" Password: {}", generatedPassword);
         log.info("=====================================================");
     }
