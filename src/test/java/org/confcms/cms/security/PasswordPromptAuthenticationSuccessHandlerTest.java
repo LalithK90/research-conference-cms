@@ -43,6 +43,23 @@ class PasswordPromptAuthenticationSuccessHandlerTest {
     }
 
     @Test
+    void setsSessionAttributeForUserWithEmptyStringPasswordHash() {
+        // data-dev.sql seeds some users with password_hash = '' rather than NULL -- both
+        // represent "no real credential", so both must trigger the prompt.
+        User emptyHash = new User();
+        emptyHash.setEmail("emptyhash@example.com");
+        emptyHash.setPasswordHash("");
+        when(userRepository.findByEmail("emptyhash@example.com")).thenReturn(Optional.of(emptyHash));
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+
+        handler.markPromptIfPasswordless(request, "emptyhash@example.com");
+
+        assertThat(request.getSession(false)).isNotNull();
+        assertThat(request.getSession(false).getAttribute("passwordPromptPending")).isEqualTo(true);
+    }
+
+    @Test
     void doesNotSetSessionAttributeForUserWithPassword() {
         User withPassword = new User();
         withPassword.setEmail("hasone@example.com");

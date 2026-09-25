@@ -30,7 +30,7 @@ public class PasswordPromptAuthenticationSuccessHandler extends SimpleUrlAuthent
 
     void markPromptIfPasswordless(HttpServletRequest request, String email) {
         userRepository.findByEmail(email)
-                .filter(user -> user.getPasswordHash() == null)
+                .filter(user -> user.getPasswordHash() == null || user.getPasswordHash().isBlank())
                 .ifPresent(user -> request.getSession().setAttribute("passwordPromptPending", true));
     }
 }
