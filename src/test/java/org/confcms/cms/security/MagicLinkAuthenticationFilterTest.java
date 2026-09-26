@@ -32,6 +32,8 @@ class MagicLinkAuthenticationFilterTest {
 
     @Mock
     private org.confcms.cms.repository.UserRepository userRepository;
+    @Mock
+    private org.confcms.cms.service.AccessLogService accessLogService;
 
     private PasswordPromptAuthenticationSuccessHandler passwordPromptHandler;
 
@@ -39,7 +41,7 @@ class MagicLinkAuthenticationFilterTest {
 
     @BeforeEach
     void setUp() {
-        passwordPromptHandler = new PasswordPromptAuthenticationSuccessHandler(userRepository);
+        passwordPromptHandler = new PasswordPromptAuthenticationSuccessHandler(userRepository, accessLogService);
         filter = new MagicLinkAuthenticationFilter(authenticationManager, passwordPromptHandler);
     }
 
