@@ -34,13 +34,26 @@
         <h3>Versions</h3>
         <table>
             <thead>
-                <tr><th>Version</th><th>Filename</th><th>File Path</th></tr>
+                <tr><th>Version</th><th>Filename</th><th>File Path</th><th>Plagiarism/Similarity</th></tr>
             </thead>
             <tbody>
                 <tr th:each="v : ${paper.versions}">
                     <td th:text="${v.versionNumber}"></td>
                     <td th:text="${v.originalFilename}"></td>
                     <td th:text="${v.filePath}"></td>
+                    <td>
+                        <div th:if="${v.plagiarismScore != null}">
+                            <strong th:text="${v.plagiarismScore} + '%'"></strong>
+                            <span th:if="${v.plagiarismNote != null}" th:text="' - ' + ${v.plagiarismNote}"></span>
+                        </div>
+                        <form th:action="@{'/admin/decisions/version/' + ${v.id} + '/plagiarism-check'}" method="post">
+                            <input type="number" step="0.1" min="0" max="100" name="score" placeholder="Score %"
+                                   th:value="${v.plagiarismScore}" />
+                            <input type="text" name="note" placeholder="Note (checked with...)"
+                                   th:value="${v.plagiarismNote}" />
+                            <button type="submit">Save</button>
+                        </form>
+                    </td>
                 </tr>
             </tbody>
         </table>

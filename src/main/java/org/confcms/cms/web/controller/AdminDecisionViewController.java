@@ -14,7 +14,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/admin/decisions")
@@ -61,5 +63,13 @@ public class AdminDecisionViewController {
         model.addAttribute("paper", paper);
         model.addAttribute("reviews", reviews);
         return "admin/paper_detail";
+    }
+
+    @PostMapping("/version/{versionId}/plagiarism-check")
+    public String recordPlagiarismCheck(@PathVariable Long versionId,
+                                         @RequestParam(required = false) Double score,
+                                         @RequestParam(required = false) String note) {
+        var version = decisionService.recordPlagiarismCheck(actingUser(), versionId, score, note);
+        return "redirect:/admin/decisions/ui/paper/" + version.getPaper().getId();
     }
 }

@@ -31,4 +31,11 @@ public class PaperVersion extends BaseEntity {
     private boolean possibleDuplicate = false;
 
     private Long duplicateOfPaperVersionId;
+
+    // Manually entered by staff after checking this version outside the system (e.g. Turnitin,
+    // iThenticate) -- no automated checking happens here. Nullable: absent until someone records it.
+    private Double plagiarismScore;
+
+    @Column(columnDefinition = "TEXT")
+    private String plagiarismNote;
 }

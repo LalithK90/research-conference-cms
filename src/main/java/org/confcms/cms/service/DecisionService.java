@@ -4,8 +4,10 @@ import org.confcms.cms.domain.User;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;
+import org.confcms.cms.submission.domain.PaperVersion;
 import org.confcms.cms.submission.domain.RevisionResolution;
 import org.confcms.cms.submission.repository.PaperRepository;
+import org.confcms.cms.submission.repository.PaperVersionRepository;
 import org.confcms.cms.review.domain.AssignmentStatus;
 import org.confcms.cms.review.domain.Review;
 import org.confcms.cms.review.domain.ReviewAssignment;
@@ -28,6 +30,7 @@ public class DecisionService {
     private final EmailService emailService;
     private final CommitteeService committeeService;
     private final ReviewAssignmentRepository reviewAssignmentRepository;
+    private final PaperVersionRepository paperVersionRepository;
 
     public enum DeskDecision { SEND_TO_REVIEW, DESK_REJECT }
 
@@ -118,6 +121,19 @@ public class DecisionService {
             index++;
         }
         return feedback;
+    }
+
+    // Manually entered by staff after checking the version outside the system (e.g. Turnitin,
+    // iThenticate) -- no automated similarity checking happens here or anywhere in this codebase.
+    @Transactional
+    public PaperVersion recordPlagiarismCheck(User actingUser, Long paperVersionId, Double score, String note) {
+        PaperVersion version = paperVersionRepository.findById(paperVersionId)
+                .orElseThrow(() -> new IllegalArgumentException("Paper version not found"));
+        requireChairOrAdmin(actingUser, version.getPaper());
+
+        version.setPlagiarismScore(score);
+        version.setPlagiarismNote(note);
+        return paperVersionRepository.save(version);
     }
 
     @Transactional

@@ -11,6 +11,7 @@ import org.confcms.cms.submission.domain.PaperStatus;
 import org.confcms.cms.submission.domain.PaperVersion;
 import org.confcms.cms.submission.domain.RevisionResolution;
 import org.confcms.cms.submission.repository.PaperRepository;
+import org.confcms.cms.submission.repository.PaperVersionRepository;
 import org.confcms.cms.review.domain.ReviewAssignment;
 import org.confcms.cms.review.domain.AssignmentStatus;
 import org.confcms.cms.review.repository.ReviewAssignmentRepository;
@@ -48,6 +49,8 @@ class DecisionServiceTest {
     private CommitteeService committeeService;
     @Mock
     private ReviewAssignmentRepository reviewAssignmentRepository;
+    @Mock
+    private PaperVersionRepository paperVersionRepository;
 
     private DecisionService service;
     private Conference conference;
@@ -57,7 +60,7 @@ class DecisionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DecisionService(reviewRepository, paperRepository, emailService, committeeService, reviewAssignmentRepository);
+        service = new DecisionService(reviewRepository, paperRepository, emailService, committeeService, reviewAssignmentRepository, paperVersionRepository);
 
         conference = new Conference();
         conference.setId(1L);
@@ -80,6 +83,43 @@ class DecisionServiceTest {
         strangerUser = new User();
         strangerUser.setId(30L);
         strangerUser.setRole(Role.REVIEWER);
+    }
+
+    @Test
+    void recordPlagiarismCheckSavesScoreAndNote() {
+        PaperVersion version = new PaperVersion();
+        version.setId(9L);
+        version.setPaper(paper);
+        when(paperVersionRepository.findById(9L)).thenReturn(Optional.of(version));
+        when(committeeService.isChairOrCoChair(chairUser, conference)).thenReturn(true);
+        when(paperVersionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        PaperVersion result = service.recordPlagiarismCheck(chairUser, 9L, 12.5, "Checked with Turnitin");
+
+        assertThat(result.getPlagiarismScore()).isEqualTo(12.5);
+        assertThat(result.getPlagiarismNote()).isEqualTo("Checked with Turnitin");
+    }
+
+    @Test
+    void recordPlagiarismCheckRejectsNonChairNonAdmin() {
+        PaperVersion version = new PaperVersion();
+        version.setId(9L);
+        version.setPaper(paper);
+        when(paperVersionRepository.findById(9L)).thenReturn(Optional.of(version));
+        when(committeeService.isChairOrCoChair(strangerUser, conference)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.recordPlagiarismCheck(strangerUser, 9L, 12.5, "note"))
+                .isInstanceOf(SecurityException.class);
+
+        verify(paperVersionRepository, never()).save(any());
+    }
+
+    @Test
+    void recordPlagiarismCheckThrowsWhenVersionNotFound() {
+        when(paperVersionRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.recordPlagiarismCheck(chairUser, 99L, 12.5, "note"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

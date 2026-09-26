@@ -8,6 +8,7 @@ import org.confcms.cms.review.repository.ReviewRepository;
 import org.confcms.cms.service.CommitteeService;
 import org.confcms.cms.service.DecisionService;
 import org.confcms.cms.submission.domain.Paper;
+import org.confcms.cms.submission.domain.PaperVersion;
 import org.confcms.cms.submission.repository.PaperRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,5 +97,23 @@ class AdminDecisionViewControllerTest {
 
         assertThat(view).isEqualTo("admin/paper_detail");
         assertThat(model.getAttribute("paper")).isEqualTo(paper);
+    }
+
+    @Test
+    void recordPlagiarismCheckRedirectsToTheOwningPaper() {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setEmail("admin@example.com");
+        admin.setRole(Role.ADMIN);
+        authenticateAs(admin);
+
+        PaperVersion version = new PaperVersion();
+        version.setId(9L);
+        version.setPaper(paper);
+        when(decisionService.recordPlagiarismCheck(admin, 9L, 12.5, "Checked with Turnitin")).thenReturn(version);
+
+        String view = controller.recordPlagiarismCheck(9L, 12.5, "Checked with Turnitin");
+
+        assertThat(view).isEqualTo("redirect:/admin/decisions/ui/paper/5");
     }
 }
