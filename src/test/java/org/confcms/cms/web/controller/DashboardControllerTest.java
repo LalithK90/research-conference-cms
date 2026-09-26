@@ -2,6 +2,9 @@ package org.confcms.cms.web.controller;
 
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.domain.User;
+import org.confcms.cms.registration.domain.PaymentStatus;
+import org.confcms.cms.registration.domain.Registration;
+import org.confcms.cms.registration.repository.RegistrationRepository;
 import org.confcms.cms.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,9 +19,12 @@ import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,12 +32,17 @@ class DashboardControllerTest {
 
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private RegistrationRepository registrationRepository;
 
     private DashboardController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new DashboardController(userRepository);
+        controller = new DashboardController(userRepository, registrationRepository);
+        // Not every test cares about registrations; stub leniently so tests that
+        // don't touch it aren't penalized by Mockito's strict-stubs unused-stub check.
+        lenient().when(registrationRepository.findByUserId(any())).thenReturn(List.of());
     }
 
     @AfterEach
@@ -63,6 +74,7 @@ class DashboardControllerTest {
     @Test
     void reviewerSeesTheMinimalDashboardWithNoPendingPrompt() {
         User reviewer = new User();
+        reviewer.setId(2L);
         reviewer.setEmail("reviewer@example.com");
         reviewer.setRole(Role.REVIEWER);
         authenticateAs(reviewer);
@@ -76,11 +88,13 @@ class DashboardControllerTest {
         assertThat(view).isEqualTo("dashboard");
         assertThat(model.getAttribute("user")).isEqualTo(reviewer);
         assertThat(model.getAttribute("passwordPromptPending")).isEqualTo(false);
+        assertThat(model.getAttribute("rejectedRegistration")).isNull();
     }
 
     @Test
     void authorSeesPasswordPromptWhenSessionFlagIsSet() {
         User author = new User();
+        author.setId(3L);
         author.setEmail("author@example.com");
         author.setRole(Role.AUTHOR);
         authenticateAs(author);
@@ -94,5 +108,49 @@ class DashboardControllerTest {
 
         assertThat(view).isEqualTo("dashboard");
         assertThat(model.getAttribute("passwordPromptPending")).isEqualTo(true);
+    }
+
+    @Test
+    void authorSeesRejectedRegistrationWhenOneExists() {
+        User author = new User();
+        author.setId(4L);
+        author.setEmail("author2@example.com");
+        author.setRole(Role.AUTHOR);
+        authenticateAs(author);
+        when(userRepository.findByEmail("author2@example.com")).thenReturn(Optional.of(author));
+
+        Registration rejected = new Registration();
+        rejected.setPaymentStatus(PaymentStatus.FAILED);
+        rejected.setRejectionReason("Illegible scan");
+        when(registrationRepository.findByUserId(4L)).thenReturn(List.of(rejected));
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        Model model = new ExtendedModelMap();
+
+        controller.dashboard(request, model);
+
+        assertThat(model.getAttribute("rejectedRegistration")).isEqualTo(rejected);
+    }
+
+    @Test
+    void authorDoesNotSeeAFailedRegistrationWithNoRejectionReasonAsRejected() {
+        User author = new User();
+        author.setId(5L);
+        author.setEmail("author3@example.com");
+        author.setRole(Role.AUTHOR);
+        authenticateAs(author);
+        when(userRepository.findByEmail("author3@example.com")).thenReturn(Optional.of(author));
+
+        Registration failedNoReason = new Registration();
+        failedNoReason.setPaymentStatus(PaymentStatus.FAILED);
+        failedNoReason.setRejectionReason(null);
+        when(registrationRepository.findByUserId(5L)).thenReturn(List.of(failedNoReason));
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        Model model = new ExtendedModelMap();
+
+        controller.dashboard(request, model);
+
+        assertThat(model.getAttribute("rejectedRegistration")).isNull();
     }
 }

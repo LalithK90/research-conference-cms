@@ -21,6 +21,11 @@
             Registration successful.
         </div>
 
+        <div th:if="${rejectedRegistration}" class="alert alert-danger">
+            Your bank slip was rejected: <span th:text="${rejectedRegistration.rejectionReason}"></span>.
+            <a th:href="@{/registration/{id}/reupload-slip(id=${rejectedRegistration.id})}">Upload a corrected slip</a>
+        </div>
+
         <div th:if="${passwordPromptPending}" class="alert alert-warning d-flex justify-content-between align-items-center">
             <span>You're using a temporary/passwordless login.</span>
             <span>
