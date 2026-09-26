@@ -50,8 +50,10 @@ public class RegistrationController {
 
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        Conference conference = conferenceService.getActiveConference();
 
-        registrationService.register(user, ticketType);
+        // TODO(Task 5): wire up the real bankSlip @RequestParam and error handling.
+        registrationService.register(user, conference, ticketType, null);
 
         return "redirect:/dashboard?registered=true";
     }
