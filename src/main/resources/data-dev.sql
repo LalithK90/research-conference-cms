@@ -42,8 +42,8 @@ INSERT INTO reviews (paper_id, reviewer_id, score, comments, confidential_commen
 VALUES (1, 2, 4, 'Promising results in sample domain.', 'Confidential note.', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
 -- Registrations (kept minimal for dev)
-INSERT INTO registrations (user_id, ticket_type, amount, payment_status, invoice_path, created_at, updated_at)
-VALUES (3, 'Academic', 0.00, 'PAID', NULL, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+INSERT INTO registrations (user_id, conference_id, ticket_type, amount, payment_status, invoice_path, created_at, updated_at)
+VALUES (3, 1, 'Academic', 0.00, 'PAID', NULL, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
 -- ==============================
 -- Additional demo data (history)
@@ -125,6 +125,7 @@ FROM papers p JOIN users u ON u.email='reviewer@example.com'
 WHERE p.title='AI for Crop Yield Prediction';
 
 -- Registration for the additional user
-INSERT INTO registrations (user_id, ticket_type, amount, payment_status, invoice_path, created_at, updated_at)
-SELECT u.id, 'Academic', 0.00, 'PENDING', NULL, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
-FROM users u WHERE u.email='author2@example.com';
+INSERT INTO registrations (user_id, conference_id, ticket_type, amount, payment_status, invoice_path, created_at, updated_at)
+SELECT u.id, c.id, 'Academic', 0.00, 'PENDING', NULL, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
+FROM users u, conferences c
+WHERE u.email='author2@example.com' AND c.is_active = TRUE;
