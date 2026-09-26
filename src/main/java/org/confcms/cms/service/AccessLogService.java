@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,12 +20,16 @@ public class AccessLogService {
     private final AccessLogRepository accessLogRepository;
     private final GeoLocationService geoLocationService;
 
-    @Transactional
+    // Deliberately NOT @Transactional: accessLogRepository.save() already runs in its own
+    // transaction (Spring Data's default), and wrapping this method in one too means a save
+    // failure marks THIS method's transaction rollback-only -- the catch below swallows the
+    // exception locally, but the surrounding @Transactional proxy still throws
+    // UnexpectedRollbackException on exit, which would defeat the whole point of this class
+    // (never letting a log-write failure break the login/download it's auditing).
     public void logLogin(User user, HttpServletRequest request) {
         write(AccessEventType.LOGIN, user, request, null);
     }
 
-    @Transactional
     public void logDownload(User user, PaperVersion paperVersion, HttpServletRequest request) {
         write(AccessEventType.PAPER_DOWNLOAD, user, request, paperVersion);
     }
