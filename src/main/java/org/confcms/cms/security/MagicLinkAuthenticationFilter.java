@@ -62,6 +62,7 @@ public class MagicLinkAuthenticationFilter extends OncePerRequestFilter {
             securityContextRepository.saveContext(context, request, response);
 
             passwordPromptHandler.markPromptIfPasswordless(request, result.getName());
+            passwordPromptHandler.logLogin(request, result.getName());
             response.sendRedirect("/dashboard");
         } catch (BadCredentialsException e) {
             response.sendRedirect("/login?error=magic-link-invalid");

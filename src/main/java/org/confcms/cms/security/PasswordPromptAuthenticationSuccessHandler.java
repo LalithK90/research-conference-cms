@@ -28,8 +28,7 @@ public class PasswordPromptAuthenticationSuccessHandler extends SimpleUrlAuthent
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
             throws IOException, ServletException {
         markPromptIfPasswordless(request, authentication.getName());
-        userRepository.findByEmail(authentication.getName())
-                .ifPresent(user -> accessLogService.logLogin(user, request));
+        logLogin(request, authentication.getName());
         super.onAuthenticationSuccess(request, response, authentication);
     }
 
@@ -37,5 +36,15 @@ public class PasswordPromptAuthenticationSuccessHandler extends SimpleUrlAuthent
         userRepository.findByEmail(email)
                 .filter(user -> user.getPasswordHash() == null || user.getPasswordHash().isBlank())
                 .ifPresent(user -> request.getSession().setAttribute("passwordPromptPending", true));
+    }
+
+    // Package-visible so MagicLinkAuthenticationFilter can call it directly -- that filter
+    // bypasses Spring Security's success-handler mechanism entirely (it persists the
+    // SecurityContext manually and redirects itself), so onAuthenticationSuccess above is
+    // never reached for a magic-link login. Without this being called separately, magic-link
+    // logins -- the passwordless path -- would never appear in the access log at all.
+    void logLogin(HttpServletRequest request, String email) {
+        userRepository.findByEmail(email)
+                .ifPresent(user -> accessLogService.logLogin(user, request));
     }
 }

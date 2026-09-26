@@ -184,4 +184,27 @@ class MagicLinkAuthenticationFilterTest {
 
         assertThat(request.getSession(false).getAttribute("passwordPromptPending")).isNull();
     }
+
+    @Test
+    void validTokenLogsTheLoginToTheAccessLog() throws Exception {
+        // Magic-link logins bypass Spring Security's success-handler mechanism entirely, so
+        // without an explicit call to passwordPromptHandler.logLogin(...) they would never
+        // appear in the access log at all.
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/auth/magic/verify");
+        request.setServletPath("/auth/magic/verify");
+        request.setParameter("token", "good-token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        org.confcms.cms.domain.User user = new org.confcms.cms.domain.User();
+        user.setEmail("magic-link-user@example.com");
+        user.setPasswordHash("hashed");
+        when(userRepository.findByEmail("magic-link-user@example.com")).thenReturn(java.util.Optional.of(user));
+        when(authenticatedResult.getName()).thenReturn("magic-link-user@example.com");
+        when(authenticationManager.authenticate(any(MagicLinkAuthenticationToken.class)))
+                .thenReturn(authenticatedResult);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(accessLogService).logLogin(user, request);
+    }
 }

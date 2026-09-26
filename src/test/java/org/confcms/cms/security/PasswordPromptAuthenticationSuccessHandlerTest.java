@@ -109,4 +109,29 @@ class PasswordPromptAuthenticationSuccessHandlerTest {
 
         assertThat(response.getRedirectedUrl()).isEqualTo("/dashboard");
     }
+
+    @Test
+    void logLoginCanBeCalledDirectlyByMagicLinkAuthenticationFilter() {
+        // MagicLinkAuthenticationFilter bypasses onAuthenticationSuccess entirely and calls this
+        // package-visible method directly -- this is the fix for magic-link logins never
+        // reaching the access log.
+        User user = new User();
+        user.setEmail("passwordless-login@example.com");
+        when(userRepository.findByEmail("passwordless-login@example.com")).thenReturn(Optional.of(user));
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+
+        handler.logLogin(request, "passwordless-login@example.com");
+
+        verify(accessLogService).logLogin(user, request);
+    }
+
+    @Test
+    void logLoginDoesNothingWhenUserLookupFindsNothing() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+
+        handler.logLogin(request, "ghost@example.com");
+
+        verify(accessLogService, org.mockito.Mockito.never()).logLogin(any(), any());
+    }
 }
