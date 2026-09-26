@@ -10,7 +10,9 @@ import org.confcms.cms.service.PersonInvitationService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperAuthor;
 import org.confcms.cms.submission.domain.PaperStatus;
+import org.confcms.cms.submission.domain.PaperVersion;
 import org.confcms.cms.submission.repository.PaperRepository;
+import org.confcms.cms.submission.repository.PaperVersionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -45,10 +47,12 @@ class SubmissionServiceTest {
     private PersonInvitationService personInvitationService;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private PaperVersionRepository paperVersionRepository;
 
     @Test
     void submitPaperSetsConferenceFromActiveConference() {
-        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
 
         Conference activeConference = new Conference();
         activeConference.setTitle("Test Conf");
@@ -73,7 +77,7 @@ class SubmissionServiceTest {
 
     @Test
     void submitPaperInvitesUnknownCoAuthor() {
-        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
 
         Conference activeConference = new Conference();
         activeConference.setTitle("Test Conf");
@@ -104,7 +108,7 @@ class SubmissionServiceTest {
 
     @Test
     void submitPaperDoesNotInviteKnownCoAuthor() {
-        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
 
         Conference activeConference = new Conference();
         activeConference.setTitle("Test Conf");
@@ -137,7 +141,7 @@ class SubmissionServiceTest {
 
     @Test
     void uploadRevisionRejectsWhenNotInRevisionStatus() {
-        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
 
         User submitter = new User();
         submitter.setId(10L);
@@ -157,7 +161,7 @@ class SubmissionServiceTest {
 
     @Test
     void uploadRevisionAutoRejectsAndBlocksUploadWhenDeadlinePassed() {
-        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
 
         User submitter = new User();
         submitter.setId(10L);
@@ -181,7 +185,7 @@ class SubmissionServiceTest {
 
     @Test
     void uploadRevisionAutoRejectClearsRevisionDueDate() {
-        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
 
         User submitter = new User();
         submitter.setId(10L);
@@ -208,7 +212,7 @@ class SubmissionServiceTest {
         // Fix 2: the plain /version upload path (uploadNewVersion) must be subject to the same
         // revision-deadline enforcement as uploadRevision, otherwise an author could dodge the
         // auto-reject by calling the older endpoint instead of the new revision-specific one.
-        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
 
         User submitter = new User();
         submitter.setId(10L);
@@ -235,7 +239,7 @@ class SubmissionServiceTest {
     @Test
     void uploadNewVersionStillBlocksWithdrawnPapers() {
         // Fix 2 must not change uploadNewVersion's existing WITHDRAWN-blocking behavior.
-        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
 
         User submitter = new User();
         submitter.setId(10L);
@@ -259,7 +263,7 @@ class SubmissionServiceTest {
     void uploadNewVersionUnaffectedForNormalStatus() {
         // Fix 2 must not change uploadNewVersion's behavior for statuses other than
         // WITHDRAWN/MINOR_REVISION/MAJOR_REVISION.
-        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
 
         User submitter = new User();
         submitter.setId(10L);
@@ -283,7 +287,7 @@ class SubmissionServiceTest {
 
     @Test
     void uploadRevisionSucceedsBeforeDeadline() {
-        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository);
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
 
         User submitter = new User();
         submitter.setId(10L);
@@ -304,5 +308,96 @@ class SubmissionServiceTest {
 
         assertThat(result.getStatus()).isEqualTo(PaperStatus.MAJOR_REVISION);
         assertThat(result.getVersions()).hasSize(1);
+    }
+
+    @Test
+    void submitPaperFlagsPossibleDuplicateWhenContentHashMatches() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        Conference activeConference = new Conference();
+        activeConference.setTitle("Test Conf");
+        activeConference.setVenue("Test Venue");
+        activeConference.setStartDate(LocalDate.now());
+        activeConference.setEndDate(LocalDate.now().plusDays(1));
+        when(conferenceService.getActiveConference()).thenReturn(activeConference);
+
+        User submitter = new User();
+        submitter.setFullName("Jane Author");
+        submitter.setEmail("jane@example.com");
+
+        when(fileStorageService.store(any())).thenReturn("/uploads/paper.pdf");
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        PaperVersion existingMatch = new PaperVersion();
+        existingMatch.setId(42L);
+        when(paperVersionRepository.findByContentHash(any())).thenReturn(List.of(existingMatch));
+
+        MockMultipartFile file = new MockMultipartFile("file", "paper.pdf", "application/pdf", "%PDF-1.4 identical content".getBytes());
+
+        Paper saved = service.submitPaper(submitter, "Title", "Abstract", "Track A", file, Collections.emptyList());
+
+        PaperVersion newVersion = saved.getVersions().get(0);
+        assertThat(newVersion.isPossibleDuplicate()).isTrue();
+        assertThat(newVersion.getDuplicateOfPaperVersionId()).isEqualTo(42L);
+        assertThat(newVersion.getContentHash()).isNotNull();
+    }
+
+    @Test
+    void submitPaperDoesNotFlagDuplicateWhenNoHashMatchExists() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        Conference activeConference = new Conference();
+        activeConference.setTitle("Test Conf");
+        activeConference.setVenue("Test Venue");
+        activeConference.setStartDate(LocalDate.now());
+        activeConference.setEndDate(LocalDate.now().plusDays(1));
+        when(conferenceService.getActiveConference()).thenReturn(activeConference);
+
+        User submitter = new User();
+        submitter.setFullName("Jane Author");
+        submitter.setEmail("jane@example.com");
+
+        when(fileStorageService.store(any())).thenReturn("/uploads/paper.pdf");
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(paperVersionRepository.findByContentHash(any())).thenReturn(List.of());
+
+        MockMultipartFile file = new MockMultipartFile("file", "paper.pdf", "application/pdf", "%PDF-1.4 unique content".getBytes());
+
+        Paper saved = service.submitPaper(submitter, "Title", "Abstract", "Track A", file, Collections.emptyList());
+
+        PaperVersion newVersion = saved.getVersions().get(0);
+        assertThat(newVersion.isPossibleDuplicate()).isFalse();
+        assertThat(newVersion.getDuplicateOfPaperVersionId()).isNull();
+        assertThat(newVersion.getContentHash()).isNotNull();
+    }
+
+    @Test
+    void submitPaperComputesTheSameHashForIdenticalContent() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        Conference activeConference = new Conference();
+        activeConference.setTitle("Test Conf");
+        activeConference.setVenue("Test Venue");
+        activeConference.setStartDate(LocalDate.now());
+        activeConference.setEndDate(LocalDate.now().plusDays(1));
+        when(conferenceService.getActiveConference()).thenReturn(activeConference);
+
+        User submitter = new User();
+        submitter.setFullName("Jane Author");
+        submitter.setEmail("jane@example.com");
+
+        when(fileStorageService.store(any())).thenReturn("/uploads/a.pdf", "/uploads/b.pdf");
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(paperVersionRepository.findByContentHash(any())).thenReturn(List.of());
+
+        byte[] identicalBytes = "%PDF-1.4 identical bytes for hash comparison".getBytes();
+        MockMultipartFile fileA = new MockMultipartFile("file", "a.pdf", "application/pdf", identicalBytes);
+        MockMultipartFile fileB = new MockMultipartFile("file", "b.pdf", "application/pdf", identicalBytes);
+
+        Paper savedA = service.submitPaper(submitter, "Title A", "Abstract", "Track A", fileA, Collections.emptyList());
+        Paper savedB = service.submitPaper(submitter, "Title B", "Abstract", "Track A", fileB, Collections.emptyList());
+
+        assertThat(savedA.getVersions().get(0).getContentHash())
+                .isEqualTo(savedB.getVersions().get(0).getContentHash());
     }
 }

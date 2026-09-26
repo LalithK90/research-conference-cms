@@ -8,17 +8,24 @@ import org.confcms.cms.service.EmailService;
 import org.confcms.cms.service.PersonInvitationService;
 import org.confcms.cms.submission.domain.*;
 import org.confcms.cms.submission.repository.PaperRepository;
+import org.confcms.cms.submission.repository.PaperVersionRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.security.MessageDigest;
 import java.time.LocalDate;
+import java.util.HexFormat;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class SubmissionService {
+
+    private static final Logger log = LoggerFactory.getLogger(SubmissionService.class);
 
     private final PaperRepository paperRepository;
     private final FileStorageService fileStorageService;
@@ -26,6 +33,7 @@ public class SubmissionService {
     private final ConferenceService conferenceService;
     private final PersonInvitationService personInvitationService;
     private final UserRepository userRepository;
+    private final PaperVersionRepository paperVersionRepository;
 
     @Transactional
     public Paper submitPaper(User submitter, String title, String abstractText, String track, MultipartFile file, List<PaperAuthor> authors) {
@@ -39,6 +47,7 @@ public class SubmissionService {
 
         // Validate and save file
         validatePdf(file);
+        String contentHash = computeContentHash(file);
         String filePath = fileStorageService.store(file);
 
         PaperVersion version = new PaperVersion();
@@ -46,6 +55,7 @@ public class SubmissionService {
         version.setVersionNumber(1);
         version.setFilePath(filePath);
         version.setOriginalFilename(file.getOriginalFilename());
+        applyDuplicateCheck(version, contentHash);
         paper.getVersions().add(version);
 
         // Set authors
@@ -97,6 +107,33 @@ public class SubmissionService {
         }
     }
 
+    private String computeContentHash(MultipartFile file) {
+        try (var in = file.getInputStream()) {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                digest.update(buffer, 0, read);
+            }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (Exception e) {
+            log.warn("Failed to compute content hash for uploaded file; duplicate detection skipped for this upload", e);
+            return null;
+        }
+    }
+
+    private void applyDuplicateCheck(PaperVersion version, String contentHash) {
+        version.setContentHash(contentHash);
+        if (contentHash == null) {
+            return;
+        }
+        List<PaperVersion> matches = paperVersionRepository.findByContentHash(contentHash);
+        if (!matches.isEmpty()) {
+            version.setPossibleDuplicate(true);
+            version.setDuplicateOfPaperVersionId(matches.get(0).getId());
+        }
+    }
+
     public List<Paper> getPapersBySubmitter(User submitter) {
         return paperRepository.findBySubmitterId(submitter.getId());
     }
@@ -124,6 +161,7 @@ public class SubmissionService {
         enforceRevisionDeadline(paper);
 
         validatePdf(file);
+        String contentHash = computeContentHash(file);
         String filePath = fileStorageService.store(file);
 
         int newVersionNumber = paper.getVersions().size() + 1;
@@ -132,6 +170,7 @@ public class SubmissionService {
         version.setVersionNumber(newVersionNumber);
         version.setFilePath(filePath);
         version.setOriginalFilename(file.getOriginalFilename());
+        applyDuplicateCheck(version, contentHash);
         paper.getVersions().add(version);
         Paper saved = paperRepository.save(paper);
 
@@ -203,6 +242,7 @@ public class SubmissionService {
         enforceRevisionDeadline(paper);
 
         validatePdf(file);
+        String contentHash = computeContentHash(file);
         String filePath = fileStorageService.store(file);
 
         int newVersionNumber = paper.getVersions().size() + 1;
@@ -211,6 +251,7 @@ public class SubmissionService {
         version.setVersionNumber(newVersionNumber);
         version.setFilePath(filePath);
         version.setOriginalFilename(file.getOriginalFilename());
+        applyDuplicateCheck(version, contentHash);
         paper.getVersions().add(version);
 
         return paperRepository.save(paper);
