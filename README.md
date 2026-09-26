@@ -126,6 +126,14 @@ should be deployed with the following in place:
     location feature above) will go stale over time. MaxMind's distribution terms require a
     (free) MaxMind account to download updates -- self-hosting institutions should periodically
     replace `src/main/resources/geoip/GeoLite2-City.mmdb` with a current copy.
+*   **Login IP resolution behind a reverse proxy**: the access log records `request.getRemoteAddr()`
+    as the login's IP address. Behind the reverse proxy this README already requires for TLS
+    termination, that call returns the proxy's own address, not the real client IP -- every
+    logged-in row would show the proxy's IP and no resolvable location. To record the real
+    client IP, configure the reverse proxy to set `X-Forwarded-For` (and strip any
+    client-supplied value of that header first, so it can't be spoofed), and set
+    `server.forward-headers-strategy=framework` in this application's configuration so Spring
+    resolves `getRemoteAddr()` from that header.
 
 ## 📜 Citation & Attribution
 
