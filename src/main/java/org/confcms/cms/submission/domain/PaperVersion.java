@@ -23,4 +23,12 @@ public class PaperVersion extends BaseEntity {
 
     @Column(nullable = false)
     private String originalFilename;
+
+    @Column(length = 64)
+    private String contentHash;
+
+    @Column(nullable = false)
+    private boolean possibleDuplicate = false;
+
+    private Long duplicateOfPaperVersionId;
 }
