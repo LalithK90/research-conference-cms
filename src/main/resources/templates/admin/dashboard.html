@@ -12,6 +12,7 @@
         <div class="container">
             <a class="navbar-brand" href="/admin/dashboard">CMS Admin</a>
             <a class="btn btn-outline-light me-2" href="/admin/registrations">Registrations</a>
+            <a class="btn btn-outline-light me-2" href="/admin/access-logs">Access Logs</a>
             <a class="btn btn-outline-light" href="/logout">Logout</a>
         </div>
     </nav>
@@ -43,7 +44,14 @@
             <tbody>
                 <tr th:each="paper : ${papers}">
                     <td th:text="${paper.id}">1</td>
-                    <td th:text="${paper.title}">Title</td>
+                    <td>
+                        <span th:text="${paper.title}">Title</span>
+                        <span th:if="${duplicateMatches.containsKey(paper.id)}"
+                              class="badge bg-warning text-dark"
+                              th:title="'Possible duplicate of: ' + ${duplicateMatches.get(paper.id).paper.title} + ' (v' + ${duplicateMatches.get(paper.id).versionNumber} + ')'">
+                            &#9888; Possible duplicate
+                        </span>
+                    </td>
                     <td th:text="${paper.submitter.fullName}">Author</td>
                     <td>
                         <span class="badge bg-secondary" th:text="${paper.status}">SUBMITTED</span>

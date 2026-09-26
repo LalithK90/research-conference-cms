@@ -1,5 +1,8 @@
 package org.confcms.cms.admin.controller;
 
+import org.confcms.cms.submission.domain.Paper;
+import org.confcms.cms.submission.domain.PaperVersion;
+import org.confcms.cms.submission.repository.PaperVersionRepository;
 import org.confcms.cms.submission.service.SubmissionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +14,8 @@ import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -20,12 +25,14 @@ class AdminControllerTest {
 
     @Mock
     private SubmissionService submissionService;
+    @Mock
+    private PaperVersionRepository paperVersionRepository;
 
     private AdminController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AdminController(submissionService);
+        controller = new AdminController(submissionService, paperVersionRepository);
     }
 
     @Test
@@ -50,5 +57,47 @@ class AdminControllerTest {
         controller.dashboard(request, model);
 
         assertThat(model.getAttribute("passwordPromptPending")).isEqualTo(true);
+    }
+
+    @Test
+    void dashboardHasNoDuplicateMatchesWhenNoPaperIsFlagged() {
+        Paper paper = new Paper();
+        paper.setId(1L);
+        PaperVersion version = new PaperVersion();
+        version.setPossibleDuplicate(false);
+        paper.getVersions().add(version);
+        when(submissionService.getAllPapers()).thenReturn(List.of(paper));
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        Model model = new ExtendedModelMap();
+
+        controller.dashboard(request, model);
+
+        @SuppressWarnings("unchecked")
+        Map<Long, PaperVersion> matches = (Map<Long, PaperVersion>) model.getAttribute("duplicateMatches");
+        assertThat(matches).isEmpty();
+    }
+
+    @Test
+    void dashboardResolvesTheMatchedVersionForAFlaggedPaper() {
+        Paper paper = new Paper();
+        paper.setId(1L);
+        PaperVersion version = new PaperVersion();
+        version.setPossibleDuplicate(true);
+        version.setDuplicateOfPaperVersionId(42L);
+        paper.getVersions().add(version);
+        when(submissionService.getAllPapers()).thenReturn(List.of(paper));
+
+        PaperVersion matchedVersion = new PaperVersion();
+        matchedVersion.setId(42L);
+        when(paperVersionRepository.findById(42L)).thenReturn(Optional.of(matchedVersion));
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        Model model = new ExtendedModelMap();
+
+        controller.dashboard(request, model);
+
+        @SuppressWarnings("unchecked")
+        Map<Long, PaperVersion> matches = (Map<Long, PaperVersion>) model.getAttribute("duplicateMatches");
+        assertThat(matches).containsEntry(1L, matchedVersion);
     }
 }
