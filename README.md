@@ -116,6 +116,16 @@ should be deployed with the following in place:
 *   **First-run admin password**: retrieve it from the server log immediately after first boot
     (see above) and change it via Account Settings. It is generated fresh per deployment and
     never checked into source control or configuration files.
+*   **Access log retention**: this application records every successful login (with IP address
+    and, if resolvable, an approximate city/country) and every reviewer paper download in an
+    `access_logs` table for audit purposes. Both the IP address and resolved location are
+    personal data under PDPA -- self-hosting institutions should periodically purge old rows
+    per their own retention policy (e.g. 90 days). The application does not do this
+    automatically.
+*   **GeoLite2 database staleness**: the bundled `GeoLite2-City.mmdb` (used for the login
+    location feature above) will go stale over time. MaxMind's distribution terms require a
+    (free) MaxMind account to download updates -- self-hosting institutions should periodically
+    replace `src/main/resources/geoip/GeoLite2-City.mmdb` with a current copy.
 
 ## 📜 Citation & Attribution
 
