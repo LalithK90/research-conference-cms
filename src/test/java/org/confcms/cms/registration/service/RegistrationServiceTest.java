@@ -224,11 +224,17 @@ class RegistrationServiceTest {
 
     @Test
     void reuploadSlipStoresNewFileResetsStatusAndClearsRejectionReason() {
+        User u = user(1L);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.domain.PaymentProvider.LOCAL_BANK);
         Registration reg = new Registration();
+        reg.setUser(u);
+        reg.setConference(c);
         reg.setPaymentStatus(PaymentStatus.FAILED);
         reg.setRejectionReason("Illegible scan");
         MultipartFile slip = new MockMultipartFile("bankSlip", "corrected.jpg", "image/jpeg",
                 new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x00});
+        when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(1L, 10L, PaymentStatus.FAILED))
+                .thenReturn(Optional.empty());
         when(fileStorageService.store(slip)).thenReturn("/uploads/uuid_corrected.jpg");
         when(registrationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -238,5 +244,30 @@ class RegistrationServiceTest {
         assertThat(reg.getBankSlipPath()).isEqualTo("/uploads/uuid_corrected.jpg");
         assertThat(reg.getBankSlipOriginalFilename()).isEqualTo("corrected.jpg");
         assertThat(reg.getRejectionReason()).isNull();
+    }
+
+    @Test
+    void reuploadSlipRejectsWhenAnotherActiveRegistrationExistsForTheSameConference() {
+        // Guards against: reject -> register again (new AWAITING_VERIFICATION row) -> then
+        // re-upload the OLD rejected row too, which would leave two simultaneously-active
+        // registrations for the same user+conference.
+        User u = user(1L);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.domain.PaymentProvider.LOCAL_BANK);
+        Registration staleRejected = new Registration();
+        staleRejected.setUser(u);
+        staleRejected.setConference(c);
+        staleRejected.setPaymentStatus(PaymentStatus.FAILED);
+        staleRejected.setRejectionReason("Illegible scan");
+        MultipartFile slip = new MockMultipartFile("bankSlip", "corrected.jpg", "image/jpeg",
+                new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x00});
+        when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(1L, 10L, PaymentStatus.FAILED))
+                .thenReturn(Optional.of(new Registration()));
+
+        assertThatThrownBy(() -> service.reuploadSlip(staleRejected, slip))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("already have an active registration");
+
+        verify(fileStorageService, never()).store(any());
+        verify(registrationRepository, never()).save(any());
     }
 }

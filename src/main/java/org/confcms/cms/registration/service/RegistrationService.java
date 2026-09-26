@@ -94,6 +94,13 @@ public class RegistrationService {
 
     @Transactional
     public void reuploadSlip(Registration registration, MultipartFile bankSlip) {
+        registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(
+                        registration.getUser().getId(), registration.getConference().getId(), PaymentStatus.FAILED)
+                .ifPresent(existing -> {
+                    throw new IllegalArgumentException(
+                            "You already have an active registration for this conference -- re-upload isn't needed");
+                });
+
         validateBankSlip(bankSlip);
         String filePath = fileStorageService.store(bankSlip);
         registration.setBankSlipPath(filePath);

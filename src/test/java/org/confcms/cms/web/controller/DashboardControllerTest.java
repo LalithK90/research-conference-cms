@@ -1,6 +1,7 @@
 package org.confcms.cms.web.controller;
 
 import org.confcms.cms.core.security.Role;
+import org.confcms.cms.domain.Conference;
 import org.confcms.cms.domain.User;
 import org.confcms.cms.registration.domain.PaymentStatus;
 import org.confcms.cms.registration.domain.Registration;
@@ -119,10 +120,15 @@ class DashboardControllerTest {
         authenticateAs(author);
         when(userRepository.findByEmail("author2@example.com")).thenReturn(Optional.of(author));
 
+        Conference conference = new Conference();
+        conference.setId(20L);
         Registration rejected = new Registration();
+        rejected.setConference(conference);
         rejected.setPaymentStatus(PaymentStatus.FAILED);
         rejected.setRejectionReason("Illegible scan");
         when(registrationRepository.findByUserId(4L)).thenReturn(List.of(rejected));
+        when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(4L, 20L, PaymentStatus.FAILED))
+                .thenReturn(Optional.empty());
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         Model model = new ExtendedModelMap();
@@ -145,6 +151,36 @@ class DashboardControllerTest {
         failedNoReason.setPaymentStatus(PaymentStatus.FAILED);
         failedNoReason.setRejectionReason(null);
         when(registrationRepository.findByUserId(5L)).thenReturn(List.of(failedNoReason));
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        Model model = new ExtendedModelMap();
+
+        controller.dashboard(request, model);
+
+        assertThat(model.getAttribute("rejectedRegistration")).isNull();
+    }
+
+    @Test
+    void authorDoesNotSeeAStaleRejectionBannerAfterRegisteringAgainForTheSameConference() {
+        // Reproduces the H2 fix: a rejected registration whose registrant has since
+        // registered again (successfully or otherwise) for the same conference should not
+        // keep showing the old rejection banner / re-upload link.
+        User author = new User();
+        author.setId(6L);
+        author.setEmail("author4@example.com");
+        author.setRole(Role.AUTHOR);
+        authenticateAs(author);
+        when(userRepository.findByEmail("author4@example.com")).thenReturn(Optional.of(author));
+
+        Conference conference = new Conference();
+        conference.setId(30L);
+        Registration staleRejected = new Registration();
+        staleRejected.setConference(conference);
+        staleRejected.setPaymentStatus(PaymentStatus.FAILED);
+        staleRejected.setRejectionReason("Illegible scan");
+        when(registrationRepository.findByUserId(6L)).thenReturn(List.of(staleRejected));
+        when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(6L, 30L, PaymentStatus.FAILED))
+                .thenReturn(Optional.of(new Registration()));
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         Model model = new ExtendedModelMap();

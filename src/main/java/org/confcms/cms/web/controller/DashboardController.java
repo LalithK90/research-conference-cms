@@ -31,6 +31,12 @@ public class DashboardController {
 
         registrationRepository.findByUserId(user.getId()).stream()
                 .filter(r -> r.getPaymentStatus() == PaymentStatus.FAILED && r.getRejectionReason() != null)
+                // A rejected registration only needs a re-upload prompt if the registrant hasn't
+                // already resolved it some other way (e.g. registered again for the same
+                // conference) -- otherwise this banner would keep pointing at a stale row.
+                .filter(r -> registrationRepository
+                        .findByUserIdAndConferenceIdAndPaymentStatusNot(user.getId(), r.getConference().getId(), PaymentStatus.FAILED)
+                        .isEmpty())
                 .findFirst()
                 .ifPresent(r -> model.addAttribute("rejectedRegistration", r));
 
