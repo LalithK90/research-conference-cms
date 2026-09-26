@@ -10,6 +10,7 @@ import org.confcms.cms.review.service.ReviewAssignmentService;
 import org.confcms.cms.review.service.ReviewService;
 import org.confcms.cms.review.repository.ReviewAssignmentRepository;
 import org.confcms.cms.review.repository.ReviewRepository;
+import org.confcms.cms.service.AccessLogService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.repository.PaperRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class ReviewRestController {
     private final UserRepository userRepository;
     private final PaperRepository paperRepository;
     private final org.confcms.cms.service.FileStorageService fileStorageService;
+    private final AccessLogService accessLogService;
 
     private User actingUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -129,11 +131,12 @@ public class ReviewRestController {
 
     @GetMapping("/assignment/{assignmentId}/paper/file")
     @PreAuthorize("hasRole('REVIEWER')")
-    public ResponseEntity<?> downloadPaperForReview(@PathVariable Long assignmentId) {
+    public ResponseEntity<?> downloadPaperForReview(@PathVariable Long assignmentId, jakarta.servlet.http.HttpServletRequest request) {
         try {
             Paper paper = reviewService.getOwnedAssignment(actingUser(), assignmentId).getPaper();
-            String filePath = reviewService.getLatestVersionFilePath(paper);
-            Resource resource = new UrlResource(fileStorageService.load(filePath).toUri());
+            org.confcms.cms.submission.domain.PaperVersion version = reviewService.getLatestVersion(paper);
+            Resource resource = new UrlResource(fileStorageService.load(version.getFilePath()).toUri());
+            accessLogService.logDownload(actingUser(), version, request);
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"paper.pdf\"")

@@ -97,10 +97,14 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
-    public String getLatestVersionFilePath(Paper paper) {
+    public PaperVersion getLatestVersion(Paper paper) {
         return paper.getVersions().stream()
                 .max(Comparator.comparing(PaperVersion::getVersionNumber))
-                .map(PaperVersion::getFilePath)
                 .orElseThrow(() -> new IllegalArgumentException("Paper has no uploaded version"));
+    }
+
+    @Transactional(readOnly = true)
+    public String getLatestVersionFilePath(Paper paper) {
+        return getLatestVersion(paper).getFilePath();
     }
 }

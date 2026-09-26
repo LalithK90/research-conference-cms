@@ -151,4 +151,19 @@ class ReviewServiceTest {
 
         assertThat(view.authorNames()).containsExactly("Jane Author");
     }
+
+    @Test
+    void getLatestVersionReturnsTheHighestVersionNumber() {
+        Paper paper = new Paper();
+        PaperVersion v1 = new PaperVersion();
+        v1.setVersionNumber(1);
+        PaperVersion v2 = new PaperVersion();
+        v2.setVersionNumber(2);
+        paper.getVersions().add(v1);
+        paper.getVersions().add(v2);
+
+        PaperVersion result = service.getLatestVersion(paper);
+
+        assertThat(result).isEqualTo(v2);
+    }
 }
