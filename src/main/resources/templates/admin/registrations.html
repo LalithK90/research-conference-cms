@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Registrations - Conference CMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/app.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/admin/dashboard">CMS Admin</a>
+            <a class="btn btn-outline-light" href="/logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>Registrations Awaiting Verification</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Registrant</th>
+                    <th>Ticket Type</th>
+                    <th>Amount</th>
+                    <th>Slip</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="reg : ${registrations}">
+                    <td th:text="${reg.user.fullName} + ' (' + ${reg.user.email} + ')'"></td>
+                    <td th:text="${reg.ticketType}"></td>
+                    <td th:text="${reg.amount}"></td>
+                    <td>
+                        <a th:href="@{/admin/registrations/{id}/slip(id=${reg.id})}" target="_blank">View slip</a>
+                    </td>
+                    <td>
+                        <form method="post" th:action="@{/admin/registrations/{id}/approve(id=${reg.id})}" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                        </form>
+                        <form method="post" th:action="@{/admin/registrations/{id}/reject(id=${reg.id})}" class="d-inline">
+                            <input type="text" name="reason" placeholder="Reason (optional)" class="form-control form-control-sm d-inline w-auto">
+                            <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${registrations.isEmpty()}">
+                    <td colspan="5" class="text-muted">No registrations awaiting verification.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>
