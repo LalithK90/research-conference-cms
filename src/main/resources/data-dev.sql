@@ -14,9 +14,9 @@ VALUES ('Research Conference 2025', 'Virtual / Example Venue', '2025-11-01', '20
 -- author@example.com / author
 INSERT INTO users (email, password_hash, full_name, role, enabled, created_at, updated_at)
 VALUES
-('admin@example.com', '$2a$10$QxQmTnWb0k1uL3s4R6zQ5e8l7OqUu3R2m3tv5U6wOeJcT3r2A1y2K', 'Dev Admin', 'ADMIN', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-('reviewer@example.com', '$2a$10$1PjvYwHkS8dV9bQe4r7uKuVfQeKX8f2rAqKQ7m1pWnYvT3b5Zc6rS', 'Dev Reviewer', 'REVIEWER', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-('author@example.com', '$2a$10$wZxYvQpL9mBnC3dE7tFhYu6pQeR8tU1lM2nO5pQzR7sT8uV1wXyZa', 'Dev Author', 'AUTHOR', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+('admin@example.com', '$2a$10$9H.tabBjQwaGqdswmvdtg..Jhf0gnyt9usvMJLjklT5WfBgdFTr9C', 'Dev Admin', 'ADMIN', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+('reviewer@example.com', '$2a$10$CKpk3Myh40.InuJ5.cCTgOKdc6Xt.re8yy556Th/goJWZTYaOkF4C', 'Dev Reviewer', 'REVIEWER', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+('author@example.com', '$2a$10$fSyTcx4oOQvx6aVQJ/E9s.gFVgPVHSsN7LklSX1Rk/.J6ElriHMOu', 'Dev Author', 'AUTHOR', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
 -- Sub-themes for the sample conference
 -- (steering_committee seed data removed: no @Entity maps this table anymore --
