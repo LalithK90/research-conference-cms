@@ -25,7 +25,21 @@
                 <h3 class="mb-0">Create New Conference</h3>
             </div>
             <div class="card-body">
+
+                <!-- Clone from previous conference -->
+                <div class="mb-4" th:if="${not #lists.isEmpty(allConferences)}">
+                    <label class="form-label">Clone from a previous conference (optional)</label>
+                    <select class="form-select" onchange="if (this.value) { window.location.href = '/admin/conference/new?cloneFrom=' + this.value; }">
+                        <option value="">-- Start blank --</option>
+                        <option th:each="c : ${allConferences}" th:value="${c.id}"
+                                th:selected="${conferenceForm.cloneFromConferenceId != null and conferenceForm.cloneFromConferenceId == c.id}"
+                                th:text="${c.title}"></option>
+                    </select>
+                    <small class="text-muted">Copies venue, contact/logo, chair/co-chairs, payment configuration, and sub-themes as a starting point. You'll still choose a new title and dates.</small>
+                </div>
+
                 <form th:action="@{/admin/conference/save}" th:object="${conferenceForm}" method="post">
+                    <input type="hidden" th:field="*{cloneFromConferenceId}">
 
                     <!-- Basic Details -->
                     <h5 class="mb-3">Conference Details</h5>
