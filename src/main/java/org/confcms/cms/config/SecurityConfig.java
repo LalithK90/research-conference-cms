@@ -48,7 +48,7 @@ public class SecurityConfig {
 
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/home", "/about", "/committee", "/speakers", "/schedule", "/venue", "/contact", "/register", "/login", "/magic-link/**", "/auth/**", "/invitations/**").permitAll()
+                .requestMatchers("/", "/home", "/about", "/committee", "/speakers", "/sponsors", "/call-for-papers", "/venue", "/contact", "/register", "/past-conferences/**", "/login", "/magic-link/**", "/auth/**", "/invitations/**").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**").permitAll()
                 .requestMatchers("/admin/conference/**").hasRole("ADMIN")
                 .requestMatchers("/admin/users/**").hasRole("ADMIN")

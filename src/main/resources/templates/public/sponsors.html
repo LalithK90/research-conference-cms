@@ -24,7 +24,7 @@
             </div>
         </div>
 
-        <div th:if="${sponsorsByTier.values().?[!isEmpty(#this)].isEmpty()}" class="alert alert-info text-center">
+        <div th:if="${hasNoSponsors}" class="alert alert-info text-center">
             Sponsors for this conference will be announced soon.
         </div>
     </div>

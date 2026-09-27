@@ -48,7 +48,7 @@ public class DevSecurityConfig {
 
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/home", "/about", "/committee", "/speakers", "/schedule", "/venue", "/contact", "/register", "/login", "/css/**", "/js/**", "/images/**", "/uploads/**", "/auth/**", "/invitations/**").permitAll()
+                .requestMatchers("/", "/home", "/about", "/committee", "/speakers", "/sponsors", "/call-for-papers", "/venue", "/contact", "/register", "/past-conferences/**", "/login", "/css/**", "/js/**", "/images/**", "/uploads/**", "/auth/**", "/invitations/**").permitAll()
                 .requestMatchers("/admin/conference/**").hasRole("ADMIN")
                 .requestMatchers("/admin/users/**").hasRole("ADMIN")
                 .requestMatchers("/review/**").hasRole("REVIEWER")

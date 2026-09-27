@@ -83,6 +83,7 @@ public class PublicWebController {
             byTier.put(tier, sponsors.stream().filter(s -> s.getTier() == tier).toList());
         }
         model.addAttribute("sponsorsByTier", byTier);
+        model.addAttribute("hasNoSponsors", sponsors.isEmpty());
         return "public/sponsors";
     }
 

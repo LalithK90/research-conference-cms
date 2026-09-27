@@ -16,7 +16,7 @@
             </div>
         </div>
 
-        <div class="row justify-content-center mb-4" th:if="${conference != null and conference.venueMapEmbedUrl != null}">
+        <div class="row justify-content-center mb-4" th:if="${conference != null and conference.venueMapEmbedUrl != null and conference.venueMapEmbedUrl.startsWith('https://')}">
             <div class="col-md-8">
                 <div class="ratio ratio-16x9">
                     <iframe th:src="${conference.venueMapEmbedUrl}" allowfullscreen loading="lazy"></iframe>
