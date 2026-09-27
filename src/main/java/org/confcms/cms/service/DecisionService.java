@@ -159,6 +159,10 @@ public class DecisionService {
         Paper paper = paperRepository.findById(paperId).orElseThrow(() -> new IllegalArgumentException("Paper not found"));
         requireChairOrAdmin(actingUser, paper);
 
+        if (paper.getStatus() == PaperStatus.CAMERA_READY_SUBMITTED) {
+            throw new IllegalStateException("This paper has already reached the camera-ready stage and cannot be re-decided");
+        }
+
         if ("ACCEPT".equalsIgnoreCase(decision)) {
             paper.setStatus(PaperStatus.ACCEPTED);
             paperRepository.save(paper);

@@ -43,6 +43,8 @@ public class AdminDecisionController {
             return ResponseEntity.ok(p);
         } catch (SecurityException se) {
             return ResponseEntity.status(403).body(se.getMessage());
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.status(409).body(ise.getMessage());
         }
     }
 
@@ -53,6 +55,8 @@ public class AdminDecisionController {
             return ResponseEntity.ok(updated);
         } catch (SecurityException se) {
             return ResponseEntity.status(403).body(se.getMessage());
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.status(409).body(ise.getMessage());
         }
     }
 

@@ -9,6 +9,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,6 +37,20 @@ public class AuthorDashboardController {
         model.addAttribute("papers", submissionService.getPapersBySubmitter(user));
         model.addAttribute("registrationsByConference", registrationsByConference);
         return "author/submissions";
+    }
+
+    @PostMapping("/author/submissions/{id}/camera-ready")
+    public String uploadCameraReady(@PathVariable Long id,
+                                     @RequestParam("file") MultipartFile file,
+                                     @RequestParam boolean copyrightAgreed,
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            submissionService.uploadCameraReady(actingUser(), id, file, copyrightAgreed);
+            redirectAttributes.addFlashAttribute("message", "Camera-ready version submitted.");
+        } catch (SecurityException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/author/submissions";
     }
 
     private User actingUser() {

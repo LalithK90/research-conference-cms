@@ -13,10 +13,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +28,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -93,5 +99,34 @@ class AuthorDashboardControllerTest {
         assertThat(view).isEqualTo("author/submissions");
         assertThat(model.getAttribute("papers")).isEqualTo(Collections.emptyList());
         assertThat((Map<?, ?>) model.getAttribute("registrationsByConference")).isEmpty();
+    }
+
+    @Test
+    void uploadCameraReadyRedirectsWithSuccessMessage() {
+        MultipartFile file = new MockMultipartFile("file", "camera-ready.pdf", "application/pdf", new byte[]{1, 2, 3});
+        RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
+
+        String view = controller.uploadCameraReady(10L, file, true, redirectAttributes);
+
+        assertThat(view).isEqualTo("redirect:/author/submissions");
+        verify(submissionService).uploadCameraReady(eq(user), eq(10L), eq(file), eq(true));
+        assertThat(redirectAttributes.getFlashAttributes().get("message")).isEqualTo("Camera-ready version submitted.");
+        assertThat(redirectAttributes.getFlashAttributes()).doesNotContainKey("error");
+    }
+
+    @Test
+    void uploadCameraReadyRedirectsWithErrorMessageOnFailure() {
+        MultipartFile file = new MockMultipartFile("file", "camera-ready.pdf", "application/pdf", new byte[]{1, 2, 3});
+        RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
+
+        when(submissionService.uploadCameraReady(user, 10L, file, true))
+                .thenThrow(new IllegalStateException("This paper is not currently awaiting a camera-ready submission"));
+
+        String view = controller.uploadCameraReady(10L, file, true, redirectAttributes);
+
+        assertThat(view).isEqualTo("redirect:/author/submissions");
+        assertThat(redirectAttributes.getFlashAttributes().get("error"))
+                .isEqualTo("This paper is not currently awaiting a camera-ready submission");
+        assertThat(redirectAttributes.getFlashAttributes()).doesNotContainKey("message");
     }
 }

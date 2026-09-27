@@ -228,6 +228,23 @@ class DecisionServiceTest {
     }
 
     @Test
+    void applyDecisionRejectsPaperAlreadyCameraReadySubmitted() {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+        paper.setStatus(PaperStatus.CAMERA_READY_SUBMITTED);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        assertThatThrownBy(() -> service.applyDecision(admin, 5L, "ACCEPT"))
+                .isInstanceOf(IllegalStateException.class);
+
+        assertThat(paper.getStatus()).isEqualTo(PaperStatus.CAMERA_READY_SUBMITTED);
+        verify(paperRepository, never()).save(any());
+        verify(emailService, never()).sendTemplateEmail(any(), any(), any(), anyMap());
+    }
+
+    @Test
     void requestRevisionRejectsNonChairNonAdmin() {
         when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
         when(committeeService.isChairOrCoChair(strangerUser, conference)).thenReturn(false);

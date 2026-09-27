@@ -14,6 +14,7 @@ import java.io.File;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,8 +67,9 @@ class ProceedingsServiceTest {
         paper.setTitle("A Paper");
         paper.setStatus(PaperStatus.CAMERA_READY_SUBMITTED);
 
+        // The camera-ready-flagged version has 1 page.
         File cameraReadyPdf = File.createTempFile("camera-ready", ".pdf");
-        writeMinimalPdf(cameraReadyPdf);
+        writeMinimalPdf(cameraReadyPdf, 1);
         cameraReadyPdf.deleteOnExit();
 
         PaperVersion cameraReadyVersion = new PaperVersion();
@@ -76,9 +78,11 @@ class ProceedingsServiceTest {
         cameraReadyVersion.setCameraReady(true);
         paper.getVersions().add(cameraReadyVersion);
 
-        // A later, non-camera-ready version should NOT be selected even though it's later in the list.
+        // A later, non-camera-ready version has a different page count (3) so that if the
+        // implementation regresses to "take the last version", the merged output's page count
+        // would differ and this test would fail instead of silently passing either way.
         File laterNonCameraReadyPdf = File.createTempFile("later-non-camera-ready", ".pdf");
-        writeMinimalPdf(laterNonCameraReadyPdf);
+        writeMinimalPdf(laterNonCameraReadyPdf, 3);
         laterNonCameraReadyPdf.deleteOnExit();
         PaperVersion laterVersion = new PaperVersion();
         laterVersion.setVersionNumber(3);
@@ -95,18 +99,21 @@ class ProceedingsServiceTest {
         File outputFile = File.createTempFile("proceedings-selection-test", ".pdf");
         outputFile.deleteOnExit();
 
-        // Should not throw -- PDFMergerUtility will only be asked to merge the cover, TOC, and the
-        // camera-ready-flagged PDF. This test's main assertion is implicit: it must not attempt to
-        // merge laterNonCameraReadyPdf. A stronger assertion would inspect merger internals, which
-        // PDFMergerUtility does not expose; the absence of an exception plus the explicit filter in
-        // the implementation (verified by code review in this task's review step) is the coverage
-        // available without a heavier PDF-parsing assertion.
         service.generateProceedings(conference, outputFile.getAbsolutePath());
+
+        // Cover page (1) + TOC page (1) + camera-ready version's page count (1) = 3.
+        // If the implementation regressed to "last version", the later 3-page version would be
+        // merged instead, giving 5 pages -- a concrete, falsifiable difference.
+        try (var merged = org.apache.pdfbox.Loader.loadPDF(outputFile)) {
+            assertThat(merged.getNumberOfPages()).isEqualTo(3);
+        }
     }
 
-    private void writeMinimalPdf(File file) throws Exception {
+    private void writeMinimalPdf(File file, int pageCount) throws Exception {
         try (var doc = new org.apache.pdfbox.pdmodel.PDDocument()) {
-            doc.addPage(new org.apache.pdfbox.pdmodel.PDPage());
+            for (int i = 0; i < pageCount; i++) {
+                doc.addPage(new org.apache.pdfbox.pdmodel.PDPage());
+            }
             doc.save(file);
         }
     }
