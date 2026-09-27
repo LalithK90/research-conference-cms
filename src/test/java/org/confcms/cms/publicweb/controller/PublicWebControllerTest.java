@@ -93,4 +93,18 @@ class PublicWebControllerTest {
         assertThat(byTier.get(org.confcms.cms.domain.SponsorTier.GOLD)).containsExactly(gold);
         assertThat(byTier.get(org.confcms.cms.domain.SponsorTier.SILVER)).isEmpty();
     }
+
+    @Test
+    void callForPapersReturnsCallForPapersView() {
+        Model model = new ExtendedModelMap();
+        String view = controller().callForPapers(model);
+        assertThat(view).isEqualTo("public/call_for_papers");
+    }
+
+    @Test
+    void venueReturnsVenueView() {
+        Model model = new ExtendedModelMap();
+        String view = controller().venue(model);
+        assertThat(view).isEqualTo("public/venue");
+    }
 }

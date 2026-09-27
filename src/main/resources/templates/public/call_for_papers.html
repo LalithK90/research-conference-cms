@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:replace="~{fragments/public_layout :: head('Call for Papers')}"></head>
+
+<body>
+    <nav th:replace="~{fragments/public_layout :: nav}"></nav>
+
+    <div class="container my-5">
+        <h1 class="text-center mb-4">Call for Papers</h1>
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-8 text-center">
+                <a sec:authorize="isAuthenticated()" href="/author/submissions" class="btn btn-brand-primary btn-lg">Go to My Submissions</a>
+                <a sec:authorize="!isAuthenticated()" href="/login" class="btn btn-brand-primary btn-lg">Login to Submit a Paper</a>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div th:if="${conference == null or conference.callForPapersHtml == null}" class="alert alert-info">
+                    Call for papers details for this conference have not been published yet.
+                </div>
+                <div th:if="${conference != null and conference.callForPapersHtml != null}" th:utext="${conference.callForPapersHtml}"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="~{fragments/public_layout :: footer}"></footer>
+    <script th:replace="~{fragments/public_layout :: scripts}"></script>
+</body>
+
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/public_layout :: head('Venue & Travel')}"></head>
+
+<body>
+    <nav th:replace="~{fragments/public_layout :: nav}"></nav>
+
+    <div class="container my-5">
+        <h1 class="text-center mb-5">Venue &amp; Travel</h1>
+
+        <div class="row justify-content-center mb-4" th:if="${conference != null and conference.venueAddress != null}">
+            <div class="col-md-8">
+                <h4>Venue Address</h4>
+                <p th:text="${conference.venueAddress}">Address</p>
+            </div>
+        </div>
+
+        <div class="row justify-content-center mb-4" th:if="${conference != null and conference.venueMapEmbedUrl != null}">
+            <div class="col-md-8">
+                <div class="ratio ratio-16x9">
+                    <iframe th:src="${conference.venueMapEmbedUrl}" allowfullscreen loading="lazy"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div th:if="${conference == null or conference.travelInfoHtml == null}" class="alert alert-info">
+                    Venue, accommodation, and transportation details for this conference have not been published yet.
+                </div>
+                <div th:if="${conference != null and conference.travelInfoHtml != null}" th:utext="${conference.travelInfoHtml}"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="~{fragments/public_layout :: footer}"></footer>
+    <script th:replace="~{fragments/public_layout :: scripts}"></script>
+</body>
+
+</html>

@@ -86,14 +86,14 @@ public class PublicWebController {
         return "public/sponsors";
     }
 
-    @GetMapping("/schedule")
-    public String schedule(Model model) {
-        return "public/schedule";
-    }
-
     @GetMapping("/venue")
     public String venue(Model model) {
         return "public/venue";
+    }
+
+    @GetMapping("/call-for-papers")
+    public String callForPapers(Model model) {
+        return "public/call_for_papers";
     }
 
     @GetMapping("/contact")
