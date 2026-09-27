@@ -34,7 +34,7 @@
         <h3>Versions</h3>
         <table>
             <thead>
-                <tr><th>Version</th><th>Filename</th><th>File Path</th><th>Plagiarism/Similarity</th></tr>
+                <tr><th>Version</th><th>Filename</th><th>File Path</th><th>Plagiarism/Similarity</th><th>Camera-Ready</th></tr>
             </thead>
             <tbody>
                 <tr th:each="v : ${paper.versions}">
@@ -53,6 +53,12 @@
                                    th:value="${v.plagiarismNote}" />
                             <button type="submit">Save</button>
                         </form>
+                    </td>
+                    <td>
+                        <span th:if="${v.cameraReady}">
+                            Yes (<span th:text="${v.copyrightTransferAgreedAt}"></span>)
+                        </span>
+                        <span th:unless="${v.cameraReady}">-</span>
                     </td>
                 </tr>
             </tbody>
