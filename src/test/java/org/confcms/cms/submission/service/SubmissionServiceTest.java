@@ -400,4 +400,96 @@ class SubmissionServiceTest {
         assertThat(savedA.getVersions().get(0).getContentHash())
                 .isEqualTo(savedB.getVersions().get(0).getContentHash());
     }
+
+    @Test
+    void uploadCameraReadySetsStatusAndFlagsVersionWhenPaperIsAccepted() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        Paper paper = new Paper();
+        paper.setId(1L);
+        paper.setTitle("Accepted Paper");
+        paper.setStatus(PaperStatus.ACCEPTED);
+        User submitter = new User();
+        submitter.setId(5L);
+        submitter.setEmail("author@example.com");
+        submitter.setFullName("Author Name");
+        paper.setSubmitter(submitter);
+
+        when(paperRepository.findById(1L)).thenReturn(Optional.of(paper));
+        MockMultipartFile file = new MockMultipartFile("file", "camera-ready.pdf", "application/pdf",
+                "%PDF-1.4 fake content".getBytes());
+        when(fileStorageService.store(file)).thenReturn("/uploads/camera-ready.pdf");
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Paper result = service.uploadCameraReady(submitter, 1L, file, true);
+
+        assertThat(result.getStatus()).isEqualTo(PaperStatus.CAMERA_READY_SUBMITTED);
+        assertThat(result.getVersions()).hasSize(1);
+        PaperVersion version = result.getVersions().get(0);
+        assertThat(version.isCameraReady()).isTrue();
+        assertThat(version.getCopyrightTransferAgreedAt()).isNotNull();
+    }
+
+    @Test
+    void uploadCameraReadyRejectsWhenPaperNotAccepted() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        Paper paper = new Paper();
+        paper.setId(2L);
+        paper.setStatus(PaperStatus.UNDER_REVIEW);
+        User submitter = new User();
+        submitter.setId(5L);
+        paper.setSubmitter(submitter);
+
+        when(paperRepository.findById(2L)).thenReturn(Optional.of(paper));
+        MockMultipartFile file = new MockMultipartFile("file", "camera-ready.pdf", "application/pdf",
+                "%PDF-1.4 fake content".getBytes());
+
+        assertThatThrownBy(() -> service.uploadCameraReady(submitter, 2L, file, true))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("not currently awaiting a camera-ready submission");
+    }
+
+    @Test
+    void uploadCameraReadyRejectsWhenCopyrightNotAgreed() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        Paper paper = new Paper();
+        paper.setId(3L);
+        paper.setStatus(PaperStatus.ACCEPTED);
+        User submitter = new User();
+        submitter.setId(5L);
+        paper.setSubmitter(submitter);
+
+        when(paperRepository.findById(3L)).thenReturn(Optional.of(paper));
+        MockMultipartFile file = new MockMultipartFile("file", "camera-ready.pdf", "application/pdf",
+                "%PDF-1.4 fake content".getBytes());
+
+        assertThatThrownBy(() -> service.uploadCameraReady(submitter, 3L, file, false))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Copyright transfer must be agreed to");
+    }
+
+    @Test
+    void uploadCameraReadyRejectsNonOwnerNonAdmin() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        Paper paper = new Paper();
+        paper.setId(4L);
+        paper.setStatus(PaperStatus.ACCEPTED);
+        User submitter = new User();
+        submitter.setId(5L);
+        paper.setSubmitter(submitter);
+
+        User stranger = new User();
+        stranger.setId(99L);
+        stranger.setRole(org.confcms.cms.core.security.Role.AUTHOR);
+
+        when(paperRepository.findById(4L)).thenReturn(Optional.of(paper));
+        MockMultipartFile file = new MockMultipartFile("file", "camera-ready.pdf", "application/pdf",
+                "%PDF-1.4 fake content".getBytes());
+
+        assertThatThrownBy(() -> service.uploadCameraReady(stranger, 4L, file, true))
+                .isInstanceOf(SecurityException.class);
+    }
 }

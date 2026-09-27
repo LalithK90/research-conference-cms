@@ -257,6 +257,52 @@ public class SubmissionService {
         return paperRepository.save(paper);
     }
 
+    @Transactional
+    public Paper uploadCameraReady(User requester, Long paperId, MultipartFile file, boolean copyrightAgreed) {
+        Paper paper = paperRepository.findById(paperId)
+                .orElseThrow(() -> new IllegalArgumentException("Paper not found"));
+
+        boolean isOwner = paper.getSubmitter().getId().equals(requester.getId());
+        boolean isAdmin = requester.getRole() == org.confcms.cms.core.security.Role.ADMIN;
+        if (!isOwner && !isAdmin) {
+            throw new SecurityException("Not authorized to upload a camera-ready version for this paper");
+        }
+
+        if (paper.getStatus() != PaperStatus.ACCEPTED) {
+            throw new IllegalStateException("This paper is not currently awaiting a camera-ready submission");
+        }
+
+        if (!copyrightAgreed) {
+            throw new IllegalStateException("Copyright transfer must be agreed to before submitting the camera-ready version");
+        }
+
+        validatePdf(file);
+        String contentHash = computeContentHash(file);
+        String filePath = fileStorageService.store(file);
+
+        int newVersionNumber = paper.getVersions().size() + 1;
+        PaperVersion version = new PaperVersion();
+        version.setPaper(paper);
+        version.setVersionNumber(newVersionNumber);
+        version.setFilePath(filePath);
+        version.setOriginalFilename(file.getOriginalFilename());
+        version.setCameraReady(true);
+        version.setCopyrightTransferAgreedAt(java.time.Instant.now());
+        applyDuplicateCheck(version, contentHash);
+        paper.getVersions().add(version);
+
+        paper.setStatus(PaperStatus.CAMERA_READY_SUBMITTED);
+        Paper saved = paperRepository.save(paper);
+
+        try {
+            emailService.sendSimpleEmail(paper.getSubmitter().getEmail(), "Camera-ready version received",
+                    "Your camera-ready version (v" + newVersionNumber + ") was received for your paper: " + paper.getTitle());
+        } catch (Exception ignored) {
+        }
+
+        return saved;
+    }
+
     }
 
 
