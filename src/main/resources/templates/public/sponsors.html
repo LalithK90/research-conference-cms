@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/public_layout :: head('Sponsors')}"></head>
+
+<body>
+    <nav th:replace="~{fragments/public_layout :: nav}"></nav>
+
+    <div class="container my-5">
+        <h1 class="text-center mb-5">Sponsors</h1>
+
+        <div th:each="entry : ${sponsorsByTier}" class="mb-5">
+            <div th:if="${not #lists.isEmpty(entry.value)}">
+                <h3 class="sponsor-tier-heading mb-4" th:text="${entry.key}">TIER</h3>
+                <div class="row align-items-center">
+                    <div class="col-md-3 col-6 mb-4 text-center" th:each="sponsor : ${entry.value}">
+                        <a th:if="${sponsor.websiteUrl}" th:href="${sponsor.websiteUrl}" target="_blank" rel="noopener">
+                            <img th:src="${sponsor.logoUrl}" th:alt="${sponsor.name}" class="img-fluid" style="max-height: 100px;">
+                        </a>
+                        <img th:unless="${sponsor.websiteUrl}" th:src="${sponsor.logoUrl}" th:alt="${sponsor.name}"
+                             class="img-fluid" style="max-height: 100px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${sponsorsByTier.values().?[!isEmpty(#this)].isEmpty()}" class="alert alert-info text-center">
+            Sponsors for this conference will be announced soon.
+        </div>
+    </div>
+
+    <footer th:replace="~{fragments/public_layout :: footer}"></footer>
+    <script th:replace="~{fragments/public_layout :: scripts}"></script>
+</body>
+
+</html>

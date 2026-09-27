@@ -24,9 +24,14 @@ class PublicWebControllerTest {
     private ClientRegistrationRepository clientRegistrationRepository;
     @Mock
     private ConferenceRepository conferenceRepository;
+    @Mock
+    private org.confcms.cms.repository.SpeakerRepository speakerRepository;
+    @Mock
+    private org.confcms.cms.repository.SponsorRepository sponsorRepository;
 
     private PublicWebController controller() {
-        return new PublicWebController(conferenceService, committeeService, clientRegistrationRepository, conferenceRepository);
+        return new PublicWebController(conferenceService, committeeService, clientRegistrationRepository,
+                conferenceRepository, speakerRepository, sponsorRepository);
     }
 
     @Test
@@ -41,5 +46,51 @@ class PublicWebControllerTest {
         Model model = new ExtendedModelMap();
         String view = controller().contact(model);
         assertThat(view).isEqualTo("public/contact");
+    }
+
+    @Test
+    void speakersSplitsIntoPlenaryAndKeynoteLists() {
+        org.confcms.cms.domain.Conference conference = new org.confcms.cms.domain.Conference();
+        conference.setId(1L);
+        org.mockito.Mockito.when(conferenceService.getActiveConference()).thenReturn(conference);
+
+        org.confcms.cms.domain.Speaker plenary = new org.confcms.cms.domain.Speaker();
+        plenary.setType(org.confcms.cms.domain.SpeakerType.PLENARY);
+        org.confcms.cms.domain.Speaker keynote = new org.confcms.cms.domain.Speaker();
+        keynote.setType(org.confcms.cms.domain.SpeakerType.KEYNOTE);
+        org.mockito.Mockito.when(speakerRepository.findByConferenceIdOrderByDisplayOrderAsc(1L))
+                .thenReturn(java.util.List.of(plenary, keynote));
+
+        Model model = new ExtendedModelMap();
+        String view = controller().speakers(model);
+
+        assertThat(view).isEqualTo("public/speakers");
+        assertThat((java.util.List<Object>) model.getAttribute("plenarySpeakers")).containsExactly(plenary);
+        assertThat((java.util.List<Object>) model.getAttribute("keynoteSpeakers")).containsExactly(keynote);
+    }
+
+    @Test
+    void sponsorsGroupsByTierInDeclarationOrder() {
+        org.confcms.cms.domain.Conference conference = new org.confcms.cms.domain.Conference();
+        conference.setId(1L);
+        org.mockito.Mockito.when(conferenceService.getActiveConference()).thenReturn(conference);
+
+        org.confcms.cms.domain.Sponsor gold = new org.confcms.cms.domain.Sponsor();
+        gold.setTier(org.confcms.cms.domain.SponsorTier.GOLD);
+        org.confcms.cms.domain.Sponsor platinum = new org.confcms.cms.domain.Sponsor();
+        platinum.setTier(org.confcms.cms.domain.SponsorTier.PLATINUM);
+        org.mockito.Mockito.when(sponsorRepository.findByConferenceIdOrderByDisplayOrderAsc(1L))
+                .thenReturn(java.util.List.of(gold, platinum));
+
+        Model model = new ExtendedModelMap();
+        String view = controller().sponsors(model);
+
+        assertThat(view).isEqualTo("public/sponsors");
+        @SuppressWarnings("unchecked")
+        java.util.Map<org.confcms.cms.domain.SponsorTier, java.util.List<org.confcms.cms.domain.Sponsor>> byTier =
+                (java.util.Map<org.confcms.cms.domain.SponsorTier, java.util.List<org.confcms.cms.domain.Sponsor>>) model.getAttribute("sponsorsByTier");
+        assertThat(byTier.get(org.confcms.cms.domain.SponsorTier.PLATINUM)).containsExactly(platinum);
+        assertThat(byTier.get(org.confcms.cms.domain.SponsorTier.GOLD)).containsExactly(gold);
+        assertThat(byTier.get(org.confcms.cms.domain.SponsorTier.SILVER)).isEmpty();
     }
 }

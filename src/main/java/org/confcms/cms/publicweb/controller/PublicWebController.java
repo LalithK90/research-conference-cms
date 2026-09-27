@@ -1,7 +1,13 @@
 package org.confcms.cms.publicweb.controller;
 
 import org.confcms.cms.domain.Conference;
+import org.confcms.cms.domain.Speaker;
+import org.confcms.cms.domain.SpeakerType;
+import org.confcms.cms.domain.Sponsor;
+import org.confcms.cms.domain.SponsorTier;
 import org.confcms.cms.repository.ConferenceRepository;
+import org.confcms.cms.repository.SpeakerRepository;
+import org.confcms.cms.repository.SponsorRepository;
 import org.confcms.cms.service.CommitteeService;
 import org.confcms.cms.service.ConferenceService;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +17,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
 @Controller("publicWebController")
 @RequiredArgsConstructor
 public class PublicWebController {
@@ -19,6 +29,8 @@ public class PublicWebController {
     private final CommitteeService committeeService;
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final ConferenceRepository conferenceRepository;
+    private final SpeakerRepository speakerRepository;
+    private final SponsorRepository sponsorRepository;
 
     @ModelAttribute("conference")
     public Conference addConferenceToModel() {
@@ -53,7 +65,25 @@ public class PublicWebController {
 
     @GetMapping("/speakers")
     public String speakers(Model model) {
+        Conference activeConference = conferenceService.getActiveConference();
+        List<Speaker> speakers = speakerRepository.findByConferenceIdOrderByDisplayOrderAsc(activeConference.getId());
+        model.addAttribute("plenarySpeakers", speakers.stream()
+                .filter(s -> s.getType() == SpeakerType.PLENARY).toList());
+        model.addAttribute("keynoteSpeakers", speakers.stream()
+                .filter(s -> s.getType() == SpeakerType.KEYNOTE).toList());
         return "public/speakers";
+    }
+
+    @GetMapping("/sponsors")
+    public String sponsors(Model model) {
+        Conference activeConference = conferenceService.getActiveConference();
+        List<Sponsor> sponsors = sponsorRepository.findByConferenceIdOrderByDisplayOrderAsc(activeConference.getId());
+        Map<SponsorTier, List<Sponsor>> byTier = new EnumMap<>(SponsorTier.class);
+        for (SponsorTier tier : SponsorTier.values()) {
+            byTier.put(tier, sponsors.stream().filter(s -> s.getTier() == tier).toList());
+        }
+        model.addAttribute("sponsorsByTier", byTier);
+        return "public/sponsors";
     }
 
     @GetMapping("/schedule")

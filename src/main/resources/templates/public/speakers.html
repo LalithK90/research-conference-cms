@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/public_layout :: head('Speakers')}"></head>
+
+<body>
+    <nav th:replace="~{fragments/public_layout :: nav}"></nav>
+
+    <div class="container my-5">
+        <h1 class="text-center mb-5">Speakers</h1>
+
+        <h2 class="mb-4">Plenary Speakers</h2>
+        <div th:if="${#lists.isEmpty(plenarySpeakers)}" class="alert alert-info">
+            Plenary speakers will be announced soon.
+        </div>
+        <div class="row mb-5">
+            <div class="col-md-4 mb-4" th:each="speaker : ${plenarySpeakers}">
+                <div class="card h-100 text-center">
+                    <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" alt="Photo" class="rounded-circle mx-auto mt-3"
+                         style="width: 120px; height: 120px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${speaker.fullName}">Name</h5>
+                        <p class="text-muted" th:if="${speaker.title}" th:text="${speaker.title}">Title</p>
+                        <p th:if="${speaker.bio}" th:text="${speaker.bio}">Bio</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="mb-4">Keynote Speakers</h2>
+        <div th:if="${#lists.isEmpty(keynoteSpeakers)}" class="alert alert-info">
+            Keynote speakers will be announced soon.
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4" th:each="speaker : ${keynoteSpeakers}">
+                <div class="card h-100 text-center">
+                    <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" alt="Photo" class="rounded-circle mx-auto mt-3"
+                         style="width: 120px; height: 120px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${speaker.fullName}">Name</h5>
+                        <p class="text-muted" th:if="${speaker.title}" th:text="${speaker.title}">Title</p>
+                        <p th:if="${speaker.bio}" th:text="${speaker.bio}">Bio</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="~{fragments/public_layout :: footer}"></footer>
+    <script th:replace="~{fragments/public_layout :: scripts}"></script>
+</body>
+
+</html>
