@@ -3,6 +3,7 @@ package org.confcms.cms.service;
 import org.confcms.cms.domain.Conference;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;
+import org.confcms.cms.submission.domain.PaperVersion;
 import org.confcms.cms.submission.repository.PaperRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,8 +17,10 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -27,7 +30,7 @@ public class ProceedingsService {
     private final PaperRepository paperRepository;
 
     public void generateProceedings(Conference conference, String outputPath) throws IOException {
-        List<Paper> acceptedPapers = paperRepository.findByStatus(PaperStatus.ACCEPTED);
+        List<Paper> acceptedPapers = new ArrayList<>(paperRepository.findByStatus(PaperStatus.CAMERA_READY_SUBMITTED));
         acceptedPapers.sort(Comparator.comparing(Paper::getTitle));
 
         PDFMergerUtility merger = new PDFMergerUtility();
@@ -41,11 +44,15 @@ public class ProceedingsService {
         File tocFile = generateTableOfContents(acceptedPapers);
         merger.addSource(tocFile);
 
-        // 3. Add Papers
+        // 3. Add Papers (specifically the camera-ready-flagged version, not "last uploaded" --
+        // a paper can have later non-camera-ready versions e.g. from before it reached this stage
+        // in a different run, so "last in the list" is not a safe substitute for the explicit flag)
         for (Paper paper : acceptedPapers) {
-            if (!paper.getVersions().isEmpty()) {
-                var latest = paper.getVersions().get(paper.getVersions().size() - 1);
-                File pdfFile = new File(latest.getFilePath());
+            Optional<PaperVersion> cameraReadyVersion = paper.getVersions().stream()
+                    .filter(PaperVersion::isCameraReady)
+                    .findFirst();
+            if (cameraReadyVersion.isPresent()) {
+                File pdfFile = new File(cameraReadyVersion.get().getFilePath());
                 if (pdfFile.exists()) {
                     merger.addSource(pdfFile);
                 }
@@ -88,7 +95,7 @@ public class ProceedingsService {
     }
 
     public void exportBibTeX(Conference conference, String outputPath) throws IOException {
-        List<Paper> acceptedPapers = paperRepository.findByStatus(PaperStatus.ACCEPTED);
+        List<Paper> acceptedPapers = paperRepository.findByStatus(PaperStatus.CAMERA_READY_SUBMITTED);
 
         try (FileWriter writer = new FileWriter(outputPath)) {
             for (Paper paper : acceptedPapers) {
