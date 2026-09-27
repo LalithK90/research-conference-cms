@@ -1,0 +1,73 @@
+/* AI-MERT-derived brand theme -- colors and heading font taken directly from
+   ai-mert.ait.ac.th's own inline CSS (fetched and inspected, not guessed). */
+:root {
+    --brand-primary: #06690f;
+    --brand-primary-dark: #05540c;
+    --brand-accent: #e91e63;
+    --brand-text: #64686d;
+    --brand-footer-bg: #1f2024;
+    --brand-heading-font: 'Montserrat', sans-serif;
+}
+
+body {
+    color: var(--brand-text);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--brand-heading-font);
+    font-weight: 600;
+}
+
+.navbar-brand {
+    font-family: var(--brand-heading-font);
+    font-weight: bold;
+    font-size: 1.4rem;
+}
+
+.public-navbar {
+    background-color: #ffffff !important;
+    border-bottom: 3px solid var(--brand-primary);
+}
+
+.public-navbar .nav-link {
+    color: var(--brand-text) !important;
+}
+
+.public-navbar .nav-link:hover,
+.public-navbar .nav-link.active {
+    color: var(--brand-primary) !important;
+}
+
+.btn-brand-primary {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary-dark);
+    color: #ffffff;
+}
+
+.btn-brand-primary:hover {
+    background-color: var(--brand-primary-dark);
+    border-color: var(--brand-primary-dark);
+    color: #ffffff;
+}
+
+.public-hero {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-dark) 100%);
+    color: #ffffff;
+    padding: 100px 0;
+}
+
+.public-footer {
+    background-color: var(--brand-footer-bg);
+    color: #ffffff;
+}
+
+.public-footer a {
+    color: #ffffff;
+}
+
+.sponsor-tier-heading {
+    color: var(--brand-accent);
+    text-transform: uppercase;
+    font-size: 1rem;
+    letter-spacing: 1px;
+}
