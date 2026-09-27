@@ -1,6 +1,7 @@
 package org.confcms.cms.publicweb.controller;
 
 import org.confcms.cms.domain.Conference;
+import org.confcms.cms.repository.ConferenceRepository;
 import org.confcms.cms.service.CommitteeService;
 import org.confcms.cms.service.ConferenceService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ public class PublicWebController {
     private final ConferenceService conferenceService;
     private final CommitteeService committeeService;
     private final ClientRegistrationRepository clientRegistrationRepository;
+    private final ConferenceRepository conferenceRepository;
 
     @ModelAttribute("conference")
     public Conference addConferenceToModel() {

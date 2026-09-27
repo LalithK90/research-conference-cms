@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/public_layout :: head('Contact')}"></head>
+
+<body>
+    <nav th:replace="~{fragments/public_layout :: nav}"></nav>
+
+    <div class="container my-5">
+        <h1 class="text-center mb-5">Contact Us</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-6 text-center">
+                <div th:if="${conference != null and conference.contactEmail != null}">
+                    <p>For questions about this conference, please contact:</p>
+                    <p>
+                        <a th:href="'mailto:' + ${conference.contactEmail}" th:text="${conference.contactEmail}"
+                           class="btn btn-brand-primary">Email Us</a>
+                    </p>
+                </div>
+                <div th:if="${conference == null or conference.contactEmail == null}" class="alert alert-info">
+                    Contact information for this conference has not been published yet.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="~{fragments/public_layout :: footer}"></footer>
+    <script th:replace="~{fragments/public_layout :: scripts}"></script>
+</body>
+
+</html>
