@@ -28,8 +28,8 @@ VALUES (1, 'Machine Learning', 'Applications of ML in agriculture.', CURRENT_TIM
 INSERT INTO papers (conference_id, title, abstract_text, submitter_id, status, track, created_at, updated_at)
 VALUES (1, 'Sample Paper on ML', 'This paper explores sample ML methods.', 3, 'ACCEPTED', 'Machine Learning', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
-INSERT INTO paper_versions (paper_id, version_number, file_path, original_filename, possible_duplicate, created_at, updated_at)
-VALUES (1, 1, '/uploads/sample-paper.pdf', 'sample-paper.pdf', FALSE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+INSERT INTO paper_versions (paper_id, version_number, file_path, original_filename, possible_duplicate, camera_ready, created_at, updated_at)
+VALUES (1, 1, '/uploads/sample-paper.pdf', 'sample-paper.pdf', FALSE, FALSE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
 INSERT INTO paper_authors (paper_id, full_name, email, affiliation, is_presenter, created_at, updated_at)
 VALUES (1, 'Dev Author', 'author@example.com', 'Example University', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
@@ -82,16 +82,16 @@ SELECT 1, 'AI for Crop Yield Prediction', 'Predictive models for yield.', u.id, 
 FROM users u WHERE u.email='author@example.com';
 
 -- Versions for the new papers
-INSERT INTO paper_versions (paper_id, version_number, file_path, original_filename, possible_duplicate, created_at, updated_at)
-SELECT p.id, 1, '/uploads/drones-v1.pdf', 'drones-v1.pdf', FALSE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
+INSERT INTO paper_versions (paper_id, version_number, file_path, original_filename, possible_duplicate, camera_ready, created_at, updated_at)
+SELECT p.id, 1, '/uploads/drones-v1.pdf', 'drones-v1.pdf', FALSE, FALSE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
 FROM papers p WHERE p.title='Precision Agriculture with Drones';
 
-INSERT INTO paper_versions (paper_id, version_number, file_path, original_filename, possible_duplicate, created_at, updated_at)
-SELECT p.id, 2, '/uploads/drones-v2.pdf', 'drones-v2.pdf', FALSE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
+INSERT INTO paper_versions (paper_id, version_number, file_path, original_filename, possible_duplicate, camera_ready, created_at, updated_at)
+SELECT p.id, 2, '/uploads/drones-v2.pdf', 'drones-v2.pdf', FALSE, FALSE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
 FROM papers p WHERE p.title='Precision Agriculture with Drones';
 
-INSERT INTO paper_versions (paper_id, version_number, file_path, original_filename, possible_duplicate, created_at, updated_at)
-SELECT p.id, 1, '/uploads/yield-v1.pdf', 'yield-v1.pdf', FALSE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
+INSERT INTO paper_versions (paper_id, version_number, file_path, original_filename, possible_duplicate, camera_ready, created_at, updated_at)
+SELECT p.id, 1, '/uploads/yield-v1.pdf', 'yield-v1.pdf', FALSE, FALSE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
 FROM papers p WHERE p.title='AI for Crop Yield Prediction';
 
 -- Authors for the new papers

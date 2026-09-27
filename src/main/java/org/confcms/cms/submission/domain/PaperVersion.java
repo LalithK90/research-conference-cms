@@ -38,4 +38,13 @@ public class PaperVersion extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String plagiarismNote;
+
+    // True only for the version uploaded specifically as the camera-ready submission
+    // (via SubmissionService.uploadCameraReady), never for a regular version/revision upload.
+    @Column(nullable = false)
+    private boolean cameraReady = false;
+
+    // Set the moment the author checks "I agree to transfer copyright" during camera-ready
+    // upload. Null until then -- no separate entity/e-signature workflow in this pass.
+    private java.time.Instant copyrightTransferAgreedAt;
 }
