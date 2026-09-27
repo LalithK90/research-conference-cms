@@ -116,4 +116,72 @@ class AdminDecisionViewControllerTest {
 
         assertThat(view).isEqualTo("redirect:/admin/decisions/ui/paper/5");
     }
+
+    @Test
+    void cameraReadyStatusShowsAcceptedAndCameraReadySubmittedPapersForAdmin() {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setEmail("admin@example.com");
+        admin.setRole(Role.ADMIN);
+        authenticateAs(admin);
+
+        Paper acceptedPaper = new Paper();
+        acceptedPaper.setId(6L);
+        acceptedPaper.setStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED);
+        acceptedPaper.setConference(conference);
+
+        Paper cameraReadyPaper = new Paper();
+        cameraReadyPaper.setId(7L);
+        cameraReadyPaper.setStatus(org.confcms.cms.submission.domain.PaperStatus.CAMERA_READY_SUBMITTED);
+        cameraReadyPaper.setConference(conference);
+
+        when(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED))
+                .thenReturn(java.util.List.of(acceptedPaper));
+        when(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.CAMERA_READY_SUBMITTED))
+                .thenReturn(java.util.List.of(cameraReadyPaper));
+
+        Model model = new ExtendedModelMap();
+        String view = controller.cameraReadyStatus(model);
+
+        assertThat(view).isEqualTo("admin/camera_ready");
+        @SuppressWarnings("unchecked")
+        java.util.List<Paper> papers = (java.util.List<Paper>) model.getAttribute("papers");
+        assertThat(papers).containsExactlyInAnyOrder(acceptedPaper, cameraReadyPaper);
+    }
+
+    @Test
+    void cameraReadyStatusFiltersToOwnConferenceForNonAdminChair() {
+        User chair = new User();
+        chair.setId(41L);
+        chair.setEmail("chair@example.com");
+        chair.setRole(Role.REVIEWER);
+        authenticateAs(chair);
+
+        Conference otherConference = new Conference();
+        otherConference.setId(99L);
+
+        Paper ownPaper = new Paper();
+        ownPaper.setId(6L);
+        ownPaper.setStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED);
+        ownPaper.setConference(conference);
+
+        Paper otherPaper = new Paper();
+        otherPaper.setId(8L);
+        otherPaper.setStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED);
+        otherPaper.setConference(otherConference);
+
+        when(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED))
+                .thenReturn(java.util.List.of(ownPaper, otherPaper));
+        when(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.CAMERA_READY_SUBMITTED))
+                .thenReturn(java.util.List.of());
+        when(committeeService.isChairOrCoChair(chair, conference)).thenReturn(true);
+        when(committeeService.isChairOrCoChair(chair, otherConference)).thenReturn(false);
+
+        Model model = new ExtendedModelMap();
+        controller.cameraReadyStatus(model);
+
+        @SuppressWarnings("unchecked")
+        java.util.List<Paper> papers = (java.util.List<Paper>) model.getAttribute("papers");
+        assertThat(papers).containsExactly(ownPaper);
+    }
 }

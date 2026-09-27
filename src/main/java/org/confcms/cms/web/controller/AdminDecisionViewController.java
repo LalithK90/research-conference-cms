@@ -65,6 +65,22 @@ public class AdminDecisionViewController {
         return "admin/paper_detail";
     }
 
+    @GetMapping("/ui/camera-ready")
+    public String cameraReadyStatus(Model model) {
+        User actingUser = actingUser();
+        java.util.List<org.confcms.cms.submission.domain.Paper> papers = new java.util.ArrayList<>();
+        papers.addAll(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED));
+        papers.addAll(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.CAMERA_READY_SUBMITTED));
+
+        boolean isAdmin = actingUser.getRole() == Role.ADMIN;
+        java.util.List<org.confcms.cms.submission.domain.Paper> visible = isAdmin ? papers : papers.stream()
+                .filter(p -> committeeService.isChairOrCoChair(actingUser, p.getConference()))
+                .toList();
+
+        model.addAttribute("papers", visible);
+        return "admin/camera_ready";
+    }
+
     @PostMapping("/version/{versionId}/plagiarism-check")
     public String recordPlagiarismCheck(@PathVariable Long versionId,
                                          @RequestParam(required = false) Double score,
