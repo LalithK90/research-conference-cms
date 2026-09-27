@@ -37,6 +37,19 @@ public class Conference extends BaseEntity {
     private String logoUrl;
     private String contactEmail;
 
+    @Column(columnDefinition = "TEXT")
+    private String aboutHtml;
+
+    @Column(columnDefinition = "TEXT")
+    private String callForPapersHtml;
+
+    private String venueAddress;
+
+    private String venueMapEmbedUrl;
+
+    @Column(columnDefinition = "TEXT")
+    private String travelInfoHtml;
+
     @OneToMany(mappedBy = "conference", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SubTheme> subThemes = new ArrayList<>();
 
