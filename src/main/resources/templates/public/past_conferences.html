@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/public_layout :: head('Past Conferences')}"></head>
+
+<body>
+    <nav th:replace="~{fragments/public_layout :: nav}"></nav>
+
+    <div class="container my-5">
+        <h1 class="text-center mb-5">Past Conferences</h1>
+
+        <div th:if="${#lists.isEmpty(pastConferences)}" class="alert alert-info text-center">
+            No past conferences to show yet.
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-4" th:each="past : ${pastConferences}">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${past.title}">Title</h5>
+                        <p class="text-muted" th:text="${past.venue} + ' | ' + ${past.startDate} + ' - ' + ${past.endDate}">Venue | Dates</p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a th:href="@{'/past-conferences/' + ${past.id} + '/about'}" class="btn btn-sm btn-outline-secondary">About</a>
+                            <a th:href="@{'/past-conferences/' + ${past.id} + '/committee'}" class="btn btn-sm btn-outline-secondary">Committee</a>
+                            <a th:href="@{'/past-conferences/' + ${past.id} + '/speakers'}" class="btn btn-sm btn-outline-secondary">Speakers</a>
+                            <a th:href="@{'/past-conferences/' + ${past.id} + '/sponsors'}" class="btn btn-sm btn-outline-secondary">Sponsors</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="~{fragments/public_layout :: footer}"></footer>
+    <script th:replace="~{fragments/public_layout :: scripts}"></script>
+</body>
+
+</html>

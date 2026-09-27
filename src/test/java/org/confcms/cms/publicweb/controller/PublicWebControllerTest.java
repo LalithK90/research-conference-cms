@@ -107,4 +107,42 @@ class PublicWebControllerTest {
         String view = controller().venue(model);
         assertThat(view).isEqualTo("public/venue");
     }
+
+    @Test
+    void pastConferencesListsOnlyInactiveConferencesNewestFirst() {
+        org.confcms.cms.domain.Conference active = new org.confcms.cms.domain.Conference();
+        active.setActive(true);
+        active.setStartDate(java.time.LocalDate.of(2026, 1, 1));
+
+        org.confcms.cms.domain.Conference older = new org.confcms.cms.domain.Conference();
+        older.setActive(false);
+        older.setStartDate(java.time.LocalDate.of(2024, 1, 1));
+
+        org.confcms.cms.domain.Conference newer = new org.confcms.cms.domain.Conference();
+        newer.setActive(false);
+        newer.setStartDate(java.time.LocalDate.of(2025, 1, 1));
+
+        org.mockito.Mockito.when(conferenceRepository.findAll()).thenReturn(java.util.List.of(active, older, newer));
+
+        Model model = new ExtendedModelMap();
+        String view = controller().pastConferences(model);
+
+        assertThat(view).isEqualTo("public/past_conferences");
+        assertThat((java.util.List<Object>) model.getAttribute("pastConferences")).containsExactly(newer, older);
+    }
+
+    @Test
+    void pastConferenceAboutLoadsTheRequestedConferenceNotTheActiveOne() {
+        org.confcms.cms.domain.Conference target = new org.confcms.cms.domain.Conference();
+        target.setId(42L);
+        target.setTitle("2024 Edition");
+        org.mockito.Mockito.when(conferenceRepository.findById(42L)).thenReturn(java.util.Optional.of(target));
+
+        Model model = new ExtendedModelMap();
+        String view = controller().pastConferenceAbout(42L, model);
+
+        assertThat(view).isEqualTo("public/about");
+        assertThat(model.getAttribute("conference")).isEqualTo(target);
+        org.mockito.Mockito.verify(conferenceService, org.mockito.Mockito.never()).getActiveConference();
+    }
 }

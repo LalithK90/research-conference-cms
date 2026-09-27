@@ -16,7 +16,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +92,61 @@ public class PublicWebController {
     @GetMapping("/venue")
     public String venue(Model model) {
         return "public/venue";
+    }
+
+    @GetMapping("/past-conferences")
+    public String pastConferences(Model model) {
+        List<Conference> past = conferenceRepository.findAll().stream()
+                .filter(c -> !c.isActive())
+                .sorted(Comparator.comparing(Conference::getStartDate).reversed())
+                .toList();
+        model.addAttribute("pastConferences", past);
+        return "public/past_conferences";
+    }
+
+    @GetMapping("/past-conferences/{id}/about")
+    public String pastConferenceAbout(@PathVariable Long id, Model model) {
+        model.addAttribute("conference", loadConferenceById(id));
+        return "public/about";
+    }
+
+    @GetMapping("/past-conferences/{id}/committee")
+    public String pastConferenceCommittee(@PathVariable Long id, Model model) {
+        Conference target = loadConferenceById(id);
+        model.addAttribute("conference", target);
+        model.addAttribute("committee", committeeService.getCommitteeForConference(target));
+        return "public/committee";
+    }
+
+    @GetMapping("/past-conferences/{id}/speakers")
+    public String pastConferenceSpeakers(@PathVariable Long id, Model model) {
+        Conference target = loadConferenceById(id);
+        model.addAttribute("conference", target);
+        List<Speaker> speakers = speakerRepository.findByConferenceIdOrderByDisplayOrderAsc(target.getId());
+        model.addAttribute("plenarySpeakers", speakers.stream()
+                .filter(s -> s.getType() == SpeakerType.PLENARY).toList());
+        model.addAttribute("keynoteSpeakers", speakers.stream()
+                .filter(s -> s.getType() == SpeakerType.KEYNOTE).toList());
+        return "public/speakers";
+    }
+
+    @GetMapping("/past-conferences/{id}/sponsors")
+    public String pastConferenceSponsors(@PathVariable Long id, Model model) {
+        Conference target = loadConferenceById(id);
+        model.addAttribute("conference", target);
+        List<Sponsor> sponsors = sponsorRepository.findByConferenceIdOrderByDisplayOrderAsc(target.getId());
+        Map<SponsorTier, List<Sponsor>> byTier = new EnumMap<>(SponsorTier.class);
+        for (SponsorTier tier : SponsorTier.values()) {
+            byTier.put(tier, sponsors.stream().filter(s -> s.getTier() == tier).toList());
+        }
+        model.addAttribute("sponsorsByTier", byTier);
+        model.addAttribute("hasNoSponsors", sponsors.isEmpty());
+        return "public/sponsors";
+    }
+
+    private Conference loadConferenceById(Long id) {
+        return conferenceRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Conference not found"));
     }
 
     @GetMapping("/call-for-papers")
