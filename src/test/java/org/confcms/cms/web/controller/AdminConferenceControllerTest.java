@@ -232,6 +232,60 @@ class AdminConferenceControllerTest {
         verify(committeeService, never()).addRole(eq(savedConference), eq(chairUser), eq(CommitteeRole.CHAIR), any());
     }
 
+    @Test
+    void editConferenceFormPrefillsAllFieldsIncludingContent() {
+        Conference conference = new Conference();
+        conference.setId(9L);
+        conference.setTitle("Existing Conf");
+        conference.setVenue("Existing Venue");
+        conference.setAboutHtml("<p>About text</p>");
+        conference.setCallForPapersHtml("<p>CFP text</p>");
+        conference.setVenueAddress("123 Main St");
+        conference.setVenueMapEmbedUrl("https://maps.example.com/embed");
+        conference.setTravelInfoHtml("<p>Travel text</p>");
+
+        when(conferenceRepository.findById(9L)).thenReturn(Optional.of(conference));
+        when(committeeService.getCommitteeForConference(conference)).thenReturn(List.of());
+        when(userRepository.findAll()).thenReturn(Collections.emptyList());
+        when(conferenceRepository.findAll()).thenReturn(Collections.emptyList());
+
+        Model model = new ExtendedModelMap();
+        controller.editConferenceForm(9L, model);
+
+        AdminConferenceController.ConferenceForm form =
+                (AdminConferenceController.ConferenceForm) model.getAttribute("conferenceForm");
+        assertThat(form.getTitle()).isEqualTo("Existing Conf");
+        assertThat(form.getAboutHtml()).isEqualTo("<p>About text</p>");
+        assertThat(form.getCallForPapersHtml()).isEqualTo("<p>CFP text</p>");
+        assertThat(form.getVenueAddress()).isEqualTo("123 Main St");
+        assertThat(form.getVenueMapEmbedUrl()).isEqualTo("https://maps.example.com/embed");
+        assertThat(form.getTravelInfoHtml()).isEqualTo("<p>Travel text</p>");
+        assertThat(model.getAttribute("editingConferenceId")).isEqualTo(9L);
+    }
+
+    @Test
+    void updateConferenceSavesContentFieldsOntoExistingConference() {
+        Conference existing = new Conference();
+        existing.setId(9L);
+        when(conferenceRepository.findById(9L)).thenReturn(Optional.of(existing));
+        when(conferenceService.saveConference(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
+        form.setTitle("Updated Title");
+        form.setVenue("Updated Venue");
+        form.setStartDate(LocalDate.now());
+        form.setEndDate(LocalDate.now().plusDays(1));
+        form.setContactEmail("a@b.com");
+        form.setPaymentProvider(PaymentProvider.FREE);
+        form.setAboutHtml("<p>Updated about</p>");
+
+        String view = controller.updateConference(9L, form);
+
+        assertThat(view).isEqualTo("redirect:/admin/conference/list");
+        assertThat(existing.getTitle()).isEqualTo("Updated Title");
+        assertThat(existing.getAboutHtml()).isEqualTo("<p>Updated about</p>");
+    }
+
     private Conference argThatConferenceHasClonedSubTheme(Conference expected) {
         return org.mockito.ArgumentMatchers.argThat(c -> c == expected
                 && c.getSubThemes().size() == 1

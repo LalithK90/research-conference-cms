@@ -19,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -64,6 +65,11 @@ public class AdminConferenceController {
         form.setLogoUrl(source.getLogoUrl());
         form.setContactEmail(source.getContactEmail());
         form.setCloneFromConferenceId(sourceId);
+        form.setAboutHtml(source.getAboutHtml());
+        form.setCallForPapersHtml(source.getCallForPapersHtml());
+        form.setVenueAddress(source.getVenueAddress());
+        form.setVenueMapEmbedUrl(source.getVenueMapEmbedUrl());
+        form.setTravelInfoHtml(source.getTravelInfoHtml());
 
         for (ConferenceCommitteeRole role : committeeService.getCommitteeForConference(source)) {
             if (role.getRole() == CommitteeRole.CHAIR) {
@@ -103,6 +109,11 @@ public class AdminConferenceController {
         conference.setBlindReview(form.isBlindReview());
         conference.setLogoUrl(form.getLogoUrl());
         conference.setContactEmail(form.getContactEmail());
+        conference.setAboutHtml(form.getAboutHtml());
+        conference.setCallForPapersHtml(form.getCallForPapersHtml());
+        conference.setVenueAddress(form.getVenueAddress());
+        conference.setVenueMapEmbedUrl(form.getVenueMapEmbedUrl());
+        conference.setTravelInfoHtml(form.getTravelInfoHtml());
 
         ConferencePaymentConfig paymentConfig = new ConferencePaymentConfig();
         paymentConfig.setProvider(form.getPaymentProvider());
@@ -134,6 +145,101 @@ public class AdminConferenceController {
         }
 
         return "redirect:/admin/dashboard";
+    }
+
+    @GetMapping("/list")
+    public String listConferences(Model model) {
+        model.addAttribute("conferences", conferenceRepository.findAll());
+        return "admin/conference_list";
+    }
+
+    @GetMapping("/{id}/edit")
+    public String editConferenceForm(@PathVariable Long id, Model model) {
+        Conference conference = conferenceRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Conference not found"));
+
+        ConferenceForm form = new ConferenceForm();
+        form.setTitle(conference.getTitle());
+        form.setVenue(conference.getVenue());
+        form.setStartDate(conference.getStartDate());
+        form.setEndDate(conference.getEndDate());
+        form.setActive(conference.isActive());
+        form.setBlindReview(conference.isBlindReview());
+        form.setLogoUrl(conference.getLogoUrl());
+        form.setContactEmail(conference.getContactEmail());
+        form.setAboutHtml(conference.getAboutHtml());
+        form.setCallForPapersHtml(conference.getCallForPapersHtml());
+        form.setVenueAddress(conference.getVenueAddress());
+        form.setVenueMapEmbedUrl(conference.getVenueMapEmbedUrl());
+        form.setTravelInfoHtml(conference.getTravelInfoHtml());
+
+        ConferenceCommitteeRole chairRole = committeeService.getCommitteeForConference(conference).stream()
+                .filter(r -> r.getRole() == CommitteeRole.CHAIR)
+                .findFirst().orElse(null);
+        if (chairRole != null) {
+            form.setChairUserId(chairRole.getUser().getId());
+        }
+        for (ConferenceCommitteeRole role : committeeService.getCommitteeForConference(conference)) {
+            if (role.getRole() == CommitteeRole.CO_CHAIR) {
+                form.getCoChairUserIds().add(role.getUser().getId());
+            }
+        }
+
+        ConferencePaymentConfig paymentConfig = conference.getPaymentConfig();
+        if (paymentConfig != null) {
+            form.setPaymentProvider(paymentConfig.getProvider());
+            form.setStripePublishableKey(paymentConfig.getStripePublishableKey());
+            form.setStripeSecretKey(paymentConfig.getStripeSecretKey());
+            form.setPaypalClientId(paymentConfig.getPaypalClientId());
+            form.setPaypalClientSecret(paymentConfig.getPaypalClientSecret());
+            form.setBankDetails(paymentConfig.getBankDetails());
+        }
+
+        model.addAttribute("conferenceForm", form);
+        model.addAttribute("allUsers", userRepository.findAll());
+        model.addAttribute("allConferences", conferenceRepository.findAll());
+        model.addAttribute("editingConferenceId", id);
+        return "admin/conference_form";
+    }
+
+    @PostMapping("/{id}/edit")
+    public String updateConference(@PathVariable Long id, @ModelAttribute ConferenceForm form) {
+        Conference conference = conferenceRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Conference not found"));
+
+        conference.setTitle(form.getTitle());
+        conference.setVenue(form.getVenue());
+        conference.setStartDate(form.getStartDate());
+        conference.setEndDate(form.getEndDate());
+        conference.setActive(form.isActive());
+        conference.setBlindReview(form.isBlindReview());
+        conference.setLogoUrl(form.getLogoUrl());
+        conference.setContactEmail(form.getContactEmail());
+        conference.setAboutHtml(form.getAboutHtml());
+        conference.setCallForPapersHtml(form.getCallForPapersHtml());
+        conference.setVenueAddress(form.getVenueAddress());
+        conference.setVenueMapEmbedUrl(form.getVenueMapEmbedUrl());
+        conference.setTravelInfoHtml(form.getTravelInfoHtml());
+
+        ConferencePaymentConfig paymentConfig = conference.getPaymentConfig();
+        if (paymentConfig == null) {
+            paymentConfig = new ConferencePaymentConfig();
+            paymentConfig.setConference(conference);
+            conference.setPaymentConfig(paymentConfig);
+        }
+        paymentConfig.setProvider(form.getPaymentProvider());
+        if (form.getPaymentProvider() == PaymentProvider.STRIPE) {
+            paymentConfig.setStripePublishableKey(form.getStripePublishableKey());
+            paymentConfig.setStripeSecretKey(form.getStripeSecretKey());
+        } else if (form.getPaymentProvider() == PaymentProvider.PAYPAL) {
+            paymentConfig.setPaypalClientId(form.getPaypalClientId());
+            paymentConfig.setPaypalClientSecret(form.getPaypalClientSecret());
+        } else if (form.getPaymentProvider() == PaymentProvider.LOCAL_BANK) {
+            paymentConfig.setBankDetails(form.getBankDetails());
+        }
+
+        conferenceService.saveConference(conference);
+        return "redirect:/admin/conference/list";
     }
 
     // Copies sub-themes and non-CHAIR/CO_CHAIR committee roles (reviewers, finance/registration/
@@ -188,5 +294,12 @@ public class AdminConferenceController {
         // source conference's id through to saveConference so sub-themes and non-chair committee
         // roles (which have no dedicated form fields) can be copied at save time too.
         private Long cloneFromConferenceId;
+
+        // Public-site content (Task 1's new Conference fields)
+        private String aboutHtml;
+        private String callForPapersHtml;
+        private String venueAddress;
+        private String venueMapEmbedUrl;
+        private String travelInfoHtml;
     }
 }
