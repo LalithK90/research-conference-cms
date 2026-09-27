@@ -91,6 +91,22 @@ public class SubmissionRestController {
         }
     }
 
+    @PostMapping(path = "/{id}/camera-ready", consumes = "multipart/form-data")
+    public ResponseEntity<?> uploadCameraReady(@PathVariable Long id,
+                                               @RequestParam("file") MultipartFile file,
+                                               @RequestParam boolean copyrightAgreed) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
+        try {
+            Paper saved = submissionService.uploadCameraReady(user, id, file, copyrightAgreed);
+            return ResponseEntity.ok(saved);
+        } catch (SecurityException se) {
+            return ResponseEntity.status(403).body(se.getMessage());
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.status(409).body(ise.getMessage());
+        }
+    }
+
     @PostMapping("/{id}/withdraw")
     public ResponseEntity<?> withdraw(@PathVariable Long id) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
