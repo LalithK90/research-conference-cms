@@ -45,8 +45,7 @@ public class AdminSponsorController {
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long conferenceId, @PathVariable Long id, Model model) {
-        Sponsor sponsor = sponsorRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Sponsor not found"));
+        Sponsor sponsor = loadSponsorInConference(conferenceId, id);
         model.addAttribute("conference", loadConference(conferenceId));
         model.addAttribute("sponsor", sponsor);
         model.addAttribute("tiers", SponsorTier.values());
@@ -55,6 +54,7 @@ public class AdminSponsorController {
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long conferenceId, @PathVariable Long id) {
+        loadSponsorInConference(conferenceId, id);
         sponsorRepository.deleteById(id);
         return "redirect:/admin/conference/" + conferenceId + "/sponsors";
     }
@@ -62,5 +62,17 @@ public class AdminSponsorController {
     private Conference loadConference(Long conferenceId) {
         return conferenceRepository.findById(conferenceId)
                 .orElseThrow(() -> new IllegalArgumentException("Conference not found"));
+    }
+
+    // Confirms the sponsor id in the URL actually belongs to the conference id also in the URL --
+    // without this, a sponsor id from a different conference could be edited/deleted through this
+    // conference's URL, silently mixing conference-scoped data.
+    private Sponsor loadSponsorInConference(Long conferenceId, Long id) {
+        Sponsor sponsor = sponsorRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Sponsor not found"));
+        if (!sponsor.getConference().getId().equals(conferenceId)) {
+            throw new IllegalArgumentException("Sponsor does not belong to this conference");
+        }
+        return sponsor;
     }
 }

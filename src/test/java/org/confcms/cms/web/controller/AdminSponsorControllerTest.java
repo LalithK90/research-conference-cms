@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -67,6 +69,11 @@ class AdminSponsorControllerTest {
 
     @Test
     void deleteRemovesSponsorById() {
+        Sponsor sponsor = new Sponsor();
+        sponsor.setId(5L);
+        sponsor.setConference(conference);
+        when(sponsorRepository.findById(5L)).thenReturn(Optional.of(sponsor));
+
         String view = controller.delete(1L, 5L);
 
         assertThat(view).isEqualTo("redirect:/admin/conference/1/sponsors");
@@ -74,10 +81,25 @@ class AdminSponsorControllerTest {
     }
 
     @Test
+    void deleteRejectsSponsorBelongingToAnotherConference() {
+        Conference otherConference = new Conference();
+        otherConference.setId(99L);
+        Sponsor sponsor = new Sponsor();
+        sponsor.setId(5L);
+        sponsor.setConference(otherConference);
+        when(sponsorRepository.findById(5L)).thenReturn(Optional.of(sponsor));
+
+        assertThatThrownBy(() -> controller.delete(1L, 5L))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(sponsorRepository, never()).deleteById(5L);
+    }
+
+    @Test
     void editFormLoadsExistingSponsor() {
         Sponsor sponsor = new Sponsor();
         sponsor.setId(5L);
         sponsor.setTier(SponsorTier.GOLD);
+        sponsor.setConference(conference);
         when(sponsorRepository.findById(5L)).thenReturn(Optional.of(sponsor));
         when(conferenceRepository.findById(1L)).thenReturn(Optional.of(conference));
 
@@ -86,5 +108,19 @@ class AdminSponsorControllerTest {
 
         assertThat(view).isEqualTo("admin/sponsor_form");
         assertThat(model.getAttribute("sponsor")).isEqualTo(sponsor);
+    }
+
+    @Test
+    void editFormRejectsSponsorBelongingToAnotherConference() {
+        Conference otherConference = new Conference();
+        otherConference.setId(99L);
+        Sponsor sponsor = new Sponsor();
+        sponsor.setId(5L);
+        sponsor.setConference(otherConference);
+        when(sponsorRepository.findById(5L)).thenReturn(Optional.of(sponsor));
+
+        Model model = new ExtendedModelMap();
+        assertThatThrownBy(() -> controller.editForm(1L, 5L, model))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
