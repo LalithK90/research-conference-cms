@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Speaker - Conference CMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/app.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/admin/dashboard">CMS Admin</a>
+            <a class="btn btn-outline-light" href="/logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 th:text="${speaker.id} != null ? 'Edit Speaker' : 'Add Speaker'">Speaker</h2>
+        <form th:action="@{'/admin/conference/' + ${conference.id} + '/speakers/save'}" th:object="${speaker}" method="post">
+            <input type="hidden" th:field="*{id}">
+
+            <div class="mb-3">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-control" th:field="*{fullName}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Title (optional)</label>
+                <input type="text" class="form-control" th:field="*{title}" placeholder="e.g. Professor, MIT">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Bio</label>
+                <textarea class="form-control" rows="4" th:field="*{bio}"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Photo URL</label>
+                <input type="text" class="form-control" th:field="*{photoUrl}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Type</label>
+                <select class="form-select" th:field="*{type}">
+                    <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Display Order</label>
+                <input type="number" class="form-control" th:field="*{displayOrder}">
+            </div>
+
+            <button type="submit" class="btn btn-success">Save</button>
+            <a th:href="@{'/admin/conference/' + ${conference.id} + '/speakers'}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</body>
+
+</html>
