@@ -271,7 +271,9 @@ public class AdminConferenceController {
     public static class ConferenceForm {
         private String title;
         private String venue;
+        @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
         private LocalDate startDate;
+        @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
         private LocalDate endDate;
         private boolean active;
         private boolean blindReview;

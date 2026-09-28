@@ -68,6 +68,24 @@ class AdminSponsorControllerTest {
     }
 
     @Test
+    void saveRejectsSponsorIdBelongingToAnotherConference() {
+        Conference otherConference = new Conference();
+        otherConference.setId(99L);
+        Sponsor existingSponsor = new Sponsor();
+        existingSponsor.setId(5L);
+        existingSponsor.setConference(otherConference);
+        when(sponsorRepository.findById(5L)).thenReturn(Optional.of(existingSponsor));
+
+        Sponsor incoming = new Sponsor();
+        incoming.setId(5L);
+        incoming.setName("Hijacked Corp");
+
+        assertThatThrownBy(() -> controller.save(1L, incoming))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(sponsorRepository, never()).save(incoming);
+    }
+
+    @Test
     void deleteRemovesSponsorById() {
         Sponsor sponsor = new Sponsor();
         sponsor.setId(5L);

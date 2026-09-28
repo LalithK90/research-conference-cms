@@ -38,6 +38,9 @@ public class AdminSpeakerController {
 
     @PostMapping("/save")
     public String save(@PathVariable Long conferenceId, @ModelAttribute Speaker speaker) {
+        if (speaker.getId() != null) {
+            loadSpeakerInConference(conferenceId, speaker.getId());
+        }
         speaker.setConference(loadConference(conferenceId));
         speakerRepository.save(speaker);
         return "redirect:/admin/conference/" + conferenceId + "/speakers";

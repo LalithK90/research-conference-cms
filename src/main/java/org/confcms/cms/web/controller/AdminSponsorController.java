@@ -38,6 +38,9 @@ public class AdminSponsorController {
 
     @PostMapping("/save")
     public String save(@PathVariable Long conferenceId, @ModelAttribute Sponsor sponsor) {
+        if (sponsor.getId() != null) {
+            loadSponsorInConference(conferenceId, sponsor.getId());
+        }
         sponsor.setConference(loadConference(conferenceId));
         sponsorRepository.save(sponsor);
         return "redirect:/admin/conference/" + conferenceId + "/sponsors";

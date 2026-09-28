@@ -68,6 +68,24 @@ class AdminSpeakerControllerTest {
     }
 
     @Test
+    void saveRejectsSpeakerIdBelongingToAnotherConference() {
+        Conference otherConference = new Conference();
+        otherConference.setId(99L);
+        Speaker existingSpeaker = new Speaker();
+        existingSpeaker.setId(5L);
+        existingSpeaker.setConference(otherConference);
+        when(speakerRepository.findById(5L)).thenReturn(Optional.of(existingSpeaker));
+
+        Speaker incoming = new Speaker();
+        incoming.setId(5L);
+        incoming.setFullName("Hijacked Speaker");
+
+        assertThatThrownBy(() -> controller.save(1L, incoming))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(speakerRepository, never()).save(incoming);
+    }
+
+    @Test
     void deleteRemovesSpeakerById() {
         Speaker speaker = new Speaker();
         speaker.setId(5L);
