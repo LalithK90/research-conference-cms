@@ -1,7 +1,7 @@
 package org.confcms.cms.web.controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import org.confcms.cms.repository.UserRepository;
 import org.confcms.cms.domain.User;
 import org.confcms.cms.submission.domain.Paper;
