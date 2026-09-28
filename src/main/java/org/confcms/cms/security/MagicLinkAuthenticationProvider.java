@@ -11,6 +11,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -22,6 +23,10 @@ public class MagicLinkAuthenticationProvider implements AuthenticationProvider {
 
     private final MagicLinkService magicLinkService;
 
+    // Without its own transaction, link.getUser() (a lazy Hibernate proxy) throws
+    // LazyInitializationException once control returns here from findByToken's own
+    // read-only transaction, which has already closed by this point.
+    @Transactional
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         MagicLinkAuthenticationToken token = (MagicLinkAuthenticationToken) authentication;
