@@ -47,3 +47,4 @@ secrets.properties
 
 ### Worktrees ###
 .worktrees/
+.playwright-mcp
