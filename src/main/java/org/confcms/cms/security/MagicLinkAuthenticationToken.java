@@ -12,7 +12,7 @@ public class MagicLinkAuthenticationToken extends AbstractAuthenticationToken {
 
     /** Unauthenticated: carries only the raw magic-link token string to be verified. */
     public MagicLinkAuthenticationToken(String magicLinkToken) {
-        super(null);
+        super((Collection<? extends GrantedAuthority>) null);
         this.principal = null;
         this.magicLinkToken = magicLinkToken;
         setAuthenticated(false);
