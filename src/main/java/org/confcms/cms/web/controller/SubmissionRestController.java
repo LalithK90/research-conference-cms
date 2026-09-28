@@ -1,7 +1,9 @@
 package org.confcms.cms.web.controller;
 
 import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.confcms.cms.repository.UserRepository;
 import org.confcms.cms.domain.User;
 import org.confcms.cms.submission.domain.Paper;
@@ -24,7 +26,12 @@ public class SubmissionRestController {
 
     private final SubmissionService submissionService;
     private final UserRepository userRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    // Jackson 3's default ObjectMapper leaves FAIL_ON_UNKNOWN_PROPERTIES off (Jackson 2 had it on);
+    // re-enable it explicitly so a malformed authors payload (e.g. a wrong JSON key) is rejected
+    // instead of silently ignored.
+    private final ObjectMapper objectMapper = JsonMapper.builder()
+            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
 
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<?> submitPaper(@RequestParam String title,
