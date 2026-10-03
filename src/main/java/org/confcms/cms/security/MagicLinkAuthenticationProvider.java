@@ -6,6 +6,7 @@ import org.confcms.cms.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
@@ -39,9 +40,15 @@ public class MagicLinkAuthenticationProvider implements AuthenticationProvider {
             throw new BadCredentialsException("This link is invalid, expired, or already used");
         }
 
-        magicLinkService.markUsed(link);
+        if (!magicLinkService.markUsed(link)) {
+            throw new BadCredentialsException("This link is invalid, expired, or already used");
+        }
 
         User user = link.getUser();
+        if (!user.isEnabled()) {
+            throw new DisabledException("This account is disabled");
+        }
+
         List<GrantedAuthority> authorities = Collections.singletonList(
                 new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
 

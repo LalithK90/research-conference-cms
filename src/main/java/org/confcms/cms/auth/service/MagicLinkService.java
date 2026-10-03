@@ -38,9 +38,16 @@ public class MagicLinkService {
         return magicLinkRepository.findByToken(token);
     }
 
+    // Returns false if another request already marked this link used first (e.g. two
+    // concurrent requests racing on the same token) -- the caller must treat that as a failed
+    // authentication rather than letting both requests succeed.
     @Transactional
-    public void markUsed(MagicLink link) {
-        link.setUsed(true);
-        magicLinkRepository.save(link);
+    public boolean markUsed(MagicLink link) {
+        int updated = magicLinkRepository.markUsedIfUnused(link.getId());
+        if (updated > 0) {
+            link.setUsed(true);
+            return true;
+        }
+        return false;
     }
 }

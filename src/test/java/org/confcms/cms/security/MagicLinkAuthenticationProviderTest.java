@@ -84,6 +84,7 @@ class MagicLinkAuthenticationProviderTest {
         link.setExpiresAt(LocalDateTime.now().plusHours(1));
         link.setUsed(false);
         when(magicLinkService.findByToken("good-token")).thenReturn(Optional.of(link));
+        when(magicLinkService.markUsed(link)).thenReturn(true);
 
         Authentication unauth = new MagicLinkAuthenticationToken("good-token");
         Authentication result = provider.authenticate(unauth);
@@ -94,6 +95,39 @@ class MagicLinkAuthenticationProviderTest {
                 .extracting(GrantedAuthority::getAuthority)
                 .containsExactly("ROLE_AUTHOR");
         verify(magicLinkService).markUsed(link);
+    }
+
+    @Test
+    void authenticateRejectsWhenMarkUsedLosesTheRace() {
+        // Two concurrent requests both pass the isUsed()/expiry check on the same token before
+        // either writes; only one of them may actually flip the row from unused -> used.
+        MagicLink link = new MagicLink();
+        link.setUser(user);
+        link.setExpiresAt(LocalDateTime.now().plusHours(1));
+        link.setUsed(false);
+        when(magicLinkService.findByToken("raced-token")).thenReturn(Optional.of(link));
+        when(magicLinkService.markUsed(link)).thenReturn(false);
+
+        Authentication unauth = new MagicLinkAuthenticationToken("raced-token");
+
+        assertThatThrownBy(() -> provider.authenticate(unauth))
+                .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    void authenticateRejectsDisabledUser() {
+        user.setEnabled(false);
+        MagicLink link = new MagicLink();
+        link.setUser(user);
+        link.setExpiresAt(LocalDateTime.now().plusHours(1));
+        link.setUsed(false);
+        when(magicLinkService.findByToken("disabled-user-token")).thenReturn(Optional.of(link));
+        when(magicLinkService.markUsed(link)).thenReturn(true);
+
+        Authentication unauth = new MagicLinkAuthenticationToken("disabled-user-token");
+
+        assertThatThrownBy(() -> provider.authenticate(unauth))
+                .isInstanceOf(org.springframework.security.authentication.DisabledException.class);
     }
 
     @Test
