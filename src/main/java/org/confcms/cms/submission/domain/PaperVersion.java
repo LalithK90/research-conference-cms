@@ -4,6 +4,7 @@ import org.confcms.cms.core.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "paper_versions")
@@ -28,6 +29,7 @@ public class PaperVersion extends BaseEntity {
     private String contentHash;
 
     @Column(nullable = false)
+    @ColumnDefault("false")
     private boolean possibleDuplicate = false;
 
     private Long duplicateOfPaperVersionId;

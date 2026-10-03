@@ -65,7 +65,9 @@
                             </label>
                             <button type="submit">Submit Camera-Ready</button>
                         </form>
-                        <span th:if="${paper.status.name() == 'CAMERA_READY_SUBMITTED'}">Submitted</span>
+                        <span th:if="${paper.status.name() == 'CAMERA_READY_SUBMITTED'}"
+                              th:with="cameraReadyVersions=${paper.versions.?[cameraReady]}"
+                              th:text="${!#lists.isEmpty(cameraReadyVersions)} ? 'Submitted on ' + ${cameraReadyVersions[0].copyrightTransferAgreedAt} : 'Submitted'"></span>
                         <span th:if="${paper.status.name() != 'ACCEPTED' and paper.status.name() != 'CAMERA_READY_SUBMITTED'}">-</span>
                     </td>
                 </tr>
