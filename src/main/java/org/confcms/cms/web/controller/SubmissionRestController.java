@@ -9,6 +9,7 @@ import org.confcms.cms.domain.User;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperAuthor;
 import org.confcms.cms.submission.dto.AuthorRequestDto;
+import org.confcms.cms.submission.dto.PaperResponseDto;
 import org.confcms.cms.submission.service.SubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -60,14 +61,14 @@ public class SubmissionRestController {
         }
 
         Paper saved = submissionService.submitPaper(user, title, abstractText, track, file, authors);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(PaperResponseDto.from(saved));
     }
 
     @GetMapping("/my")
     public ResponseEntity<?> mySubmissions() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
-        return ResponseEntity.ok(submissionService.getPapersBySubmitter(user));
+        return ResponseEntity.ok(PaperResponseDto.from(submissionService.getPapersBySubmitter(user)));
     }
 
     @PostMapping(path = "/{id}/version", consumes = "multipart/form-data")
@@ -76,7 +77,7 @@ public class SubmissionRestController {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
         try {
             Paper saved = submissionService.uploadNewVersion(user, id, file);
-            return ResponseEntity.ok(saved);
+            return ResponseEntity.ok(PaperResponseDto.from(saved));
         } catch (SecurityException se) {
             return ResponseEntity.status(403).body(se.getMessage());
         } catch (IllegalStateException ise) {
@@ -90,7 +91,7 @@ public class SubmissionRestController {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
         try {
             Paper saved = submissionService.uploadRevision(user, id, file);
-            return ResponseEntity.ok(saved);
+            return ResponseEntity.ok(PaperResponseDto.from(saved));
         } catch (SecurityException se) {
             return ResponseEntity.status(403).body(se.getMessage());
         } catch (IllegalStateException ise) {
@@ -106,7 +107,7 @@ public class SubmissionRestController {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
         try {
             Paper saved = submissionService.uploadCameraReady(user, id, file, copyrightAgreed);
-            return ResponseEntity.ok(saved);
+            return ResponseEntity.ok(PaperResponseDto.from(saved));
         } catch (SecurityException se) {
             return ResponseEntity.status(403).body(se.getMessage());
         } catch (IllegalStateException ise) {
@@ -120,7 +121,7 @@ public class SubmissionRestController {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
         try {
             Paper saved = submissionService.withdrawPaper(user, id);
-            return ResponseEntity.ok(saved);
+            return ResponseEntity.ok(PaperResponseDto.from(saved));
         } catch (SecurityException se) {
             return ResponseEntity.status(403).body(se.getMessage());
         }

@@ -69,11 +69,15 @@ class SubmissionRestControllerTest {
     void submitPaperAcceptsAuthorsJsonWithCorrectPresenterKey() {
         String authorsJson = "[{\"fullName\":\"Ada Lovelace\",\"email\":\"ada@example.com\",\"affiliation\":\"Analytical Engines Inc\",\"presenter\":true}]";
         Paper saved = new Paper();
+        saved.setId(42L);
+        saved.setTitle("Title");
+        saved.setConference(new org.confcms.cms.domain.Conference());
         when(submissionService.submitPaper(any(User.class), any(), any(), any(), any(), any())).thenReturn(saved);
 
         ResponseEntity<?> response = controller.submitPaper("Title", "Abstract", "track", authorsJson, file);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
-        assertThat(response.getBody()).isEqualTo(saved);
+        assertThat(response.getBody()).isInstanceOf(org.confcms.cms.submission.dto.PaperResponseDto.class);
+        assertThat(((org.confcms.cms.submission.dto.PaperResponseDto) response.getBody()).getId()).isEqualTo(42L);
     }
 }
