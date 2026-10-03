@@ -1,6 +1,6 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.accesslog;
 
-import org.confcms.cms.repository.AccessLogRepository;
+import org.confcms.cms.accesslog.AccessLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;

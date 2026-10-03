@@ -2,7 +2,7 @@ package org.confcms.cms.security;
 
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.service.AccessLogService;
+import org.confcms.cms.accesslog.AccessLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

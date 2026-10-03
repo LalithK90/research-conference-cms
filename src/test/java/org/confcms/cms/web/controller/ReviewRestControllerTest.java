@@ -7,7 +7,7 @@ import org.confcms.cms.review.repository.ReviewAssignmentRepository;
 import org.confcms.cms.review.repository.ReviewRepository;
 import org.confcms.cms.review.service.ReviewAssignmentService;
 import org.confcms.cms.review.service.ReviewService;
-import org.confcms.cms.service.AccessLogService;
+import org.confcms.cms.accesslog.AccessLogService;
 import org.confcms.cms.service.FileStorageService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperVersion;

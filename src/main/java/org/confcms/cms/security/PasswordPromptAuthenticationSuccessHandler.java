@@ -4,7 +4,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.service.AccessLogService;
+import org.confcms.cms.accesslog.AccessLogService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;

@@ -33,7 +33,7 @@ class MagicLinkAuthenticationFilterTest {
     @Mock
     private org.confcms.cms.user.UserRepository userRepository;
     @Mock
-    private org.confcms.cms.service.AccessLogService accessLogService;
+    private org.confcms.cms.accesslog.AccessLogService accessLogService;
 
     private PasswordPromptAuthenticationSuccessHandler passwordPromptHandler;
 

@@ -1,9 +1,7 @@
-package org.confcms.cms.service;
+package org.confcms.cms.accesslog;
 
-import org.confcms.cms.domain.AccessEventType;
-import org.confcms.cms.domain.AccessLog;
 import org.confcms.cms.user.User;
-import org.confcms.cms.repository.AccessLogRepository;
+import org.confcms.cms.service.GeoLocationService;
 import org.confcms.cms.submission.domain.PaperVersion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

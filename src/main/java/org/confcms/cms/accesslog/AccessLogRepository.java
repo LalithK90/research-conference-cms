@@ -1,6 +1,6 @@
-package org.confcms.cms.repository;
+package org.confcms.cms.accesslog;
 
-import org.confcms.cms.domain.AccessLog;
+import org.confcms.cms.accesslog.AccessLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
