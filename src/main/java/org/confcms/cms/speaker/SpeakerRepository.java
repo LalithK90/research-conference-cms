@@ -1,6 +1,5 @@
-package org.confcms.cms.repository;
+package org.confcms.cms.speaker;
 
-import org.confcms.cms.domain.Speaker;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

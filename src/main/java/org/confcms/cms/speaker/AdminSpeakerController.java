@@ -1,10 +1,7 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.speaker;
 
 import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.Speaker;
-import org.confcms.cms.domain.SpeakerType;
 import org.confcms.cms.repository.ConferenceRepository;
-import org.confcms.cms.repository.SpeakerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;

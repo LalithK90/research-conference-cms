@@ -25,7 +25,7 @@ class PublicWebControllerTest {
     @Mock
     private ConferenceRepository conferenceRepository;
     @Mock
-    private org.confcms.cms.repository.SpeakerRepository speakerRepository;
+    private org.confcms.cms.speaker.SpeakerRepository speakerRepository;
     @Mock
     private org.confcms.cms.repository.SponsorRepository sponsorRepository;
 
@@ -54,10 +54,10 @@ class PublicWebControllerTest {
         conference.setId(1L);
         org.mockito.Mockito.when(conferenceService.getActiveConference()).thenReturn(conference);
 
-        org.confcms.cms.domain.Speaker plenary = new org.confcms.cms.domain.Speaker();
-        plenary.setType(org.confcms.cms.domain.SpeakerType.PLENARY);
-        org.confcms.cms.domain.Speaker keynote = new org.confcms.cms.domain.Speaker();
-        keynote.setType(org.confcms.cms.domain.SpeakerType.KEYNOTE);
+        org.confcms.cms.speaker.Speaker plenary = new org.confcms.cms.speaker.Speaker();
+        plenary.setType(org.confcms.cms.speaker.SpeakerType.PLENARY);
+        org.confcms.cms.speaker.Speaker keynote = new org.confcms.cms.speaker.Speaker();
+        keynote.setType(org.confcms.cms.speaker.SpeakerType.KEYNOTE);
         org.mockito.Mockito.when(speakerRepository.findByConferenceIdOrderByDisplayOrderAsc(1L))
                 .thenReturn(java.util.List.of(plenary, keynote));
 
