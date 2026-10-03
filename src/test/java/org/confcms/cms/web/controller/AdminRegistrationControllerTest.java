@@ -124,6 +124,23 @@ class AdminRegistrationControllerTest {
     }
 
     @Test
+    void viewSlipEncodesContentDispositionForFilenameWithQuotesAndNonAsciiCharacters() throws Exception {
+        Path pdfFile = tempDir.resolve("slip.pdf");
+        Files.write(pdfFile, "%PDF-1.4 fake".getBytes());
+        Registration reg = new Registration();
+        reg.setBankSlipPath("slip.pdf");
+        reg.setBankSlipOriginalFilename("receipt \"copy\" résumé.pdf");
+        when(registrationRepository.findById(5L)).thenReturn(Optional.of(reg));
+        when(fileStorageService.load("slip.pdf")).thenReturn(pdfFile);
+
+        ResponseEntity<?> response = controller.viewSlip(5L);
+
+        String contentDisposition = response.getHeaders().getFirst("Content-Disposition");
+        assertThat(contentDisposition).doesNotContain("\"copy\"");
+        assertThat(contentDisposition).contains("filename*=UTF-8''");
+    }
+
+    @Test
     void approveDelegatesToServiceAndRedirects() {
         String view = controller.approve(5L);
 

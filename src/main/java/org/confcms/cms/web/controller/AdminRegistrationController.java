@@ -9,6 +9,7 @@ import org.confcms.cms.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -50,10 +52,13 @@ public class AdminRegistrationController {
         try {
             Path path = fileStorageService.load(registration.getBankSlipPath());
             Resource resource = new UrlResource(path.toUri());
+            String contentDisposition = ContentDisposition.inline()
+                    .filename(registration.getBankSlipOriginalFilename(), StandardCharsets.UTF_8)
+                    .build()
+                    .toString();
             return ResponseEntity.ok()
                     .contentType(contentTypeFor(path))
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "inline; filename=\"" + registration.getBankSlipOriginalFilename() + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
                     .body(resource);
         } catch (MalformedURLException e) {
             return ResponseEntity.status(404).body("File not found");
