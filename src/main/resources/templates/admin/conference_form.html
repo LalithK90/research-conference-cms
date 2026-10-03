@@ -26,8 +26,10 @@
             </div>
             <div class="card-body">
 
-                <!-- Clone from previous conference -->
-                <div class="mb-4" th:if="${not #lists.isEmpty(allConferences)}">
+                <!-- Clone from previous conference (create flow only -- selecting an entry while
+                     editing would navigate away to /admin/conference/new?cloneFrom=..., silently
+                     abandoning the in-progress edit) -->
+                <div class="mb-4" th:if="${editingConferenceId == null and not #lists.isEmpty(allConferences)}">
                     <label class="form-label">Clone from a previous conference (optional)</label>
                     <select class="form-select" onchange="if (this.value) { window.location.href = '/admin/conference/new?cloneFrom=' + this.value; }">
                         <option value="">-- Start blank --</option>

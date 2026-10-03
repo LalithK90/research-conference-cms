@@ -109,11 +109,11 @@ public class AdminConferenceController {
         conference.setBlindReview(form.isBlindReview());
         conference.setLogoUrl(form.getLogoUrl());
         conference.setContactEmail(form.getContactEmail());
-        conference.setAboutHtml(form.getAboutHtml());
-        conference.setCallForPapersHtml(form.getCallForPapersHtml());
-        conference.setVenueAddress(form.getVenueAddress());
+        conference.setAboutHtml(blankToNull(form.getAboutHtml()));
+        conference.setCallForPapersHtml(blankToNull(form.getCallForPapersHtml()));
+        conference.setVenueAddress(blankToNull(form.getVenueAddress()));
         conference.setVenueMapEmbedUrl(form.getVenueMapEmbedUrl());
-        conference.setTravelInfoHtml(form.getTravelInfoHtml());
+        conference.setTravelInfoHtml(blankToNull(form.getTravelInfoHtml()));
 
         ConferencePaymentConfig paymentConfig = new ConferencePaymentConfig();
         paymentConfig.setProvider(form.getPaymentProvider());
@@ -215,11 +215,11 @@ public class AdminConferenceController {
         conference.setBlindReview(form.isBlindReview());
         conference.setLogoUrl(form.getLogoUrl());
         conference.setContactEmail(form.getContactEmail());
-        conference.setAboutHtml(form.getAboutHtml());
-        conference.setCallForPapersHtml(form.getCallForPapersHtml());
-        conference.setVenueAddress(form.getVenueAddress());
+        conference.setAboutHtml(blankToNull(form.getAboutHtml()));
+        conference.setCallForPapersHtml(blankToNull(form.getCallForPapersHtml()));
+        conference.setVenueAddress(blankToNull(form.getVenueAddress()));
         conference.setVenueMapEmbedUrl(form.getVenueMapEmbedUrl());
-        conference.setTravelInfoHtml(form.getTravelInfoHtml());
+        conference.setTravelInfoHtml(blankToNull(form.getTravelInfoHtml()));
 
         ConferencePaymentConfig paymentConfig = conference.getPaymentConfig();
         if (paymentConfig == null) {
@@ -265,6 +265,13 @@ public class AdminConferenceController {
             }
             committeeService.addRole(target, sourceRole.getUser(), sourceRole.getRole(), sourceRole.getDisplayTitle());
         }
+    }
+
+    // The public templates for these fields only show their "not published yet" fallback when
+    // the field is null, not when it's blank -- an admin-authored content field left empty in
+    // the form would otherwise save as "" and silently suppress that fallback message.
+    private static String blankToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
     }
 
     @Data

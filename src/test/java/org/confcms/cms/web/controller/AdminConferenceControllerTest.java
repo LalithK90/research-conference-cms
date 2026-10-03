@@ -286,6 +286,58 @@ class AdminConferenceControllerTest {
         assertThat(existing.getAboutHtml()).isEqualTo("<p>Updated about</p>");
     }
 
+    @Test
+    void updateConferenceSavesBlankContentFieldsAsNullNotEmptyString() {
+        Conference existing = new Conference();
+        existing.setId(9L);
+        existing.setAboutHtml("<p>Old about</p>");
+        when(conferenceRepository.findById(9L)).thenReturn(Optional.of(existing));
+        when(conferenceService.saveConference(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
+        form.setTitle("Updated Title");
+        form.setVenue("Updated Venue");
+        form.setStartDate(LocalDate.now());
+        form.setEndDate(LocalDate.now().plusDays(1));
+        form.setContactEmail("a@b.com");
+        form.setPaymentProvider(PaymentProvider.FREE);
+        form.setAboutHtml("");
+        form.setCallForPapersHtml("   ");
+        form.setVenueAddress("");
+        form.setTravelInfoHtml("");
+
+        controller.updateConference(9L, form);
+
+        assertThat(existing.getAboutHtml()).isNull();
+        assertThat(existing.getCallForPapersHtml()).isNull();
+        assertThat(existing.getVenueAddress()).isNull();
+        assertThat(existing.getTravelInfoHtml()).isNull();
+    }
+
+    @Test
+    void saveConferenceSavesBlankContentFieldsAsNullNotEmptyString() {
+        when(conferenceService.saveConference(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
+        form.setTitle("New Conf");
+        form.setVenue("New Venue");
+        form.setStartDate(LocalDate.now());
+        form.setEndDate(LocalDate.now().plusDays(1));
+        form.setChairUserId(1L);
+        form.setPaymentProvider(PaymentProvider.FREE);
+        form.setAboutHtml("");
+        form.setCallForPapersHtml("");
+        form.setVenueAddress("");
+        form.setTravelInfoHtml("");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
+
+        controller.saveConference(form);
+
+        org.mockito.Mockito.verify(conferenceService).saveConference(org.mockito.ArgumentMatchers.argThat(c ->
+                c.getAboutHtml() == null && c.getCallForPapersHtml() == null
+                        && c.getVenueAddress() == null && c.getTravelInfoHtml() == null));
+    }
+
     private Conference argThatConferenceHasClonedSubTheme(Conference expected) {
         return org.mockito.ArgumentMatchers.argThat(c -> c == expected
                 && c.getSubThemes().size() == 1
