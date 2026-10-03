@@ -1,10 +1,7 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.sponsor;
 
 import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.Sponsor;
-import org.confcms.cms.domain.SponsorTier;
 import org.confcms.cms.repository.ConferenceRepository;
-import org.confcms.cms.repository.SponsorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

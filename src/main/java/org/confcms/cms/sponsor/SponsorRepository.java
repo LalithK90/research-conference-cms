@@ -1,6 +1,5 @@
-package org.confcms.cms.repository;
+package org.confcms.cms.sponsor;
 
-import org.confcms.cms.domain.Sponsor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

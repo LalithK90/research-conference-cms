@@ -27,7 +27,7 @@ class PublicWebControllerTest {
     @Mock
     private org.confcms.cms.speaker.SpeakerRepository speakerRepository;
     @Mock
-    private org.confcms.cms.repository.SponsorRepository sponsorRepository;
+    private org.confcms.cms.sponsor.SponsorRepository sponsorRepository;
 
     private PublicWebController controller() {
         return new PublicWebController(conferenceService, committeeService, clientRegistrationRepository,
@@ -75,10 +75,10 @@ class PublicWebControllerTest {
         conference.setId(1L);
         org.mockito.Mockito.when(conferenceService.getActiveConference()).thenReturn(conference);
 
-        org.confcms.cms.domain.Sponsor gold = new org.confcms.cms.domain.Sponsor();
-        gold.setTier(org.confcms.cms.domain.SponsorTier.GOLD);
-        org.confcms.cms.domain.Sponsor platinum = new org.confcms.cms.domain.Sponsor();
-        platinum.setTier(org.confcms.cms.domain.SponsorTier.PLATINUM);
+        org.confcms.cms.sponsor.Sponsor gold = new org.confcms.cms.sponsor.Sponsor();
+        gold.setTier(org.confcms.cms.sponsor.SponsorTier.GOLD);
+        org.confcms.cms.sponsor.Sponsor platinum = new org.confcms.cms.sponsor.Sponsor();
+        platinum.setTier(org.confcms.cms.sponsor.SponsorTier.PLATINUM);
         org.mockito.Mockito.when(sponsorRepository.findByConferenceIdOrderByDisplayOrderAsc(1L))
                 .thenReturn(java.util.List.of(gold, platinum));
 
@@ -87,11 +87,11 @@ class PublicWebControllerTest {
 
         assertThat(view).isEqualTo("public/sponsors");
         @SuppressWarnings("unchecked")
-        java.util.Map<org.confcms.cms.domain.SponsorTier, java.util.List<org.confcms.cms.domain.Sponsor>> byTier =
-                (java.util.Map<org.confcms.cms.domain.SponsorTier, java.util.List<org.confcms.cms.domain.Sponsor>>) model.getAttribute("sponsorsByTier");
-        assertThat(byTier.get(org.confcms.cms.domain.SponsorTier.PLATINUM)).containsExactly(platinum);
-        assertThat(byTier.get(org.confcms.cms.domain.SponsorTier.GOLD)).containsExactly(gold);
-        assertThat(byTier.get(org.confcms.cms.domain.SponsorTier.SILVER)).isEmpty();
+        java.util.Map<org.confcms.cms.sponsor.SponsorTier, java.util.List<org.confcms.cms.sponsor.Sponsor>> byTier =
+                (java.util.Map<org.confcms.cms.sponsor.SponsorTier, java.util.List<org.confcms.cms.sponsor.Sponsor>>) model.getAttribute("sponsorsByTier");
+        assertThat(byTier.get(org.confcms.cms.sponsor.SponsorTier.PLATINUM)).containsExactly(platinum);
+        assertThat(byTier.get(org.confcms.cms.sponsor.SponsorTier.GOLD)).containsExactly(gold);
+        assertThat(byTier.get(org.confcms.cms.sponsor.SponsorTier.SILVER)).isEmpty();
     }
 
     @Test
