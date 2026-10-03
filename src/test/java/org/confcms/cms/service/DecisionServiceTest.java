@@ -2,7 +2,7 @@ package org.confcms.cms.service;
 
 import org.confcms.cms.domain.CommitteeRole;
 import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.User;
+import org.confcms.cms.user.User;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.review.domain.Review;
 import org.confcms.cms.review.repository.ReviewRepository;

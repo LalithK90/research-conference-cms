@@ -2,7 +2,7 @@ package org.confcms.cms.service;
 
 import org.confcms.cms.domain.AccessEventType;
 import org.confcms.cms.domain.AccessLog;
-import org.confcms.cms.domain.User;
+import org.confcms.cms.user.User;
 import org.confcms.cms.repository.AccessLogRepository;
 import org.confcms.cms.submission.domain.PaperVersion;
 import jakarta.servlet.http.HttpServletRequest;

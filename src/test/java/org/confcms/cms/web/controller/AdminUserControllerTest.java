@@ -2,7 +2,7 @@ package org.confcms.cms.web.controller;
 
 import org.confcms.cms.auth.service.AuthService;
 import org.confcms.cms.core.security.Role;
-import org.confcms.cms.domain.User;
+import org.confcms.cms.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

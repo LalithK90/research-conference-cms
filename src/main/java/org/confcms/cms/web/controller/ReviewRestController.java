@@ -1,7 +1,7 @@
 package org.confcms.cms.web.controller;
 
-import org.confcms.cms.domain.User;
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.User;
+import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.review.domain.Review;
 import org.confcms.cms.review.domain.ReviewAssignment;
 import org.confcms.cms.review.domain.ReviewDecline;

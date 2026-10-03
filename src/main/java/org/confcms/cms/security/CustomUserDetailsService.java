@@ -1,6 +1,6 @@
 package org.confcms.cms.security;
 
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

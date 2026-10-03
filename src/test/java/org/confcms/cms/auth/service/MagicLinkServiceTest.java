@@ -2,7 +2,7 @@ package org.confcms.cms.auth.service;
 
 import org.confcms.cms.domain.MagicLink;
 import org.confcms.cms.repository.MagicLinkRepository;
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

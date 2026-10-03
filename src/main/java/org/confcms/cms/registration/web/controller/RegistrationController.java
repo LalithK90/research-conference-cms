@@ -1,12 +1,12 @@
 package org.confcms.cms.registration.web.controller;
 
 import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.User;
+import org.confcms.cms.user.User;
 import org.confcms.cms.registration.domain.PaymentStatus;
 import org.confcms.cms.registration.domain.Registration;
 import org.confcms.cms.registration.service.RegistrationService;
 import org.confcms.cms.service.ConferenceService;
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;

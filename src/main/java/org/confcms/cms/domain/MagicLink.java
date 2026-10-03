@@ -16,7 +16,7 @@ public class MagicLink extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private org.confcms.cms.domain.User user;
+    private org.confcms.cms.user.User user;
 
     @Column(nullable = false, unique = true)
     private String token;

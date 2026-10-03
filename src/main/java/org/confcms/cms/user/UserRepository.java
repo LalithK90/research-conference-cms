@@ -1,6 +1,5 @@
-package org.confcms.cms.repository;
+package org.confcms.cms.user;
 
-import org.confcms.cms.domain.User;
 import org.confcms.cms.core.security.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

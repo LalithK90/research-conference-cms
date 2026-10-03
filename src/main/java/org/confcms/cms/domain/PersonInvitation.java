@@ -1,5 +1,7 @@
 package org.confcms.cms.domain;
 
+import org.confcms.cms.user.User;
+
 import org.confcms.cms.core.domain.BaseEntity;
 import org.confcms.cms.review.domain.ReviewDecline;
 import org.confcms.cms.submission.domain.Paper;

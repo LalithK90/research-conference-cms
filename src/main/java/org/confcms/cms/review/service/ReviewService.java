@@ -1,6 +1,6 @@
 package org.confcms.cms.review.service;
 
-import org.confcms.cms.domain.User;
+import org.confcms.cms.user.User;
 import org.confcms.cms.review.domain.AssignmentStatus;
 import org.confcms.cms.review.domain.Review;
 import org.confcms.cms.review.domain.ReviewAssignment;

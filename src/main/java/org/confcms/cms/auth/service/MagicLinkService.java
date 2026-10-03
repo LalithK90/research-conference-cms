@@ -1,9 +1,9 @@
 package org.confcms.cms.auth.service;
 
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.domain.MagicLink;
 import org.confcms.cms.repository.MagicLinkRepository;
-import org.confcms.cms.domain.User;
+import org.confcms.cms.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

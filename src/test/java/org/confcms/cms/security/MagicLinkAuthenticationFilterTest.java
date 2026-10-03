@@ -31,7 +31,7 @@ class MagicLinkAuthenticationFilterTest {
     private Authentication authenticatedResult;
 
     @Mock
-    private org.confcms.cms.repository.UserRepository userRepository;
+    private org.confcms.cms.user.UserRepository userRepository;
     @Mock
     private org.confcms.cms.service.AccessLogService accessLogService;
 
@@ -152,7 +152,7 @@ class MagicLinkAuthenticationFilterTest {
         request.setParameter("token", "good-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        org.confcms.cms.domain.User passwordless = new org.confcms.cms.domain.User();
+        org.confcms.cms.user.User passwordless = new org.confcms.cms.user.User();
         passwordless.setEmail("passwordless@example.com");
         passwordless.setPasswordHash(null);
         when(userRepository.findByEmail("passwordless@example.com")).thenReturn(java.util.Optional.of(passwordless));
@@ -172,7 +172,7 @@ class MagicLinkAuthenticationFilterTest {
         request.setParameter("token", "good-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        org.confcms.cms.domain.User withPassword = new org.confcms.cms.domain.User();
+        org.confcms.cms.user.User withPassword = new org.confcms.cms.user.User();
         withPassword.setEmail("hasone@example.com");
         withPassword.setPasswordHash("hashed");
         when(userRepository.findByEmail("hasone@example.com")).thenReturn(java.util.Optional.of(withPassword));
@@ -195,7 +195,7 @@ class MagicLinkAuthenticationFilterTest {
         request.setParameter("token", "good-token");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        org.confcms.cms.domain.User user = new org.confcms.cms.domain.User();
+        org.confcms.cms.user.User user = new org.confcms.cms.user.User();
         user.setEmail("magic-link-user@example.com");
         user.setPasswordHash("hashed");
         when(userRepository.findByEmail("magic-link-user@example.com")).thenReturn(java.util.Optional.of(user));

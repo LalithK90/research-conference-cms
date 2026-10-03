@@ -1,7 +1,7 @@
 package org.confcms.cms.review.domain;
 
 import org.confcms.cms.core.domain.BaseEntity;
-import org.confcms.cms.domain.User;
+import org.confcms.cms.user.User;
 import org.confcms.cms.submission.domain.Paper;
 import jakarta.persistence.*;
 import lombok.Getter;

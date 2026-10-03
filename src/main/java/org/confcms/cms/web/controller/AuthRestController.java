@@ -2,10 +2,10 @@ package org.confcms.cms.web.controller;
 
 import org.confcms.cms.auth.service.AuthService;
 import org.confcms.cms.auth.service.MagicLinkService;
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.domain.MagicLink;
 import org.confcms.cms.service.EmailService;
-import org.confcms.cms.domain.User;
+import org.confcms.cms.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

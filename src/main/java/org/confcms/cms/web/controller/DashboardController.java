@@ -2,10 +2,10 @@ package org.confcms.cms.web.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.confcms.cms.core.security.Role;
-import org.confcms.cms.domain.User;
+import org.confcms.cms.user.User;
 import org.confcms.cms.registration.domain.PaymentStatus;
 import org.confcms.cms.registration.repository.RegistrationRepository;
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;

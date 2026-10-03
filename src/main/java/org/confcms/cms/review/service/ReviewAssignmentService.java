@@ -1,7 +1,7 @@
 package org.confcms.cms.review.service;
 
-import org.confcms.cms.domain.User;
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.User;
+import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.review.domain.AssignmentStatus;
 import org.confcms.cms.review.domain.BidType;

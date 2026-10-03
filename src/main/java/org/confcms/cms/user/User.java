@@ -1,4 +1,4 @@
-package org.confcms.cms.domain;
+package org.confcms.cms.user;
 
 import org.confcms.cms.core.domain.BaseEntity;
 import org.confcms.cms.core.security.Role;

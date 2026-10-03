@@ -1,5 +1,7 @@
 package org.confcms.cms.domain;
 
+import org.confcms.cms.user.User;
+
 import org.confcms.cms.core.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;

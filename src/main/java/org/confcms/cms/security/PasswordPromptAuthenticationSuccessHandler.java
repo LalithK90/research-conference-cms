@@ -3,7 +3,7 @@ package org.confcms.cms.security;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.service.AccessLogService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;

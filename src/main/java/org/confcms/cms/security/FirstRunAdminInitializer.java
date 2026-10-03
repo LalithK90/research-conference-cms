@@ -1,8 +1,8 @@
 package org.confcms.cms.security;
 
 import org.confcms.cms.core.security.Role;
-import org.confcms.cms.domain.User;
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.User;
+import org.confcms.cms.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

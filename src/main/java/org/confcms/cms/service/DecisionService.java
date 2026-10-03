@@ -1,6 +1,6 @@
 package org.confcms.cms.service;
 
-import org.confcms.cms.domain.User;
+import org.confcms.cms.user.User;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;

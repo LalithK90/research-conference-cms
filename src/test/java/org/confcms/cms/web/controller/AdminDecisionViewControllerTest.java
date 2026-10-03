@@ -2,8 +2,8 @@ package org.confcms.cms.web.controller;
 
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.User;
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.User;
+import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.review.repository.ReviewRepository;
 import org.confcms.cms.service.CommitteeService;
 import org.confcms.cms.service.DecisionService;

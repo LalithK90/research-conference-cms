@@ -1,7 +1,7 @@
 package org.confcms.cms.web.controller;
 
-import org.confcms.cms.domain.User;
-import org.confcms.cms.repository.UserRepository;
+import org.confcms.cms.user.User;
+import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.service.SubmissionService;
 import org.junit.jupiter.api.AfterEach;
