@@ -1,6 +1,5 @@
-package org.confcms.cms.repository;
+package org.confcms.cms.auth;
 
-import org.confcms.cms.domain.MagicLink;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

@@ -1,7 +1,7 @@
 package org.confcms.cms.security;
 
-import org.confcms.cms.auth.service.MagicLinkService;
-import org.confcms.cms.domain.MagicLink;
+import org.confcms.cms.auth.MagicLinkService;
+import org.confcms.cms.auth.MagicLink;
 import org.confcms.cms.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;

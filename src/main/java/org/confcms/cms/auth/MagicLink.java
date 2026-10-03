@@ -1,23 +1,22 @@
-package org.confcms.cms.domain;
+package org.confcms.cms.auth;
 
-import org.confcms.cms.user.User;
+import org.confcms.cms.core.domain.BaseEntity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.confcms.cms.core.domain.BaseEntity;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "password_reset_tokens")
+@Table(name = "magic_links")
 @Getter
 @Setter
-public class PasswordResetToken extends BaseEntity {
+public class MagicLink extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private org.confcms.cms.user.User user;
 
     @Column(nullable = false, unique = true)
     private String token;
@@ -26,5 +25,5 @@ public class PasswordResetToken extends BaseEntity {
     private LocalDateTime expiresAt;
 
     @Column(nullable = false)
-    private boolean used;
+    private boolean used = false;
 }

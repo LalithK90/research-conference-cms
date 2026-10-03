@@ -1,4 +1,4 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.confcms.cms.user.User;

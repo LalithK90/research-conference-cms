@@ -1,6 +1,5 @@
-package org.confcms.cms.repository;
+package org.confcms.cms.auth;
 
-import org.confcms.cms.domain.PasswordResetToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

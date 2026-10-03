@@ -1,9 +1,6 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.auth;
 
-import org.confcms.cms.auth.service.AuthService;
-import org.confcms.cms.auth.service.MagicLinkService;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.domain.MagicLink;
 import org.confcms.cms.service.EmailService;
 import org.confcms.cms.user.User;
 import lombok.RequiredArgsConstructor;

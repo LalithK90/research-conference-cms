@@ -1,4 +1,4 @@
-package org.confcms.cms.auth.service;
+package org.confcms.cms.auth;
 
 import org.confcms.cms.user.User;
 import org.confcms.cms.useridentity.UserIdentity;

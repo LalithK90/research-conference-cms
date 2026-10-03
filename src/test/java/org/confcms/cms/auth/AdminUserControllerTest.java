@@ -1,6 +1,5 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.auth;
 
-import org.confcms.cms.auth.service.AuthService;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.user.User;
 import org.junit.jupiter.api.BeforeEach;

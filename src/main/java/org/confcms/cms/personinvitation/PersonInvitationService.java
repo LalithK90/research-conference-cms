@@ -1,6 +1,6 @@
 package org.confcms.cms.personinvitation;
 
-import org.confcms.cms.auth.service.AuthService;
+import org.confcms.cms.auth.AuthService;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.domain.Conference;
 import org.confcms.cms.service.CommitteeService;

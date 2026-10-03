@@ -9,7 +9,7 @@ import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.review.domain.ReviewAssignment;
 import org.confcms.cms.review.domain.ReviewDecline;
 import org.confcms.cms.submission.domain.Paper;
-import org.confcms.cms.auth.service.AuthService;
+import org.confcms.cms.auth.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

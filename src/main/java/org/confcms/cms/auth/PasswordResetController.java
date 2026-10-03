@@ -1,6 +1,5 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.auth;
 
-import org.confcms.cms.auth.service.PasswordResetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

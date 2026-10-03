@@ -1,4 +1,4 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.auth;
 
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.user.User;
