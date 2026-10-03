@@ -73,6 +73,7 @@ public class RegistrationService {
     @Transactional
     public void markAsPaid(Long registrationId) {
         Registration registration = getRegistration(registrationId);
+        requireNotResolved(registration);
         registration.setPaymentStatus(PaymentStatus.PAID);
         registration.setRejectionReason(null);
         registrationRepository.save(registration);
@@ -81,9 +82,20 @@ public class RegistrationService {
     @Transactional
     public void reject(Long registrationId, String reason) {
         Registration registration = getRegistration(registrationId);
+        requireNotResolved(registration);
         registration.setPaymentStatus(PaymentStatus.FAILED);
         registration.setRejectionReason(reason == null || reason.isBlank() ? "No reason provided" : reason);
         registrationRepository.save(registration);
+    }
+
+    // Guards against a stale/replayed admin request re-deciding a registration that was
+    // already approved or rejected (e.g. two admins racing on the same AWAITING_VERIFICATION
+    // row, or a double-submitted form).
+    private void requireNotResolved(Registration registration) {
+        PaymentStatus status = registration.getPaymentStatus();
+        if (status == PaymentStatus.PAID || status == PaymentStatus.FAILED) {
+            throw new IllegalStateException("This registration has already been resolved (" + status + ")");
+        }
     }
 
     @Transactional(readOnly = true)

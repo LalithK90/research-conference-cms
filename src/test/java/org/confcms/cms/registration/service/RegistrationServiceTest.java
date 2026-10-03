@@ -187,6 +187,7 @@ class RegistrationServiceTest {
     @Test
     void rejectWithBlankReasonDefaultsToNoReasonProvided() {
         Registration reg = new Registration();
+        reg.setPaymentStatus(PaymentStatus.AWAITING_VERIFICATION);
         when(registrationRepository.findById(5L)).thenReturn(Optional.of(reg));
         when(registrationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -198,12 +199,65 @@ class RegistrationServiceTest {
     @Test
     void rejectWithNullReasonDefaultsToNoReasonProvided() {
         Registration reg = new Registration();
+        reg.setPaymentStatus(PaymentStatus.AWAITING_VERIFICATION);
         when(registrationRepository.findById(5L)).thenReturn(Optional.of(reg));
         when(registrationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.reject(5L, null);
 
         assertThat(reg.getRejectionReason()).isEqualTo("No reason provided");
+    }
+
+    @Test
+    void markAsPaidThrowsWhenRegistrationAlreadyPaid() {
+        Registration reg = new Registration();
+        reg.setPaymentStatus(PaymentStatus.PAID);
+        when(registrationRepository.findById(5L)).thenReturn(Optional.of(reg));
+
+        assertThatThrownBy(() -> service.markAsPaid(5L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already been resolved");
+
+        verify(registrationRepository, never()).save(any());
+    }
+
+    @Test
+    void markAsPaidThrowsWhenRegistrationAlreadyFailed() {
+        Registration reg = new Registration();
+        reg.setPaymentStatus(PaymentStatus.FAILED);
+        when(registrationRepository.findById(5L)).thenReturn(Optional.of(reg));
+
+        assertThatThrownBy(() -> service.markAsPaid(5L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already been resolved");
+
+        verify(registrationRepository, never()).save(any());
+    }
+
+    @Test
+    void rejectThrowsWhenRegistrationAlreadyPaid() {
+        Registration reg = new Registration();
+        reg.setPaymentStatus(PaymentStatus.PAID);
+        when(registrationRepository.findById(5L)).thenReturn(Optional.of(reg));
+
+        assertThatThrownBy(() -> service.reject(5L, "too late"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already been resolved");
+
+        verify(registrationRepository, never()).save(any());
+    }
+
+    @Test
+    void rejectThrowsWhenRegistrationAlreadyFailed() {
+        Registration reg = new Registration();
+        reg.setPaymentStatus(PaymentStatus.FAILED);
+        when(registrationRepository.findById(5L)).thenReturn(Optional.of(reg));
+
+        assertThatThrownBy(() -> service.reject(5L, "too late"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already been resolved");
+
+        verify(registrationRepository, never()).save(any());
     }
 
     @Test
