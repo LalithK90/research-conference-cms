@@ -2,7 +2,7 @@ package org.confcms.cms.web.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.confcms.cms.user.User;
-import org.confcms.cms.repository.UserIdentityRepository;
+import org.confcms.cms.useridentity.UserIdentityRepository;
 import org.confcms.cms.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;

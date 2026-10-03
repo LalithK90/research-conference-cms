@@ -2,8 +2,8 @@ package org.confcms.cms.security;
 
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.user.User;
-import org.confcms.cms.domain.UserIdentity;
-import org.confcms.cms.repository.UserIdentityRepository;
+import org.confcms.cms.useridentity.UserIdentity;
+import org.confcms.cms.useridentity.UserIdentityRepository;
 import org.confcms.cms.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;

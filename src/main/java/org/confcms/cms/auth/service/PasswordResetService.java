@@ -2,9 +2,9 @@ package org.confcms.cms.auth.service;
 
 import org.confcms.cms.domain.PasswordResetToken;
 import org.confcms.cms.user.User;
-import org.confcms.cms.domain.UserIdentity;
+import org.confcms.cms.useridentity.UserIdentity;
 import org.confcms.cms.repository.PasswordResetTokenRepository;
-import org.confcms.cms.repository.UserIdentityRepository;
+import org.confcms.cms.useridentity.UserIdentityRepository;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.service.EmailService;
 import lombok.RequiredArgsConstructor;

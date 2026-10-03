@@ -1,4 +1,4 @@
-package org.confcms.cms.domain;
+package org.confcms.cms.useridentity;
 
 import org.confcms.cms.user.User;
 

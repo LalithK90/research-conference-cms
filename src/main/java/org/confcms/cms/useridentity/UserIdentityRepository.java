@@ -1,6 +1,5 @@
-package org.confcms.cms.repository;
+package org.confcms.cms.useridentity;
 
-import org.confcms.cms.domain.UserIdentity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
