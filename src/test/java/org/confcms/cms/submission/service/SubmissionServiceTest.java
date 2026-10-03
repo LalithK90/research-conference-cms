@@ -6,7 +6,7 @@ import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.service.ConferenceService;
 import org.confcms.cms.service.EmailService;
 import org.confcms.cms.service.FileStorageService;
-import org.confcms.cms.service.PersonInvitationService;
+import org.confcms.cms.personinvitation.PersonInvitationService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperAuthor;
 import org.confcms.cms.submission.domain.PaperStatus;

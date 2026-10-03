@@ -1,8 +1,5 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.personinvitation;
 
-import org.confcms.cms.domain.PersonInvitation;
-import org.confcms.cms.repository.PersonInvitationRepository;
-import org.confcms.cms.service.PersonInvitationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

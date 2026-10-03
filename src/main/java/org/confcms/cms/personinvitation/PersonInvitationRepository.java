@@ -1,6 +1,5 @@
-package org.confcms.cms.repository;
+package org.confcms.cms.personinvitation;
 
-import org.confcms.cms.domain.PersonInvitation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

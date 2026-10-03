@@ -1,11 +1,9 @@
-package org.confcms.cms.service;
+package org.confcms.cms.personinvitation;
 
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.InvitationPurpose;
-import org.confcms.cms.domain.InvitationStatus;
-import org.confcms.cms.domain.PersonInvitation;
-import org.confcms.cms.repository.PersonInvitationRepository;
+import org.confcms.cms.service.CommitteeService;
+import org.confcms.cms.service.EmailService;
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.review.domain.ReviewAssignment;

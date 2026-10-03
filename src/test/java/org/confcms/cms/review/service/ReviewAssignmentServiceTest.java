@@ -1,7 +1,7 @@
 package org.confcms.cms.review.service;
 
 import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.PersonInvitation;
+import org.confcms.cms.personinvitation.PersonInvitation;
 import org.confcms.cms.user.User;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.user.UserRepository;
@@ -13,7 +13,7 @@ import org.confcms.cms.review.repository.ReviewBidRepository;
 import org.confcms.cms.review.repository.ReviewDeclineRepository;
 import org.confcms.cms.service.CommitteeService;
 import org.confcms.cms.service.ConflictDeclarationService;
-import org.confcms.cms.service.PersonInvitationService;
+import org.confcms.cms.personinvitation.PersonInvitationService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;
 import org.confcms.cms.submission.repository.PaperRepository;

@@ -1,14 +1,11 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.personinvitation;
 
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.PersonInvitation;
 import org.confcms.cms.user.User;
 import org.confcms.cms.repository.ConferenceRepository;
-import org.confcms.cms.repository.PersonInvitationRepository;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.service.CommitteeService;
-import org.confcms.cms.service.PersonInvitationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

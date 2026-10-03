@@ -1,4 +1,4 @@
-package org.confcms.cms.domain;
+package org.confcms.cms.personinvitation;
 
 public enum InvitationPurpose {
     REVIEWER_SUGGESTION,
