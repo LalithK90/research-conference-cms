@@ -12,7 +12,7 @@ import org.confcms.cms.review.repository.ReviewAssignmentRepository;
 import org.confcms.cms.review.repository.ReviewBidRepository;
 import org.confcms.cms.review.repository.ReviewDeclineRepository;
 import org.confcms.cms.service.CommitteeService;
-import org.confcms.cms.service.ConflictDeclarationService;
+import org.confcms.cms.conflictdeclaration.ConflictDeclarationService;
 import org.confcms.cms.personinvitation.PersonInvitationService;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperStatus;

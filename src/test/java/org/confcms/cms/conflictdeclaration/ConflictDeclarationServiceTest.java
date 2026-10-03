@@ -1,9 +1,7 @@
-package org.confcms.cms.service;
+package org.confcms.cms.conflictdeclaration;
 
-import org.confcms.cms.domain.ConflictDeclaration;
 import org.confcms.cms.domain.Conference;
 import org.confcms.cms.user.User;
-import org.confcms.cms.repository.ConflictDeclarationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

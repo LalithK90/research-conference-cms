@@ -1,9 +1,8 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.conflictdeclaration;
 
 import org.confcms.cms.domain.Conference;
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.service.ConflictDeclarationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

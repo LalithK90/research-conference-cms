@@ -1,6 +1,5 @@
-package org.confcms.cms.repository;
+package org.confcms.cms.conflictdeclaration;
 
-import org.confcms.cms.domain.ConflictDeclaration;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
