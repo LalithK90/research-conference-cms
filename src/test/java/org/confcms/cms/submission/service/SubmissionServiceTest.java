@@ -328,8 +328,11 @@ class SubmissionServiceTest {
         when(fileStorageService.store(any())).thenReturn("/uploads/paper.pdf");
         when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
+        Paper otherPaper = new Paper();
+        otherPaper.setId(999L);
         PaperVersion existingMatch = new PaperVersion();
         existingMatch.setId(42L);
+        existingMatch.setPaper(otherPaper);
         when(paperVersionRepository.findByContentHash(any())).thenReturn(List.of(existingMatch));
 
         MockMultipartFile file = new MockMultipartFile("file", "paper.pdf", "application/pdf", "%PDF-1.4 identical content".getBytes());
@@ -340,6 +343,38 @@ class SubmissionServiceTest {
         assertThat(newVersion.isPossibleDuplicate()).isTrue();
         assertThat(newVersion.getDuplicateOfPaperVersionId()).isEqualTo(42L);
         assertThat(newVersion.getContentHash()).isNotNull();
+    }
+
+    @Test
+    void uploadRevisionDoesNotFlagDuplicateAgainstItsOwnPaperPriorVersion() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.MAJOR_REVISION);
+        paper.setRevisionDueDate(LocalDate.now().plusDays(5));
+
+        PaperVersion priorVersion = new PaperVersion();
+        priorVersion.setId(7L);
+        priorVersion.setPaper(paper);
+        paper.getVersions().add(priorVersion);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(fileStorageService.store(any())).thenReturn("/uploads/revised.pdf");
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(paperVersionRepository.findByContentHash(any())).thenReturn(List.of(priorVersion));
+
+        MockMultipartFile file = new MockMultipartFile("file", "revised.pdf", "application/pdf", "%PDF-1.4 unchanged content".getBytes());
+
+        Paper result = service.uploadRevision(submitter, 5L, file);
+
+        PaperVersion newVersion = result.getVersions().get(result.getVersions().size() - 1);
+        assertThat(newVersion.isPossibleDuplicate()).isFalse();
+        assertThat(newVersion.getDuplicateOfPaperVersionId()).isNull();
     }
 
     @Test

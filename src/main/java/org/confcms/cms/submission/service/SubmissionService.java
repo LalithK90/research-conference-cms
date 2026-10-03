@@ -127,7 +127,9 @@ public class SubmissionService {
         if (contentHash == null) {
             return;
         }
-        List<PaperVersion> matches = paperVersionRepository.findByContentHash(contentHash);
+        List<PaperVersion> matches = paperVersionRepository.findByContentHash(contentHash).stream()
+                .filter(match -> !match.getPaper().getId().equals(version.getPaper().getId()))
+                .toList();
         if (!matches.isEmpty()) {
             version.setPossibleDuplicate(true);
             version.setDuplicateOfPaperVersionId(matches.get(0).getId());
