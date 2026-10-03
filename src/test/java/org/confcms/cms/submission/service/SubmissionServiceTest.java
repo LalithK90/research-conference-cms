@@ -260,6 +260,31 @@ class SubmissionServiceTest {
     }
 
     @Test
+    void uploadNewVersionBlocksPaperThatHasReachedCameraReadyStage() {
+        // The generic /version upload path must not be usable to bypass uploadCameraReady's
+        // own checks (ACCEPTED-status requirement, copyright-transfer agreement) once a paper
+        // has moved past peer review.
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.ACCEPTED);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        MockMultipartFile file = new MockMultipartFile("file", "sneaky.pdf", "application/pdf", "%PDF-1.4".getBytes());
+
+        assertThatThrownBy(() -> service.uploadNewVersion(submitter, 5L, file))
+                .isInstanceOf(IllegalStateException.class);
+
+        verify(fileStorageService, never()).store(any());
+    }
+
+    @Test
     void uploadNewVersionUnaffectedForNormalStatus() {
         // Fix 2 must not change uploadNewVersion's behavior for statuses other than
         // WITHDRAWN/MINOR_REVISION/MAJOR_REVISION.

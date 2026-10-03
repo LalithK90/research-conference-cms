@@ -160,6 +160,18 @@ public class SubmissionService {
             throw new IllegalStateException("Cannot upload versions for withdrawn paper");
         }
 
+        // Once a paper is ACCEPTED (or further along), new versions must go through
+        // uploadCameraReady so its own checks (ACCEPTED-status requirement, copyright transfer
+        // agreement) can't be bypassed via this generic endpoint. MINOR/MAJOR_REVISION stay
+        // allowed here -- they fall through to enforceRevisionDeadline below, which is this
+        // same guard for the revision flow.
+        if (paper.getStatus() == PaperStatus.ACCEPTED
+                || paper.getStatus() == PaperStatus.REJECTED
+                || paper.getStatus() == PaperStatus.DESK_REJECTED
+                || paper.getStatus() == PaperStatus.CAMERA_READY_SUBMITTED) {
+            throw new IllegalStateException("This paper is not open for a plain version upload at its current stage");
+        }
+
         enforceRevisionDeadline(paper);
 
         validatePdf(file);
