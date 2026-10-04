@@ -4,6 +4,7 @@ import org.confcms.cms.accesslog.AccessLogService;
 import org.confcms.cms.service.EmailService;
 import org.confcms.cms.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -51,6 +52,11 @@ class AuthRestControllerTest {
 
     private AuthRestController controller;
 
+    @BeforeEach
+    void setUp() {
+        when(httpServletRequest.getRemoteAddr()).thenReturn("203.0.113.5");
+    }
+
     private AuthRestController newController(long delayMillis) {
         return new AuthRestController(authService, magicLinkService, emailService, userRepository,
                 accessLogService, mailExecutor, delayMillis);
@@ -70,11 +76,10 @@ class AuthRestControllerTest {
 
     @Test
     void requestMagicLinkNeverEmailsAnUnverifiedAddressWhenEmailIsUnknown() {
-        // This endpoint has no rate limiting beyond the per-email window; unconditionally
-        // emailing the caller-supplied address on the unknown-email branch would turn it
-        // into a spam/relay vector. The timing-side-channel fix must close the timing gap
-        // without ever sending real mail to an address that was never confirmed to belong
-        // to a registered user.
+        // Unconditionally emailing the caller-supplied address on the unknown-email branch
+        // would turn it into a spam/relay vector. The timing-side-channel fix must close the
+        // timing gap without ever sending real mail to an address that was never confirmed
+        // to belong to a registered user.
         controller = newController(unknownEmailDelayMillis);
         when(magicLinkService.createMagicLinkForEmail("unknown@example.com"))
                 .thenThrow(new IllegalArgumentException("No user found for email"));
@@ -129,28 +134,56 @@ class AuthRestControllerTest {
     }
 
     @Test
-    void requestMagicLinkSkipsCreatingANewLinkWhenAlreadyRequestedWithinTheWindow() {
-        // One request per email per 30-minute window -- a repeat within the window must not
-        // create a second MagicLink row or send a second email.
+    void requestMagicLinkStillCreatesALinkButDoesNotEmailWhenAlreadyRequestedWithinTheWindow() {
+        // One request per (email, IP) per 30-minute window. createMagicLinkForEmail still
+        // runs on the rate-limited branch (so a rate-limited known email pays the same cost
+        // as a fresh one, not a third, cheaper, distinguishable timing bucket) -- only the
+        // actual email send is skipped.
         controller = newController(unknownEmailDelayMillis);
-        when(accessLogService.wasMagicLinkRequestedRecently(eq("known@example.com"), any(Duration.class)))
+        when(accessLogService.wasMagicLinkRequestedRecently(
+                eq("known@example.com"), eq("203.0.113.5"), any(Duration.class)))
                 .thenReturn(true);
+        MagicLink link = new MagicLink();
+        link.setToken("tok-123");
+        link.setExpiresAt(java.time.LocalDateTime.now().plusHours(2));
+        when(magicLinkService.createMagicLinkForEmail("known@example.com")).thenReturn(link);
 
         ResponseEntity<?> response = controller.requestMagicLink("known@example.com", httpServletRequest);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isEqualTo(EXPECTED_RESPONSE);
-        verify(magicLinkService, never()).createMagicLinkForEmail(anyString());
+        verify(magicLinkService).createMagicLinkForEmail("known@example.com");
         verify(emailService, never()).sendSimpleEmail(anyString(), anyString(), anyString());
     }
 
     @Test
-    void requestMagicLinkChecksTheThirtyMinuteWindow() {
+    void requestMagicLinkChecksTheThirtyMinuteWindowScopedToTheRequesterIp() {
         controller = newController(unknownEmailDelayMillis);
         when(magicLinkService.createMagicLinkForEmail("known@example.com")).thenReturn(new MagicLink());
 
         controller.requestMagicLink("known@example.com", httpServletRequest);
 
-        verify(accessLogService).wasMagicLinkRequestedRecently("known@example.com", Duration.ofMinutes(30));
+        verify(accessLogService).wasMagicLinkRequestedRecently(
+                "known@example.com", "203.0.113.5", Duration.ofMinutes(30));
+    }
+
+    @Test
+    void requestMagicLinkRateLimitDoesNotBlockTheSameEmailFromADifferentIp() {
+        // A rate-limit keyed on email alone would let an attacker who knows a victim's email
+        // lock the victim out of their own requests by submitting it first, from anywhere.
+        // Scoping by (email, IP) means a request from the attacker's IP never affects whether
+        // the victim's own IP is rate-limited.
+        controller = newController(unknownEmailDelayMillis);
+        when(accessLogService.wasMagicLinkRequestedRecently(
+                eq("victim@example.com"), eq("203.0.113.5"), any(Duration.class)))
+                .thenReturn(false);
+        MagicLink link = new MagicLink();
+        link.setToken("tok-456");
+        link.setExpiresAt(java.time.LocalDateTime.now().plusHours(2));
+        when(magicLinkService.createMagicLinkForEmail("victim@example.com")).thenReturn(link);
+
+        controller.requestMagicLink("victim@example.com", httpServletRequest);
+
+        verify(emailService).sendSimpleEmail(anyString(), anyString(), anyString());
     }
 }

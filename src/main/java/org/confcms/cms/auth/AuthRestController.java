@@ -65,47 +65,54 @@ public class AuthRestController {
 
     @PostMapping("/magic/request")
     public ResponseEntity<?> requestMagicLink(@RequestParam String email, HttpServletRequest request) {
+        // Scoped by (email, requester IP), not email alone: limiting by email alone would let
+        // anyone who knows a victim's email lock the real victim out of their own requests for
+        // the rest of the window just by submitting that email first, from anywhere -- a
+        // denial-of-service against the feature meant to help the victim log in.
+        //
         // Checked (and the outcome applied) identically whether or not the email is known --
         // rate-limiting only known emails would itself be a user-enumeration oracle, and the
         // response text must stay identical either way for the same reason as the branches
-        // below. One request per email per 30-minute window; a repeat request within the
-        // window returns the same success message without sending a new email.
+        // below. One request per (email, IP) per 30-minute window.
+        String requesterIp = request.getRemoteAddr();
         boolean alreadyRequestedRecently =
-                accessLogService.wasMagicLinkRequestedRecently(email, MAGIC_LINK_REQUEST_WINDOW);
+                accessLogService.wasMagicLinkRequestedRecently(email, requesterIp, MAGIC_LINK_REQUEST_WINDOW);
         accessLogService.logMagicLinkRequest(email, request);
 
-        if (alreadyRequestedRecently) {
-            // Rate-limited: pay the same "cheap branch" cost as an unknown email (no DB
-            // insert, no real email) so this doesn't become a third, distinguishable timing
-            // bucket alongside known/unknown.
-            mailExecutor.execute(() -> {
-            });
-            padForMissingDatabaseInsert();
-        } else {
-            // createMagicLinkForEmail throws for an unknown email; swallow that here so the
-            // response is identical either way -- otherwise this endpoint is a user-enumeration
-            // oracle despite its own response text claiming not to be one.
-            try {
-                MagicLink link = magicLinkService.createMagicLinkForEmail(email);
+        // createMagicLinkForEmail throws for an unknown email; swallow that here so the
+        // response is identical either way -- otherwise this endpoint is a user-enumeration
+        // oracle despite its own response text claiming not to be one. Called unconditionally,
+        // even when rate-limited, so a rate-limited known email still pays the same cost as a
+        // fresh known email -- skipping it only when rate-limited would reopen a third,
+        // distinguishable timing bucket alongside known/unknown.
+        try {
+            MagicLink link = magicLinkService.createMagicLinkForEmail(email);
 
+            if (!alreadyRequestedRecently) {
                 // Build a URL. In production use app host config.
                 String url = String.format("http://localhost:8080/auth/magic/verify?token=%s", link.getToken());
 
                 String subject = "Your magic login link";
                 String body = "Click to sign in: " + url + "\nLink expires at: " + link.getExpiresAt();
                 emailService.sendSimpleEmail(email, subject, body);
-            } catch (IllegalArgumentException ignored) {
-                // Do the same "submit a task to the mail executor" work as the success branch,
-                // without ever sending mail to an unverified, attacker-supplied address (this
-                // endpoint has no rate limiting beyond the per-email window above, so
-                // unconditionally emailing the request's address here would turn it into a
-                // spam/relay vector). Matching that one externally-observable submit-call cost
-                // on both branches is what closes the timing side-channel; actually sending
-                // mail is not the part that needs matching.
+            } else {
+                // Rate-limited: the link above is real and usable, but don't email it again --
+                // still pay the same executor-submit cost as the real send would, for the same
+                // timing reason as the unknown-email branch below.
                 mailExecutor.execute(() -> {
                 });
-                padForMissingDatabaseInsert();
             }
+        } catch (IllegalArgumentException ignored) {
+            // Do the same "submit a task to the mail executor" work as the success branch,
+            // without ever sending mail to an unverified, attacker-supplied address (this
+            // endpoint has no rate limiting beyond the per-(email, IP) window above, so
+            // unconditionally emailing the request's address here would turn it into a
+            // spam/relay vector). Matching that one externally-observable submit-call cost
+            // on both branches is what closes the timing side-channel; actually sending
+            // mail is not the part that needs matching.
+            mailExecutor.execute(() -> {
+            });
+            padForMissingDatabaseInsert();
         }
 
         return ResponseEntity.ok("If an account exists for this email, we've sent a magic "

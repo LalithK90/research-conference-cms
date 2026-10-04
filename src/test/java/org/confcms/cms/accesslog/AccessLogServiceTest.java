@@ -122,11 +122,12 @@ class AccessLogServiceTest {
     void wasMagicLinkRequestedRecentlyReturnsTrueWhenTheLastRequestIsInsideTheWindow() {
         AccessLog recent = new AccessLog();
         recent.setCreatedAt(LocalDateTime.now().minusMinutes(5));
-        when(accessLogRepository.findTopByEventTypeAndRequestedEmailIgnoreCaseOrderByCreatedAtDesc(
-                AccessEventType.MAGIC_LINK_REQUEST, "someone@example.com"))
+        when(accessLogRepository.findTopByEventTypeAndRequestedEmailIgnoreCaseAndIpAddressOrderByCreatedAtDesc(
+                AccessEventType.MAGIC_LINK_REQUEST, "someone@example.com", "203.0.113.5"))
                 .thenReturn(Optional.of(recent));
 
-        boolean result = service.wasMagicLinkRequestedRecently("someone@example.com", Duration.ofMinutes(30));
+        boolean result = service.wasMagicLinkRequestedRecently(
+                "someone@example.com", "203.0.113.5", Duration.ofMinutes(30));
 
         assertThat(result).isTrue();
     }
@@ -135,22 +136,38 @@ class AccessLogServiceTest {
     void wasMagicLinkRequestedRecentlyReturnsFalseWhenTheLastRequestIsOutsideTheWindow() {
         AccessLog stale = new AccessLog();
         stale.setCreatedAt(LocalDateTime.now().minusMinutes(45));
-        when(accessLogRepository.findTopByEventTypeAndRequestedEmailIgnoreCaseOrderByCreatedAtDesc(
-                AccessEventType.MAGIC_LINK_REQUEST, "someone@example.com"))
+        when(accessLogRepository.findTopByEventTypeAndRequestedEmailIgnoreCaseAndIpAddressOrderByCreatedAtDesc(
+                AccessEventType.MAGIC_LINK_REQUEST, "someone@example.com", "203.0.113.5"))
                 .thenReturn(Optional.of(stale));
 
-        boolean result = service.wasMagicLinkRequestedRecently("someone@example.com", Duration.ofMinutes(30));
+        boolean result = service.wasMagicLinkRequestedRecently(
+                "someone@example.com", "203.0.113.5", Duration.ofMinutes(30));
 
         assertThat(result).isFalse();
     }
 
     @Test
     void wasMagicLinkRequestedRecentlyReturnsFalseWhenThereIsNoPriorRequest() {
-        when(accessLogRepository.findTopByEventTypeAndRequestedEmailIgnoreCaseOrderByCreatedAtDesc(
-                AccessEventType.MAGIC_LINK_REQUEST, "someone@example.com"))
+        when(accessLogRepository.findTopByEventTypeAndRequestedEmailIgnoreCaseAndIpAddressOrderByCreatedAtDesc(
+                AccessEventType.MAGIC_LINK_REQUEST, "someone@example.com", "203.0.113.5"))
                 .thenReturn(Optional.empty());
 
-        boolean result = service.wasMagicLinkRequestedRecently("someone@example.com", Duration.ofMinutes(30));
+        boolean result = service.wasMagicLinkRequestedRecently(
+                "someone@example.com", "203.0.113.5", Duration.ofMinutes(30));
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void wasMagicLinkRequestedRecentlyDoesNotMatchTheSameEmailFromADifferentIp() {
+        // Scoping by (email, IP) is what prevents an attacker who knows a victim's email
+        // from locking the victim out of their own requests by submitting from elsewhere.
+        when(accessLogRepository.findTopByEventTypeAndRequestedEmailIgnoreCaseAndIpAddressOrderByCreatedAtDesc(
+                AccessEventType.MAGIC_LINK_REQUEST, "victim@example.com", "203.0.113.5"))
+                .thenReturn(Optional.empty());
+
+        boolean result = service.wasMagicLinkRequestedRecently(
+                "victim@example.com", "203.0.113.5", Duration.ofMinutes(30));
 
         assertThat(result).isFalse();
     }

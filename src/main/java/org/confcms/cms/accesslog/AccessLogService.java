@@ -48,10 +48,13 @@ public class AccessLogService {
 
     // Checked (and logged) identically whether or not the email belongs to a registered
     // account -- rate-limiting only known emails would itself be a user-enumeration oracle.
-    public boolean wasMagicLinkRequestedRecently(String email, java.time.Duration window) {
+    // Scoped by (email, requesterIp): scoping by email alone would let anyone who knows a
+    // victim's email lock the real victim out of their own requests for the rest of the
+    // window just by submitting that email first, from anywhere.
+    public boolean wasMagicLinkRequestedRecently(String email, String requesterIp, java.time.Duration window) {
         return accessLogRepository
-                .findTopByEventTypeAndRequestedEmailIgnoreCaseOrderByCreatedAtDesc(
-                        AccessEventType.MAGIC_LINK_REQUEST, email)
+                .findTopByEventTypeAndRequestedEmailIgnoreCaseAndIpAddressOrderByCreatedAtDesc(
+                        AccessEventType.MAGIC_LINK_REQUEST, email, requesterIp)
                 .map(last -> last.getCreatedAt().isAfter(java.time.LocalDateTime.now().minus(window)))
                 .orElse(false);
     }
