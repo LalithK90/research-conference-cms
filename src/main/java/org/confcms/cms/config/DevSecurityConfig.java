@@ -13,7 +13,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -38,13 +37,15 @@ public class DevSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Dedicated manager for the magic-link filter: the global AuthenticationManager from
-        // AuthenticationConfiguration only knows about the DaoAuthenticationProvider wired via
-        // UserDetailsService, not the magicLinkAuthenticationProvider registered on this chain's
-        // own AuthenticationManagerBuilder (they are separate managers), so authenticate() would
-        // throw ProviderNotFoundException. A minimal ProviderManager scoped to just this provider
-        // is simpler and correct.
-        AuthenticationManager magicLinkAuthenticationManager = new ProviderManager(magicLinkAuthenticationProvider);
+        // Both providers are registered explicitly on the SAME manager (see
+        // authenticationManager() below) rather than left for Spring's bean-count-based
+        // auto-detection, which silently discards both of these in favor of its own
+        // auto-built DaoAuthenticationProvider whenever more than one AuthenticationProvider
+        // bean exists in the context (exactly the case here). The magic-link filter and
+        // formLogin both authenticate against this one manager; each provider only supports its
+        // own token type (UsernamePasswordAuthenticationToken vs MagicLinkAuthenticationToken),
+        // so routing between them is automatic and unambiguous.
+        AuthenticationManager sharedAuthenticationManager = authenticationManager();
 
         http
             .authorizeHttpRequests(auth -> auth
@@ -55,8 +56,8 @@ public class DevSecurityConfig {
                 .requestMatchers("/submission/**").hasAnyRole("AUTHOR", "ADMIN")
                 .anyRequest().authenticated()
             )
-            .authenticationProvider(magicLinkAuthenticationProvider)
-            .addFilterBefore(new MagicLinkAuthenticationFilter(magicLinkAuthenticationManager, passwordPromptAuthenticationSuccessHandler), UsernamePasswordAuthenticationFilter.class)
+            .authenticationManager(sharedAuthenticationManager)
+            .addFilterBefore(new MagicLinkAuthenticationFilter(sharedAuthenticationManager, passwordPromptAuthenticationSuccessHandler), UsernamePasswordAuthenticationFilter.class)
             .formLogin(form -> form
                 .loginPage("/login")
                 .successHandler(passwordPromptAuthenticationSuccessHandler)
@@ -101,9 +102,14 @@ public class DevSecurityConfig {
         return provider;
     }
 
+    // Explicitly wires both providers into one manager instead of relying on
+    // AuthenticationConfiguration's global manager, which -- whenever more than one
+    // AuthenticationProvider bean is present, as both authenticationProvider() and
+    // magicLinkAuthenticationProvider are here -- discards all of them and silently
+    // auto-builds its own DaoAuthenticationProvider from the UserDetailsService bean instead.
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager() {
+        return new ProviderManager(authenticationProvider(), magicLinkAuthenticationProvider);
     }
 
     @Bean
