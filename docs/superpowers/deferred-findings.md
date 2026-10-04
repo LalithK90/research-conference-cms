@@ -24,7 +24,6 @@ Real, non-blocking findings surfaced during final whole-branch reviews across th
 
 ## From: Camera-Ready Stage + Copyright-Transfer Collection (roadmap #11)
 
-- **M7:** No `SubmissionRestControllerTest` exists for the new `POST /submission/{id}/camera-ready` REST endpoint (used by non-browser callers now that the HTML form posts elsewhere) — the plan explicitly permitted skipping this since no test file for this controller existed before this branch, relying on manual verification instead. A real gap against the originating spec's own testing section, not a regression.
 - **M8:** `PaperVersion.cameraReady` is declared `@Column(nullable = false)` (a non-nullable primitive `boolean` with a Java-side default), which doesn't literally match the design spec's stated "nullable" reasoning for this field — harmless in practice (matches the existing `possibleDuplicate` field's declaration style exactly, and `data-dev.sql`'s seed rows were updated), just a documentation/spec-wording mismatch worth tidying if the spec is ever revisited.
 
 ## From: Public Conference Website (roadmap: AI-MERT replacement)
