@@ -113,8 +113,15 @@ class CustomOAuth2UserServiceTest {
 
         when(userIdentityRepository.findByProviderAndProviderUserId("orcid", "0000-0002-1825-0097")).thenReturn(Optional.empty());
 
+        // A cold ORCID login can't auto-create a User (no email), but it's not a hard dead end
+        // either -- OrcidSignupRequiresEmailException carries the ORCID iD + name needed for
+        // OAuth2LoginFailureHandler to redirect to the "finish creating your account" step.
         assertThatThrownBy(() -> service.resolveLocalUser("orcid", attrs))
-                .isInstanceOf(org.springframework.security.oauth2.core.OAuth2AuthenticationException.class);
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(OrcidSignupRequiresEmailException.class))
+                .satisfies(e -> {
+                    assertThat(e.getOrcidId()).isEqualTo("0000-0002-1825-0097");
+                    assertThat(e.getName()).isEqualTo("New Researcher");
+                });
 
         verify(userRepository, never()).save(any());
         verify(userRepository, never()).findByEmail(any());
@@ -303,7 +310,7 @@ class CustomOAuth2UserServiceTest {
         // No authentication set on SecurityContextHolder -- a genuinely cold OAuth2 attempt.
 
         assertThatThrownBy(() -> service.resolveLocalUser("orcid", attrs))
-                .isInstanceOf(org.springframework.security.oauth2.core.OAuth2AuthenticationException.class);
+                .isInstanceOf(OrcidSignupRequiresEmailException.class);
 
         verify(userRepository, never()).save(any());
         verify(userRepository, never()).findByEmail(any());
@@ -321,7 +328,7 @@ class CustomOAuth2UserServiceTest {
                         Collections.singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))));
 
         assertThatThrownBy(() -> service.resolveLocalUser("orcid", attrs))
-                .isInstanceOf(org.springframework.security.oauth2.core.OAuth2AuthenticationException.class);
+                .isInstanceOf(OrcidSignupRequiresEmailException.class);
 
         verify(userRepository, never()).save(any());
         verify(userRepository, never()).findByEmail(any());
@@ -355,5 +362,56 @@ class CustomOAuth2UserServiceTest {
 
         assertThat(result.getName()).isEqualTo("author@example.com");
         assertThat(result.getAttributes()).containsEntry("email", "author@example.com");
+    }
+
+    // --- completeOrcidSignup: finishes the flow OrcidSignupRequiresEmailException started ---
+
+    @Test
+    void completeOrcidSignupCreatesNewUserAndLinksIdentity() {
+        when(userRepository.findByEmail("newresearcher@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(userIdentityRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = service.completeOrcidSignup("0000-0002-1825-0097", "New Researcher", "newresearcher@example.com");
+
+        assertThat(result.getEmail()).isEqualTo("newresearcher@example.com");
+        assertThat(result.getFullName()).isEqualTo("New Researcher");
+        assertThat(result.getRole()).isEqualTo(Role.AUTHOR);
+        assertThat(result.getOrcidId()).isEqualTo("0000-0002-1825-0097");
+        assertThat(result.getPasswordHash()).isNull();
+
+        ArgumentCaptor<UserIdentity> captor = ArgumentCaptor.forClass(UserIdentity.class);
+        verify(userIdentityRepository).save(captor.capture());
+        assertThat(captor.getValue().getProvider()).isEqualTo("orcid");
+        assertThat(captor.getValue().getProviderUserId()).isEqualTo("0000-0002-1825-0097");
+    }
+
+    @Test
+    void completeOrcidSignupFallsBackToEmailWhenOrcidGaveNoName() {
+        when(userRepository.findByEmail("noname@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(userIdentityRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = service.completeOrcidSignup("0000-0002-1825-0097", null, "noname@example.com");
+
+        assertThat(result.getFullName()).isEqualTo("noname@example.com");
+    }
+
+    @Test
+    void completeOrcidSignupRejectsEmailAlreadyBelongingToAnotherAccount() {
+        // The email here is unverified, user-typed input -- ORCID never supplies anything to
+        // check it against (unlike Google's email_verified claim) -- so a collision must be
+        // rejected rather than silently auto-linked to whatever account already owns that email.
+        User existing = new User();
+        existing.setId(5L);
+        existing.setEmail("taken@example.com");
+        when(userRepository.findByEmail("taken@example.com")).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> service.completeOrcidSignup("0000-0002-1825-0097", "Someone", "taken@example.com"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("already exists");
+
+        verify(userRepository, never()).save(any());
+        verify(userIdentityRepository, never()).save(any());
     }
 }

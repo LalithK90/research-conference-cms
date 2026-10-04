@@ -32,6 +32,7 @@ public class SecurityConfig {
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final PasswordPromptAuthenticationSuccessHandler passwordPromptAuthenticationSuccessHandler;
+    private final org.confcms.cms.security.OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -88,6 +89,7 @@ public class SecurityConfig {
                 .loginPage("/login")
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .successHandler(passwordPromptAuthenticationSuccessHandler)
+                .failureHandler(oAuth2LoginFailureHandler)
             );
         }
 

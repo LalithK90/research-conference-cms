@@ -106,13 +106,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             return currentSessionUser;
         }
 
-        // ORCID's basic /authenticate grant never supplies an email, so there is nothing to
-        // auto-link or auto-create a User by/from (User.email is NOT NULL UNIQUE). A first-time,
-        // cold ORCID login (no existing session) must instead be linked explicitly from an
-        // existing account (handled by the already-authenticated branch above).
+        // ORCID's basic /authenticate grant never supplies an email, under any scope (confirmed
+        // against ORCID's own OIDC discovery document -- it is not merely a scope this
+        // integration failed to request). A first-time, cold ORCID login (no existing session)
+        // can't auto-create a User from this alone (User.email is NOT NULL UNIQUE), so control
+        // hands off to a short "confirm your email" step instead
+        // (OAuth2LoginFailureHandler + AuthRestController's completeOrcidSignup).
         if ("orcid".equals(provider)) {
-            throw new OAuth2AuthenticationException(new OAuth2Error("orcid_not_linked"),
-                    "ORCID login requires an existing account. Log in with your password or Google account first, then link ORCID from your account settings.");
+            throw new OrcidSignupRequiresEmailException(providerUserId, (String) attributes.get("name"));
         }
 
         Boolean verified = (Boolean) attributes.get("email_verified");
@@ -140,6 +141,37 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         userIdentityRepository.save(identity);
 
         return user;
+    }
+
+    // Finishes the signup flow OrcidSignupRequiresEmailException/OAuth2LoginFailureHandler
+    // started: creates a brand-new User + links the ORCID identity to it. The email is
+    // user-typed, unverified input (ORCID never supplies one to check against, unlike Google's
+    // email_verified claim) -- an email collision with an existing account is rejected rather
+    // than auto-linked, since auto-linking unverified input would let anyone claiming an ORCID
+    // identity attach it to any existing account just by typing that account's email.
+    @Transactional
+    public User completeOrcidSignup(String orcidId, String name, String email) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException(
+                    "An account with this email already exists. Log in first, then link ORCID from Account Settings.");
+        }
+
+        User created = new User();
+        created.setEmail(email);
+        created.setFullName(name == null || name.isBlank() ? email : name);
+        created.setRole(Role.AUTHOR);
+        created.setEnabled(true);
+        created.setOrcidId(orcidId);
+        User saved = userRepository.save(created);
+
+        UserIdentity identity = new UserIdentity();
+        identity.setUser(saved);
+        identity.setProvider("orcid");
+        identity.setProviderUserId(orcidId);
+        identity.setLinkedAt(LocalDateTime.now());
+        userIdentityRepository.save(identity);
+
+        return saved;
     }
 
     private String providerUserId(String provider, Map<String, Object> attributes) {
