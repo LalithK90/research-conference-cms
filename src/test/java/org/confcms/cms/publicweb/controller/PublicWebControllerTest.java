@@ -145,4 +145,72 @@ class PublicWebControllerTest {
         assertThat(model.getAttribute("conference")).isEqualTo(target);
         org.mockito.Mockito.verify(conferenceService, org.mockito.Mockito.never()).getActiveConference();
     }
+
+    // The shared nav fragment needs to know it's rendering a past conference's page (and which
+    // one) so its About/Committee/Speakers/Sponsors links point back at that same conference's
+    // past-conferences/{id}/... routes instead of the live site's -- without this, those links
+    // silently land on the active conference's page no matter which past conference is showing.
+    @Test
+    void pastConferenceAboutSetsPastConferenceIdForNav() {
+        org.confcms.cms.conference.Conference target = new org.confcms.cms.conference.Conference();
+        target.setId(42L);
+        org.mockito.Mockito.when(conferenceRepository.findById(42L)).thenReturn(java.util.Optional.of(target));
+
+        Model model = new ExtendedModelMap();
+        controller().pastConferenceAbout(42L, model);
+
+        assertThat(model.getAttribute("pastConferenceId")).isEqualTo(42L);
+    }
+
+    @Test
+    void pastConferenceCommitteeSetsPastConferenceIdForNav() {
+        org.confcms.cms.conference.Conference target = new org.confcms.cms.conference.Conference();
+        target.setId(43L);
+        org.mockito.Mockito.when(conferenceRepository.findById(43L)).thenReturn(java.util.Optional.of(target));
+        org.mockito.Mockito.when(committeeService.getCommitteeForConference(target)).thenReturn(java.util.List.of());
+
+        Model model = new ExtendedModelMap();
+        controller().pastConferenceCommittee(43L, model);
+
+        assertThat(model.getAttribute("pastConferenceId")).isEqualTo(43L);
+    }
+
+    @Test
+    void pastConferenceSpeakersSetsPastConferenceIdForNav() {
+        org.confcms.cms.conference.Conference target = new org.confcms.cms.conference.Conference();
+        target.setId(44L);
+        org.mockito.Mockito.when(conferenceRepository.findById(44L)).thenReturn(java.util.Optional.of(target));
+        org.mockito.Mockito.when(speakerRepository.findByConferenceIdOrderByDisplayOrderAsc(44L))
+                .thenReturn(java.util.List.of());
+
+        Model model = new ExtendedModelMap();
+        controller().pastConferenceSpeakers(44L, model);
+
+        assertThat(model.getAttribute("pastConferenceId")).isEqualTo(44L);
+    }
+
+    @Test
+    void pastConferenceSponsorsSetsPastConferenceIdForNav() {
+        org.confcms.cms.conference.Conference target = new org.confcms.cms.conference.Conference();
+        target.setId(45L);
+        org.mockito.Mockito.when(conferenceRepository.findById(45L)).thenReturn(java.util.Optional.of(target));
+        org.mockito.Mockito.when(sponsorRepository.findByConferenceIdOrderByDisplayOrderAsc(45L))
+                .thenReturn(java.util.List.of());
+
+        Model model = new ExtendedModelMap();
+        controller().pastConferenceSponsors(45L, model);
+
+        assertThat(model.getAttribute("pastConferenceId")).isEqualTo(45L);
+    }
+
+    // The live (active-conference) handlers must NOT set pastConferenceId -- its mere presence
+    // in the model is what tells the nav fragment "you're viewing a past conference", so leaking
+    // a stale value here would make the live site's nav wrongly link into past-conferences/**.
+    @Test
+    void aboutDoesNotSetPastConferenceId() {
+        Model model = new ExtendedModelMap();
+        controller().about(model);
+
+        assertThat(model.containsAttribute("pastConferenceId")).isFalse();
+    }
 }

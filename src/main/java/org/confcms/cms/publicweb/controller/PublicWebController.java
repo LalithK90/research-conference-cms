@@ -106,7 +106,9 @@ public class PublicWebController {
 
     @GetMapping("/past-conferences/{id}/about")
     public String pastConferenceAbout(@PathVariable Long id, Model model) {
-        model.addAttribute("conference", loadConferenceById(id));
+        Conference target = loadConferenceById(id);
+        model.addAttribute("conference", target);
+        model.addAttribute("pastConferenceId", target.getId());
         return "public/about";
     }
 
@@ -114,6 +116,7 @@ public class PublicWebController {
     public String pastConferenceCommittee(@PathVariable Long id, Model model) {
         Conference target = loadConferenceById(id);
         model.addAttribute("conference", target);
+        model.addAttribute("pastConferenceId", target.getId());
         model.addAttribute("committee", committeeService.getCommitteeForConference(target));
         return "public/committee";
     }
@@ -122,6 +125,7 @@ public class PublicWebController {
     public String pastConferenceSpeakers(@PathVariable Long id, Model model) {
         Conference target = loadConferenceById(id);
         model.addAttribute("conference", target);
+        model.addAttribute("pastConferenceId", target.getId());
         List<Speaker> speakers = speakerRepository.findByConferenceIdOrderByDisplayOrderAsc(target.getId());
         model.addAttribute("plenarySpeakers", speakers.stream()
                 .filter(s -> s.getType() == SpeakerType.PLENARY).toList());
@@ -134,6 +138,7 @@ public class PublicWebController {
     public String pastConferenceSponsors(@PathVariable Long id, Model model) {
         Conference target = loadConferenceById(id);
         model.addAttribute("conference", target);
+        model.addAttribute("pastConferenceId", target.getId());
         List<Sponsor> sponsors = sponsorRepository.findByConferenceIdOrderByDisplayOrderAsc(target.getId());
         Map<SponsorTier, List<Sponsor>> byTier = new EnumMap<>(SponsorTier.class);
         for (SponsorTier tier : SponsorTier.values()) {
