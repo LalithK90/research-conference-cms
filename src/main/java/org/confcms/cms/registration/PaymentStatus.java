@@ -1,4 +1,4 @@
-package org.confcms.cms.registration.domain;
+package org.confcms.cms.registration;
 
 public enum PaymentStatus {
     PENDING,

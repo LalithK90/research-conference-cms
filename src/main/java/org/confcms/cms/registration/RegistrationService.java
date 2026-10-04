@@ -1,11 +1,8 @@
-package org.confcms.cms.registration.service;
+package org.confcms.cms.registration;
 
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.conference.PaymentProvider;
 import org.confcms.cms.user.User;
-import org.confcms.cms.registration.domain.PaymentStatus;
-import org.confcms.cms.registration.domain.Registration;
-import org.confcms.cms.registration.repository.RegistrationRepository;
 import org.confcms.cms.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

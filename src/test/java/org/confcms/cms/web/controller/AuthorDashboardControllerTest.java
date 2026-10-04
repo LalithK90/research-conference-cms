@@ -2,9 +2,9 @@ package org.confcms.cms.web.controller;
 
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.user.User;
-import org.confcms.cms.registration.domain.PaymentStatus;
-import org.confcms.cms.registration.domain.Registration;
-import org.confcms.cms.registration.repository.RegistrationRepository;
+import org.confcms.cms.registration.PaymentStatus;
+import org.confcms.cms.registration.Registration;
+import org.confcms.cms.registration.RegistrationRepository;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.paper.Paper;
 import org.confcms.cms.paper.SubmissionService;

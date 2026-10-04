@@ -1,7 +1,7 @@
 package org.confcms.cms.web.controller;
 
 import org.confcms.cms.user.User;
-import org.confcms.cms.registration.repository.RegistrationRepository;
+import org.confcms.cms.registration.RegistrationRepository;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.paper.SubmissionService;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class AuthorDashboardController {
     public String mySubmissions(Model model) {
         User user = actingUser();
 
-        Map<Long, org.confcms.cms.registration.domain.Registration> registrationsByConference =
+        Map<Long, org.confcms.cms.registration.Registration> registrationsByConference =
                 registrationRepository.findByUserId(user.getId()).stream()
                         .collect(Collectors.toMap(r -> r.getConference().getId(), r -> r, (a, b) -> a));
 

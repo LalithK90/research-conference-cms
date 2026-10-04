@@ -1,7 +1,5 @@
-package org.confcms.cms.registration.repository;
+package org.confcms.cms.registration;
 
-import org.confcms.cms.registration.domain.PaymentStatus;
-import org.confcms.cms.registration.domain.Registration;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

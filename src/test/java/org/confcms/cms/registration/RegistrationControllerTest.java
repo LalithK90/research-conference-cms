@@ -1,11 +1,8 @@
-package org.confcms.cms.registration.web.controller;
+package org.confcms.cms.registration;
 
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.user.User;
-import org.confcms.cms.registration.domain.PaymentStatus;
-import org.confcms.cms.registration.domain.Registration;
-import org.confcms.cms.registration.service.RegistrationService;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.conference.ConferenceService;
 import org.junit.jupiter.api.BeforeEach;
