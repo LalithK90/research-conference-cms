@@ -155,11 +155,38 @@ class AdminConferenceControllerTest {
         assertThat(form.getCoChairUserIds()).containsExactly(11L);
         assertThat(form.getPaymentProvider()).isEqualTo(PaymentProvider.STRIPE);
         assertThat(form.getStripePublishableKey()).isEqualTo("pk_test_123");
-        assertThat(form.getStripeSecretKey()).isEqualTo("sk_test_secret");
+        assertThat(form.getStripeSecretKey())
+                .as("the real secret must never be copied into a new conference's form")
+                .isNull();
         assertThat(form.getCloneFromConferenceId()).isEqualTo(5L);
         assertThat(form.getTitle()).isNull();
         assertThat(form.getStartDate()).isNull();
         assertThat(form.isActive()).isFalse();
+    }
+
+    @Test
+    void newConferenceFormDoesNotCopyPaypalSecretFromClonedConference() {
+        Conference source = new Conference();
+        source.setId(5L);
+
+        ConferencePaymentConfig sourceConfig = new ConferencePaymentConfig();
+        sourceConfig.setProvider(PaymentProvider.PAYPAL);
+        sourceConfig.setPaypalClientId("client_123");
+        sourceConfig.setPaypalClientSecret("paypal_realsecret");
+        source.setPaymentConfig(sourceConfig);
+
+        when(conferenceRepository.findById(5L)).thenReturn(Optional.of(source));
+        when(committeeService.getCommitteeForConference(source)).thenReturn(List.of());
+        when(userRepository.findAll()).thenReturn(Collections.emptyList());
+        when(conferenceRepository.findAll()).thenReturn(Collections.emptyList());
+
+        Model model = new ExtendedModelMap();
+        controller.newConferenceForm(5L, model);
+
+        AdminConferenceController.ConferenceForm form =
+                (AdminConferenceController.ConferenceForm) model.getAttribute("conferenceForm");
+        assertThat(form.getPaypalClientId()).isEqualTo("client_123");
+        assertThat(form.getPaypalClientSecret()).isNull();
     }
 
     @Test

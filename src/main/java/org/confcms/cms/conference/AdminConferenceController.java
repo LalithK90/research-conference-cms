@@ -79,10 +79,11 @@ public class AdminConferenceController {
         if (sourceConfig != null) {
             form.setPaymentProvider(sourceConfig.getProvider());
             form.setStripePublishableKey(sourceConfig.getStripePublishableKey());
-            form.setStripeSecretKey(sourceConfig.getStripeSecretKey());
             form.setPaypalClientId(sourceConfig.getPaypalClientId());
-            form.setPaypalClientSecret(sourceConfig.getPaypalClientSecret());
             form.setBankDetails(sourceConfig.getBankDetails());
+            // Secrets are never copied to a clone: this form creates a brand-new conference, so
+            // there is no "leave unchanged" case to support -- an admin cloning payment setup
+            // must re-enter the secret key explicitly, same trust model as the edit form.
         }
 
         return form;
