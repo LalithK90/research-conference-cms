@@ -32,7 +32,10 @@ public class AccessLogService {
         write(AccessEventType.PAPER_DOWNLOAD, user, request, paperVersion);
     }
 
-    public void logMagicLinkRequest(String email, HttpServletRequest request) {
+    // emailSent reflects the controller's final decision for THIS request (false for a
+    // rate-limited repeat or an unknown email) -- recorded once, after that decision is made,
+    // rather than logged first and updated after, so there's no separate write to reconcile.
+    public void logMagicLinkRequest(String email, HttpServletRequest request, boolean emailSent) {
         try {
             String ip = request.getRemoteAddr();
             AccessLog entry = new AccessLog();
@@ -40,6 +43,7 @@ public class AccessLogService {
             entry.setRequestedEmail(email);
             entry.setIpAddress(ip);
             entry.setResolvedLocation(geoLocationService.resolveLocation(ip).orElse(null));
+            entry.setEmailSent(emailSent);
             accessLogRepository.save(entry);
         } catch (Exception e) {
             log.warn("Failed to write access log entry (eventType=MAGIC_LINK_REQUEST)", e);
@@ -57,6 +61,15 @@ public class AccessLogService {
                         AccessEventType.MAGIC_LINK_REQUEST, email, requesterIp)
                 .map(last -> last.getCreatedAt().isAfter(java.time.LocalDateTime.now().minus(window)))
                 .orElse(false);
+    }
+
+    // Independent of the per-(email, IP) check above: caps total real sends to one address
+    // across ALL requesting IPs combined, closing the gap an attacker rotating through
+    // multiple IPs (a botnet/proxy chain) would otherwise exploit to email-bomb one victim.
+    public boolean hasReachedMagicLinkEmailCap(String email, int maxSends, java.time.Duration window) {
+        long sentCount = accessLogRepository.countByEventTypeAndRequestedEmailIgnoreCaseAndEmailSentTrueAndCreatedAtAfter(
+                AccessEventType.MAGIC_LINK_REQUEST, email, java.time.LocalDateTime.now().minus(window));
+        return sentCount >= maxSends;
     }
 
     private void write(AccessEventType eventType, User user, HttpServletRequest request, PaperVersion paperVersion) {

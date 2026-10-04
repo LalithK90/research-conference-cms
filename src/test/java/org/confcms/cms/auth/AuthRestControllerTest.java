@@ -16,6 +16,7 @@ import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -130,7 +131,22 @@ class AuthRestControllerTest {
 
         controller.requestMagicLink("someone@example.com", httpServletRequest);
 
-        verify(accessLogService).logMagicLinkRequest(eq("someone@example.com"), eq(httpServletRequest));
+        verify(accessLogService).logMagicLinkRequest(
+                eq("someone@example.com"), eq(httpServletRequest), eq(false));
+    }
+
+    @Test
+    void requestMagicLinkRecordsEmailSentTrueOnlyWhenARealEmailWasSent() {
+        controller = newController(unknownEmailDelayMillis);
+        MagicLink link = new MagicLink();
+        link.setToken("tok-123");
+        link.setExpiresAt(java.time.LocalDateTime.now().plusHours(2));
+        when(magicLinkService.createMagicLinkForEmail("known@example.com")).thenReturn(link);
+
+        controller.requestMagicLink("known@example.com", httpServletRequest);
+
+        verify(accessLogService).logMagicLinkRequest(
+                eq("known@example.com"), eq(httpServletRequest), eq(true));
     }
 
     @Test
@@ -185,5 +201,42 @@ class AuthRestControllerTest {
         controller.requestMagicLink("victim@example.com", httpServletRequest);
 
         verify(emailService).sendSimpleEmail(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void requestMagicLinkChecksThePerEmailSendCapIndependentlyOfIp() {
+        controller = newController(unknownEmailDelayMillis);
+        when(magicLinkService.createMagicLinkForEmail("known@example.com")).thenReturn(new MagicLink());
+
+        controller.requestMagicLink("known@example.com", httpServletRequest);
+
+        verify(accessLogService).hasReachedMagicLinkEmailCap(
+                eq("known@example.com"), anyInt(), eq(Duration.ofMinutes(30)));
+    }
+
+    @Test
+    void requestMagicLinkDoesNotEmailWhenThePerEmailSendCapIsReached() {
+        // This is the gap the per-(email, IP) check alone leaves open: an attacker rotating
+        // through multiple IPs gets a fresh per-IP allowance each time, with no ceiling on
+        // total emails actually sent to one victim address. The cap closes that regardless
+        // of which (fresh) IP the request comes from.
+        controller = newController(unknownEmailDelayMillis);
+        when(accessLogService.wasMagicLinkRequestedRecently(
+                eq("victim@example.com"), anyString(), any(Duration.class)))
+                .thenReturn(false);
+        when(accessLogService.hasReachedMagicLinkEmailCap(
+                eq("victim@example.com"), anyInt(), any(Duration.class)))
+                .thenReturn(true);
+        MagicLink link = new MagicLink();
+        link.setToken("tok-789");
+        link.setExpiresAt(java.time.LocalDateTime.now().plusHours(2));
+        when(magicLinkService.createMagicLinkForEmail("victim@example.com")).thenReturn(link);
+
+        ResponseEntity<?> response = controller.requestMagicLink("victim@example.com", httpServletRequest);
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isEqualTo(EXPECTED_RESPONSE);
+        verify(magicLinkService).createMagicLinkForEmail("victim@example.com");
+        verify(emailService, never()).sendSimpleEmail(anyString(), anyString(), anyString());
     }
 }

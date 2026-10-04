@@ -33,6 +33,12 @@ public class AccessLog extends BaseEntity {
     // otherwise the limiter itself would leak which emails are registered.
     private String requestedEmail;
 
+    // MAGIC_LINK_REQUEST only: whether this specific request actually triggered a real email
+    // send (false for a rate-limited repeat, or an unknown email). Lets the per-email send
+    // cap count real sends, not every logged request -- a request that was itself
+    // rate-limited shouldn't count against a separate, looser per-email ceiling.
+    private boolean emailSent;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "paper_version_id")
     private PaperVersion paperVersion;

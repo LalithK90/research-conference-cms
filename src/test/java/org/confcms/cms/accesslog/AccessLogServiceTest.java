@@ -17,6 +17,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -106,7 +107,7 @@ class AccessLogServiceTest {
         request.setRemoteAddr("203.0.113.5");
         when(geoLocationService.resolveLocation("203.0.113.5")).thenReturn(Optional.of("Bangkok, Thailand"));
 
-        service.logMagicLinkRequest("someone@example.com", request);
+        service.logMagicLinkRequest("someone@example.com", request, true);
 
         ArgumentCaptor<AccessLog> captor = ArgumentCaptor.forClass(AccessLog.class);
         verify(accessLogRepository).save(captor.capture());
@@ -116,6 +117,20 @@ class AccessLogServiceTest {
         assertThat(saved.getUser()).isNull();
         assertThat(saved.getIpAddress()).isEqualTo("203.0.113.5");
         assertThat(saved.getResolvedLocation()).isEqualTo("Bangkok, Thailand");
+        assertThat(saved.isEmailSent()).isTrue();
+    }
+
+    @Test
+    void logMagicLinkRequestRecordsEmailSentFalseWhenNoRealEmailWasSent() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("203.0.113.5");
+        when(geoLocationService.resolveLocation("203.0.113.5")).thenReturn(Optional.empty());
+
+        service.logMagicLinkRequest("someone@example.com", request, false);
+
+        ArgumentCaptor<AccessLog> captor = ArgumentCaptor.forClass(AccessLog.class);
+        verify(accessLogRepository).save(captor.capture());
+        assertThat(captor.getValue().isEmailSent()).isFalse();
     }
 
     @Test
@@ -170,5 +185,43 @@ class AccessLogServiceTest {
                 "victim@example.com", "203.0.113.5", Duration.ofMinutes(30));
 
         assertThat(result).isFalse();
+    }
+
+    @Test
+    void hasReachedMagicLinkEmailCapReturnsTrueWhenSentCountMeetsTheMax() {
+        when(accessLogRepository.countByEventTypeAndRequestedEmailIgnoreCaseAndEmailSentTrueAndCreatedAtAfter(
+                eq(AccessEventType.MAGIC_LINK_REQUEST), eq("victim@example.com"), any(LocalDateTime.class)))
+                .thenReturn(5L);
+
+        boolean result = service.hasReachedMagicLinkEmailCap("victim@example.com", 5, Duration.ofMinutes(30));
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void hasReachedMagicLinkEmailCapReturnsFalseWhenSentCountIsBelowTheMax() {
+        when(accessLogRepository.countByEventTypeAndRequestedEmailIgnoreCaseAndEmailSentTrueAndCreatedAtAfter(
+                eq(AccessEventType.MAGIC_LINK_REQUEST), eq("victim@example.com"), any(LocalDateTime.class)))
+                .thenReturn(4L);
+
+        boolean result = service.hasReachedMagicLinkEmailCap("victim@example.com", 5, Duration.ofMinutes(30));
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void hasReachedMagicLinkEmailCapIsNotScopedByIp() {
+        // This is the gap the per-(email, IP) check alone leaves open: the cap counts real
+        // sends to one email across ALL requesting IPs combined, so an attacker rotating
+        // through multiple IPs can't bypass it just by changing IP.
+        when(accessLogRepository.countByEventTypeAndRequestedEmailIgnoreCaseAndEmailSentTrueAndCreatedAtAfter(
+                eq(AccessEventType.MAGIC_LINK_REQUEST), eq("victim@example.com"), any(LocalDateTime.class)))
+                .thenReturn(5L);
+
+        boolean result = service.hasReachedMagicLinkEmailCap("victim@example.com", 5, Duration.ofMinutes(30));
+
+        assertThat(result).isTrue();
+        verify(accessLogRepository).countByEventTypeAndRequestedEmailIgnoreCaseAndEmailSentTrueAndCreatedAtAfter(
+                eq(AccessEventType.MAGIC_LINK_REQUEST), eq("victim@example.com"), any(LocalDateTime.class));
     }
 }

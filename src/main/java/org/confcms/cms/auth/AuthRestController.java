@@ -18,6 +18,10 @@ import java.util.concurrent.Executor;
 public class AuthRestController {
 
     private static final Duration MAGIC_LINK_REQUEST_WINDOW = Duration.ofMinutes(30);
+    // Independent of the per-(email, IP) check: caps total real sends to one address across
+    // all requesting IPs combined, so an attacker rotating through multiple IPs can't use a
+    // fresh per-IP allowance each time to email-bomb a single victim address.
+    private static final int MAGIC_LINK_MAX_SENDS_PER_EMAIL = 5;
 
     private final AuthService authService;
     private final MagicLinkService magicLinkService;
@@ -65,19 +69,31 @@ public class AuthRestController {
 
     @PostMapping("/magic/request")
     public ResponseEntity<?> requestMagicLink(@RequestParam String email, HttpServletRequest request) {
-        // Scoped by (email, requester IP), not email alone: limiting by email alone would let
-        // anyone who knows a victim's email lock the real victim out of their own requests for
-        // the rest of the window just by submitting that email first, from anywhere -- a
-        // denial-of-service against the feature meant to help the victim log in.
+        // Two independent rate limits, both checked (and applied) identically whether or not
+        // the email is known -- limiting only known emails would itself be a user-enumeration
+        // oracle, and the response text must stay identical either way for the same reason as
+        // the branches below.
         //
-        // Checked (and the outcome applied) identically whether or not the email is known --
-        // rate-limiting only known emails would itself be a user-enumeration oracle, and the
-        // response text must stay identical either way for the same reason as the branches
-        // below. One request per (email, IP) per 30-minute window.
+        // 1. Per-(email, IP): limiting by email alone would let anyone who knows a victim's
+        //    email lock the real victim out of their own requests for the rest of the window
+        //    just by submitting that email first, from anywhere -- a denial-of-service against
+        //    the feature meant to help the victim log in.
+        // 2. Per-email send cap, independent of IP: the per-IP check alone gives an attacker
+        //    rotating through multiple IPs (a botnet/proxy chain) a fresh allowance per IP,
+        //    with no ceiling on total emails actually sent to one victim address. Capped at
+        //    MAGIC_LINK_MAX_SENDS_PER_EMAIL real sends per email per window, across all IPs.
+        //
+        // NOTE: requesterIp is request.getRemoteAddr(), the TCP-layer source address -- correct
+        // today (this app has no reverse proxy in front), but if one is ever introduced
+        // (nginx, a load balancer, a CDN) without server.forward-headers-strategy=framework (or
+        // an equivalent trusted X-Forwarded-For parse), getRemoteAddr() silently returns the
+        // proxy's IP for every request, collapsing rate limit #1 back to per-email-only. This
+        // must be revisited the moment a reverse proxy is introduced in front of this app.
         String requesterIp = request.getRemoteAddr();
-        boolean alreadyRequestedRecently =
-                accessLogService.wasMagicLinkRequestedRecently(email, requesterIp, MAGIC_LINK_REQUEST_WINDOW);
-        accessLogService.logMagicLinkRequest(email, request);
+        boolean rateLimited =
+                accessLogService.wasMagicLinkRequestedRecently(email, requesterIp, MAGIC_LINK_REQUEST_WINDOW)
+                || accessLogService.hasReachedMagicLinkEmailCap(
+                        email, MAGIC_LINK_MAX_SENDS_PER_EMAIL, MAGIC_LINK_REQUEST_WINDOW);
 
         // createMagicLinkForEmail throws for an unknown email; swallow that here so the
         // response is identical either way -- otherwise this endpoint is a user-enumeration
@@ -85,16 +101,18 @@ public class AuthRestController {
         // even when rate-limited, so a rate-limited known email still pays the same cost as a
         // fresh known email -- skipping it only when rate-limited would reopen a third,
         // distinguishable timing bucket alongside known/unknown.
+        boolean emailSent = false;
         try {
             MagicLink link = magicLinkService.createMagicLinkForEmail(email);
 
-            if (!alreadyRequestedRecently) {
+            if (!rateLimited) {
                 // Build a URL. In production use app host config.
                 String url = String.format("http://localhost:8080/auth/magic/verify?token=%s", link.getToken());
 
                 String subject = "Your magic login link";
                 String body = "Click to sign in: " + url + "\nLink expires at: " + link.getExpiresAt();
                 emailService.sendSimpleEmail(email, subject, body);
+                emailSent = true;
             } else {
                 // Rate-limited: the link above is real and usable, but don't email it again --
                 // still pay the same executor-submit cost as the real send would, for the same
@@ -105,15 +123,17 @@ public class AuthRestController {
         } catch (IllegalArgumentException ignored) {
             // Do the same "submit a task to the mail executor" work as the success branch,
             // without ever sending mail to an unverified, attacker-supplied address (this
-            // endpoint has no rate limiting beyond the per-(email, IP) window above, so
-            // unconditionally emailing the request's address here would turn it into a
-            // spam/relay vector). Matching that one externally-observable submit-call cost
-            // on both branches is what closes the timing side-channel; actually sending
-            // mail is not the part that needs matching.
+            // endpoint has no rate limiting beyond the two checks above, so unconditionally
+            // emailing the request's address here would turn it into a spam/relay vector).
+            // Matching that one externally-observable submit-call cost on both branches is
+            // what closes the timing side-channel; actually sending mail is not the part
+            // that needs matching.
             mailExecutor.execute(() -> {
             });
             padForMissingDatabaseInsert();
         }
+
+        accessLogService.logMagicLinkRequest(email, request, emailSent);
 
         return ResponseEntity.ok("If an account exists for this email, we've sent a magic "
                 + "link. Please check your inbox, and your spam/junk folder, for an email "
