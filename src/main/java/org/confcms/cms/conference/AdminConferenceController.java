@@ -30,6 +30,11 @@ public class AdminConferenceController {
     private final UserRepository userRepository;
     private final ConferenceRepository conferenceRepository;
 
+    // Shown in place of a real stored secret on the edit form so it never appears in rendered
+    // HTML. Submitting the form unchanged (this placeholder still present) keeps the stored
+    // secret; any other value -- including blank -- replaces or clears it.
+    static final String SECRET_PLACEHOLDER = "•••••••• (unchanged)";
+
     @GetMapping("/new")
     public String newConferenceForm(@RequestParam(required = false) Long cloneFrom, Model model) {
         ConferenceForm form = cloneFrom != null
@@ -180,9 +185,9 @@ public class AdminConferenceController {
         if (paymentConfig != null) {
             form.setPaymentProvider(paymentConfig.getProvider());
             form.setStripePublishableKey(paymentConfig.getStripePublishableKey());
-            form.setStripeSecretKey(paymentConfig.getStripeSecretKey());
+            form.setStripeSecretKey(maskIfPresent(paymentConfig.getStripeSecretKey()));
             form.setPaypalClientId(paymentConfig.getPaypalClientId());
-            form.setPaypalClientSecret(paymentConfig.getPaypalClientSecret());
+            form.setPaypalClientSecret(maskIfPresent(paymentConfig.getPaypalClientSecret()));
             form.setBankDetails(paymentConfig.getBankDetails());
         }
 
@@ -193,10 +198,26 @@ public class AdminConferenceController {
         return "admin/conference_form";
     }
 
+    // Never echoes the real secret into the rendered edit form.
+    private static String maskIfPresent(String storedSecret) {
+        return (storedSecret == null || storedSecret.isBlank()) ? null : SECRET_PLACEHOLDER;
+    }
+
+    // The placeholder means "leave the stored secret alone" -- resolves to the value that should
+    // end up persisted: the submitted value, unless it's the untouched placeholder, in which case
+    // the previously stored secret carries forward.
+    private static String resolveSecret(String submittedValue, String previouslyStored) {
+        return SECRET_PLACEHOLDER.equals(submittedValue) ? previouslyStored : blankToNull(submittedValue);
+    }
+
     @PostMapping("/{id}/edit")
     public String updateConference(@PathVariable Long id, @ModelAttribute ConferenceForm form) {
         Conference conference = conferenceRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Conference not found"));
+
+        ConferencePaymentConfig previousConfig = conference.getPaymentConfig();
+        String previousStripeSecret = previousConfig != null ? previousConfig.getStripeSecretKey() : null;
+        String previousPaypalSecret = previousConfig != null ? previousConfig.getPaypalClientSecret() : null;
 
         conference.setTitle(form.getTitle());
         conference.setVenue(form.getVenue());
@@ -221,10 +242,10 @@ public class AdminConferenceController {
         paymentConfig.setProvider(form.getPaymentProvider());
         if (form.getPaymentProvider() == PaymentProvider.STRIPE) {
             paymentConfig.setStripePublishableKey(form.getStripePublishableKey());
-            paymentConfig.setStripeSecretKey(form.getStripeSecretKey());
+            paymentConfig.setStripeSecretKey(resolveSecret(form.getStripeSecretKey(), previousStripeSecret));
         } else if (form.getPaymentProvider() == PaymentProvider.PAYPAL) {
             paymentConfig.setPaypalClientId(form.getPaypalClientId());
-            paymentConfig.setPaypalClientSecret(form.getPaypalClientSecret());
+            paymentConfig.setPaypalClientSecret(resolveSecret(form.getPaypalClientSecret(), previousPaypalSecret));
         } else if (form.getPaymentProvider() == PaymentProvider.LOCAL_BANK) {
             paymentConfig.setBankDetails(form.getBankDetails());
         }

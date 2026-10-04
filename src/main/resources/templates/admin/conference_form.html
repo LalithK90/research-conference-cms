@@ -151,6 +151,8 @@
                             <div class="mb-2">
                                 <label class="form-label">Secret Key</label>
                                 <input type="text" class="form-control" th:field="*{stripeSecretKey}">
+                                <div class="form-text">Leave the placeholder as-is to keep the saved key. Type a new
+                                    value to replace it, or clear the field to remove it.</div>
                             </div>
                         </div>
                     </div>
@@ -166,6 +168,8 @@
                             <div class="mb-2">
                                 <label class="form-label">Client Secret</label>
                                 <input type="text" class="form-control" th:field="*{paypalClientSecret}">
+                                <div class="form-text">Leave the placeholder as-is to keep the saved secret. Type a
+                                    new value to replace it, or clear the field to remove it.</div>
                             </div>
                         </div>
                     </div>

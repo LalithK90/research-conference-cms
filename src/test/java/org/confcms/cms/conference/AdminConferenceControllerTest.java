@@ -329,6 +329,124 @@ class AdminConferenceControllerTest {
                         && c.getVenueAddress() == null && c.getTravelInfoHtml() == null));
     }
 
+    @Test
+    void editConferenceFormShowsPlaceholderNotRealSecrets() {
+        Conference conference = new Conference();
+        conference.setId(9L);
+        ConferencePaymentConfig paymentConfig = new ConferencePaymentConfig();
+        paymentConfig.setProvider(PaymentProvider.STRIPE);
+        paymentConfig.setStripeSecretKey("sk_live_realsecret");
+        paymentConfig.setPaypalClientSecret("paypal_realsecret");
+        conference.setPaymentConfig(paymentConfig);
+
+        when(conferenceRepository.findById(9L)).thenReturn(Optional.of(conference));
+        when(committeeService.getCommitteeForConference(conference)).thenReturn(List.of());
+        when(userRepository.findAll()).thenReturn(Collections.emptyList());
+        when(conferenceRepository.findAll()).thenReturn(Collections.emptyList());
+
+        Model model = new ExtendedModelMap();
+        controller.editConferenceForm(9L, model);
+
+        AdminConferenceController.ConferenceForm form =
+                (AdminConferenceController.ConferenceForm) model.getAttribute("conferenceForm");
+        assertThat(form.getStripeSecretKey()).isEqualTo(AdminConferenceController.SECRET_PLACEHOLDER);
+        assertThat(form.getPaypalClientSecret()).isEqualTo(AdminConferenceController.SECRET_PLACEHOLDER);
+    }
+
+    @Test
+    void editConferenceFormLeavesSecretBlankWhenNoneStoredYet() {
+        Conference conference = new Conference();
+        conference.setId(9L);
+
+        when(conferenceRepository.findById(9L)).thenReturn(Optional.of(conference));
+        when(committeeService.getCommitteeForConference(conference)).thenReturn(List.of());
+        when(userRepository.findAll()).thenReturn(Collections.emptyList());
+        when(conferenceRepository.findAll()).thenReturn(Collections.emptyList());
+
+        Model model = new ExtendedModelMap();
+        controller.editConferenceForm(9L, model);
+
+        AdminConferenceController.ConferenceForm form =
+                (AdminConferenceController.ConferenceForm) model.getAttribute("conferenceForm");
+        assertThat(form.getStripeSecretKey()).isNull();
+        assertThat(form.getPaypalClientSecret()).isNull();
+    }
+
+    @Test
+    void updateConferenceKeepsStoredSecretWhenPlaceholderSubmitted() {
+        Conference existing = new Conference();
+        existing.setId(9L);
+        ConferencePaymentConfig existingConfig = new ConferencePaymentConfig();
+        existingConfig.setProvider(PaymentProvider.STRIPE);
+        existingConfig.setStripeSecretKey("sk_live_realsecret");
+        existing.setPaymentConfig(existingConfig);
+        when(conferenceRepository.findById(9L)).thenReturn(Optional.of(existing));
+        when(conferenceService.saveConference(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
+        form.setTitle("Updated Title");
+        form.setVenue("Updated Venue");
+        form.setStartDate(LocalDate.now());
+        form.setEndDate(LocalDate.now().plusDays(1));
+        form.setContactEmail("a@b.com");
+        form.setPaymentProvider(PaymentProvider.STRIPE);
+        form.setStripeSecretKey(AdminConferenceController.SECRET_PLACEHOLDER);
+
+        controller.updateConference(9L, form);
+
+        assertThat(existing.getPaymentConfig().getStripeSecretKey()).isEqualTo("sk_live_realsecret");
+    }
+
+    @Test
+    void updateConferenceReplacesSecretWhenNewValueSubmitted() {
+        Conference existing = new Conference();
+        existing.setId(9L);
+        ConferencePaymentConfig existingConfig = new ConferencePaymentConfig();
+        existingConfig.setProvider(PaymentProvider.STRIPE);
+        existingConfig.setStripeSecretKey("sk_live_oldsecret");
+        existing.setPaymentConfig(existingConfig);
+        when(conferenceRepository.findById(9L)).thenReturn(Optional.of(existing));
+        when(conferenceService.saveConference(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
+        form.setTitle("Updated Title");
+        form.setVenue("Updated Venue");
+        form.setStartDate(LocalDate.now());
+        form.setEndDate(LocalDate.now().plusDays(1));
+        form.setContactEmail("a@b.com");
+        form.setPaymentProvider(PaymentProvider.STRIPE);
+        form.setStripeSecretKey("sk_live_newsecret");
+
+        controller.updateConference(9L, form);
+
+        assertThat(existing.getPaymentConfig().getStripeSecretKey()).isEqualTo("sk_live_newsecret");
+    }
+
+    @Test
+    void updateConferenceClearsSecretWhenBlankSubmitted() {
+        Conference existing = new Conference();
+        existing.setId(9L);
+        ConferencePaymentConfig existingConfig = new ConferencePaymentConfig();
+        existingConfig.setProvider(PaymentProvider.STRIPE);
+        existingConfig.setStripeSecretKey("sk_live_oldsecret");
+        existing.setPaymentConfig(existingConfig);
+        when(conferenceRepository.findById(9L)).thenReturn(Optional.of(existing));
+        when(conferenceService.saveConference(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
+        form.setTitle("Updated Title");
+        form.setVenue("Updated Venue");
+        form.setStartDate(LocalDate.now());
+        form.setEndDate(LocalDate.now().plusDays(1));
+        form.setContactEmail("a@b.com");
+        form.setPaymentProvider(PaymentProvider.STRIPE);
+        form.setStripeSecretKey("");
+
+        controller.updateConference(9L, form);
+
+        assertThat(existing.getPaymentConfig().getStripeSecretKey()).isNull();
+    }
+
     private Conference argThatConferenceHasClonedSubTheme(Conference expected) {
         return org.mockito.ArgumentMatchers.argThat(c -> c == expected
                 && c.getSubThemes().size() == 1
