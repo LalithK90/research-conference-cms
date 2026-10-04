@@ -321,6 +321,26 @@ class RegistrationServiceTest {
     }
 
     @Test
+    void reuploadSlipLocksTheUsersRowBeforeCheckingForAnotherActiveRegistration() {
+        User u = user(1L);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.conference.PaymentProvider.LOCAL_BANK);
+        Registration reg = new Registration();
+        reg.setUser(u);
+        reg.setConference(c);
+        reg.setPaymentStatus(PaymentStatus.FAILED);
+        MultipartFile slip = new MockMultipartFile("bankSlip", "corrected.jpg", "image/jpeg",
+                new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x00});
+        when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(1L, 10L, PaymentStatus.FAILED))
+                .thenReturn(Optional.empty());
+        when(fileStorageService.store(slip)).thenReturn("/uploads/uuid_corrected.jpg");
+        when(registrationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.reuploadSlip(reg, slip);
+
+        verify(userRepository).findByIdForUpdate(1L);
+    }
+
+    @Test
     void reuploadSlipRejectsWhenAnotherActiveRegistrationExistsForTheSameConference() {
         // Guards against: reject -> register again (new AWAITING_VERIFICATION row) -> then
         // re-upload the OLD rejected row too, which would leave two simultaneously-active

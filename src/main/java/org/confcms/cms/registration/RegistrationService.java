@@ -111,6 +111,11 @@ public class RegistrationService {
 
     @Transactional
     public void reuploadSlip(Registration registration, MultipartFile bankSlip) {
+        // Same race as register() above: without this lock, a reuploadSlip() racing against
+        // another reuploadSlip() or a register() for the same user+conference could both pass
+        // the "already have an active registration" check below before either commits.
+        userRepository.findByIdForUpdate(registration.getUser().getId());
+
         registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(
                         registration.getUser().getId(), registration.getConference().getId(), PaymentStatus.FAILED)
                 .ifPresent(existing -> {
