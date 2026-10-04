@@ -1,13 +1,7 @@
-package org.confcms.cms.scheduling.service;
+package org.confcms.cms.scheduling;
 
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.conference.ConferenceRepository;
-import org.confcms.cms.scheduling.domain.Presentation;
-import org.confcms.cms.scheduling.domain.Room;
-import org.confcms.cms.scheduling.domain.Session;
-import org.confcms.cms.scheduling.repository.PresentationRepository;
-import org.confcms.cms.scheduling.repository.RoomRepository;
-import org.confcms.cms.scheduling.repository.SessionRepository;
 import org.confcms.cms.paper.Paper;
 import org.confcms.cms.paper.PaperRepository;
 import lombok.RequiredArgsConstructor;

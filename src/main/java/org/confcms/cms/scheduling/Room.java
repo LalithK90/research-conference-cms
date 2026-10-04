@@ -1,4 +1,4 @@
-package org.confcms.cms.scheduling.domain;
+package org.confcms.cms.scheduling;
 
 import org.confcms.cms.core.domain.BaseEntity;
 import org.confcms.cms.conference.Conference;

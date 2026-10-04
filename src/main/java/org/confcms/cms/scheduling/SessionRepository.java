@@ -1,6 +1,5 @@
-package org.confcms.cms.scheduling.repository;
+package org.confcms.cms.scheduling;
 
-import org.confcms.cms.scheduling.domain.Session;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,9 +1,5 @@
-package org.confcms.cms.scheduling.web;
+package org.confcms.cms.scheduling;
 
-import org.confcms.cms.scheduling.domain.Presentation;
-import org.confcms.cms.scheduling.domain.Room;
-import org.confcms.cms.scheduling.domain.Session;
-import org.confcms.cms.scheduling.service.SchedulingService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
