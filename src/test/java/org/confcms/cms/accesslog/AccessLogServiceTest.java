@@ -11,6 +11,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -96,5 +98,60 @@ class AccessLogServiceTest {
 
         // Must not throw -- an audit-log failure must never break the action being audited.
         service.logLogin(user, request);
+    }
+
+    @Test
+    void logMagicLinkRequestWritesAnEntryWithTheRequestedEmailAndNoUser() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("203.0.113.5");
+        when(geoLocationService.resolveLocation("203.0.113.5")).thenReturn(Optional.of("Bangkok, Thailand"));
+
+        service.logMagicLinkRequest("someone@example.com", request);
+
+        ArgumentCaptor<AccessLog> captor = ArgumentCaptor.forClass(AccessLog.class);
+        verify(accessLogRepository).save(captor.capture());
+        AccessLog saved = captor.getValue();
+        assertThat(saved.getEventType()).isEqualTo(AccessEventType.MAGIC_LINK_REQUEST);
+        assertThat(saved.getRequestedEmail()).isEqualTo("someone@example.com");
+        assertThat(saved.getUser()).isNull();
+        assertThat(saved.getIpAddress()).isEqualTo("203.0.113.5");
+        assertThat(saved.getResolvedLocation()).isEqualTo("Bangkok, Thailand");
+    }
+
+    @Test
+    void wasMagicLinkRequestedRecentlyReturnsTrueWhenTheLastRequestIsInsideTheWindow() {
+        AccessLog recent = new AccessLog();
+        recent.setCreatedAt(LocalDateTime.now().minusMinutes(5));
+        when(accessLogRepository.findTopByEventTypeAndRequestedEmailIgnoreCaseOrderByCreatedAtDesc(
+                AccessEventType.MAGIC_LINK_REQUEST, "someone@example.com"))
+                .thenReturn(Optional.of(recent));
+
+        boolean result = service.wasMagicLinkRequestedRecently("someone@example.com", Duration.ofMinutes(30));
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void wasMagicLinkRequestedRecentlyReturnsFalseWhenTheLastRequestIsOutsideTheWindow() {
+        AccessLog stale = new AccessLog();
+        stale.setCreatedAt(LocalDateTime.now().minusMinutes(45));
+        when(accessLogRepository.findTopByEventTypeAndRequestedEmailIgnoreCaseOrderByCreatedAtDesc(
+                AccessEventType.MAGIC_LINK_REQUEST, "someone@example.com"))
+                .thenReturn(Optional.of(stale));
+
+        boolean result = service.wasMagicLinkRequestedRecently("someone@example.com", Duration.ofMinutes(30));
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void wasMagicLinkRequestedRecentlyReturnsFalseWhenThereIsNoPriorRequest() {
+        when(accessLogRepository.findTopByEventTypeAndRequestedEmailIgnoreCaseOrderByCreatedAtDesc(
+                AccessEventType.MAGIC_LINK_REQUEST, "someone@example.com"))
+                .thenReturn(Optional.empty());
+
+        boolean result = service.wasMagicLinkRequestedRecently("someone@example.com", Duration.ofMinutes(30));
+
+        assertThat(result).isFalse();
     }
 }

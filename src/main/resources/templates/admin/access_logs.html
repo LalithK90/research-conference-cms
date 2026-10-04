@@ -32,7 +32,7 @@
             <tbody>
                 <tr th:each="entry : ${logs}">
                     <td th:text="${entry.eventType}"></td>
-                    <td th:text="${entry.user != null ? entry.user.email : '-'}"></td>
+                    <td th:text="${entry.user != null ? entry.user.email : (entry.requestedEmail != null ? entry.requestedEmail : '-')}"></td>
                     <td th:text="${entry.createdAt}"></td>
                     <td th:text="${entry.ipAddress}"></td>
                     <td th:text="${entry.resolvedLocation != null ? entry.resolvedLocation : '-'}"></td>

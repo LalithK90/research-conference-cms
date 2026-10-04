@@ -32,6 +32,30 @@ public class AccessLogService {
         write(AccessEventType.PAPER_DOWNLOAD, user, request, paperVersion);
     }
 
+    public void logMagicLinkRequest(String email, HttpServletRequest request) {
+        try {
+            String ip = request.getRemoteAddr();
+            AccessLog entry = new AccessLog();
+            entry.setEventType(AccessEventType.MAGIC_LINK_REQUEST);
+            entry.setRequestedEmail(email);
+            entry.setIpAddress(ip);
+            entry.setResolvedLocation(geoLocationService.resolveLocation(ip).orElse(null));
+            accessLogRepository.save(entry);
+        } catch (Exception e) {
+            log.warn("Failed to write access log entry (eventType=MAGIC_LINK_REQUEST)", e);
+        }
+    }
+
+    // Checked (and logged) identically whether or not the email belongs to a registered
+    // account -- rate-limiting only known emails would itself be a user-enumeration oracle.
+    public boolean wasMagicLinkRequestedRecently(String email, java.time.Duration window) {
+        return accessLogRepository
+                .findTopByEventTypeAndRequestedEmailIgnoreCaseOrderByCreatedAtDesc(
+                        AccessEventType.MAGIC_LINK_REQUEST, email)
+                .map(last -> last.getCreatedAt().isAfter(java.time.LocalDateTime.now().minus(window)))
+                .orElse(false);
+    }
+
     private void write(AccessEventType eventType, User user, HttpServletRequest request, PaperVersion paperVersion) {
         try {
             String ip = request.getRemoteAddr();
