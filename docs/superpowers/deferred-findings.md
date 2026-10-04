@@ -13,10 +13,6 @@ Real, non-blocking findings surfaced during final whole-branch reviews across th
 
 *(Note: this branch's own deferred items were resolved within the same session, right after the user asked to "fix it now" — listed here only for a complete historical record.)*
 
-## From: Payment Secrets Encryption + Bank-Slip Workflow (roadmap #7)
-
-- **M4:** No DB-level uniqueness constraint enforces "one active registration per user per conference" — the in-code guard (`findByUserIdAndConferenceIdAndPaymentStatusNot`) can theoretically be raced by two concurrent `/register` submissions. Acceptable at current traffic levels; a partial unique index isn't available in MySQL, so this is a documented limitation, not a quick fix.
-
 ## From: Access Audit Log + Duplicate-Paper Detection + GeoLite2 (roadmap #8)
 
 - **M2:** No test directly asserts duplicate-flag behavior specifically on the `uploadNewVersion`/`uploadRevision` code paths (only `submitPaper` has dedicated duplicate-detection tests) — though a prior review independently confirmed all three methods share identical, correctly-ordered wiring, so this is redundant coverage rather than an unverified risk.
