@@ -43,7 +43,7 @@ public enum PaperStatus {
 
 No migration required: Hibernate maps this enum to a `VARCHAR`/native-enum column via `@Enumerated(EnumType.STRING)`; adding a new constant does not require a schema change. (Confirm at implementation time whether the dev H2 profile uses a native `ENUM(...)` column type anywhere for `papers.status` — if so, that DDL must list the new value too. Checked: `papers.status` is `@Enumerated(EnumType.STRING)` with no explicit `columnDefinition`, so Hibernate generates a plain `VARCHAR`; no DDL enum list to update.)
 
-### 3.2 `PaperVersion` (two new nullable fields)
+### 3.2 `PaperVersion` (two new fields)
 
 ```java
 // True only for the version uploaded specifically as the camera-ready submission
@@ -57,7 +57,7 @@ private boolean cameraReady = false;
 private Instant copyrightTransferAgreedAt;
 ```
 
-Both fields are nullable/defaulted, following the pattern already established this session for `PaperVersion.plagiarismScore`/`plagiarismNote` and `possibleDuplicate` — a `NOT NULL` column added to this entity has twice broken `data-dev.sql`'s pre-existing seed INSERTs earlier in this project's history; nullable-by-default avoids a third occurrence.
+`cameraReady` is a non-nullable primitive `boolean` defaulted to `false`, matching `possibleDuplicate`'s existing declaration style exactly. `copyrightTransferAgreedAt` is genuinely nullable (boxed `Instant`, absent until the author agrees). Both default harmlessly without requiring every pre-existing seed row to supply a value — a `NOT NULL` column with no Java-side default added to this entity has twice broken `data-dev.sql`'s pre-existing seed INSERTs earlier in this project's history; defaulting (nullable or not) avoids a third occurrence.
 
 ## 4. Service layer
 
