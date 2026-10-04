@@ -5,8 +5,11 @@ import org.confcms.cms.conference.ConferenceRepository;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
+import org.confcms.cms.review.ReviewAssignmentRepository;
+import org.confcms.cms.review.ReviewAssignmentService;
 import org.confcms.cms.review.ReviewRepository;
 import org.confcms.cms.conference.CommitteeService;
+import org.confcms.cms.paper.Paper;
 import org.confcms.cms.paper.PaperRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ContentDisposition;
@@ -41,6 +44,8 @@ public class AdminDecisionViewController {
     private final UserRepository userRepository;
     private final ConferenceRepository conferenceRepository;
     private final ProceedingsService proceedingsService;
+    private final ReviewAssignmentService reviewAssignmentService;
+    private final ReviewAssignmentRepository reviewAssignmentRepository;
 
     private User actingUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -75,6 +80,52 @@ public class AdminDecisionViewController {
         model.addAttribute("paper", paper);
         model.addAttribute("reviews", reviews);
         return "admin/paper_detail";
+    }
+
+    @GetMapping("/ui/paper/{id}/assign")
+    public String assignReviewerForm(@PathVariable Long id, Model model) {
+        Paper paper = paperRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Paper not found"));
+
+        User actingUser = actingUser();
+        boolean isAdmin = actingUser.getRole() == Role.ADMIN;
+        if (!isAdmin && !committeeService.isChairOrCoChair(actingUser, paper.getConference())) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Not authorized to manage reviewer assignments for this paper");
+        }
+
+        model.addAttribute("paper", paper);
+        model.addAttribute("assignments", reviewAssignmentRepository.findByPaperId(id));
+        model.addAttribute("reviewers", userRepository.findByRole(Role.REVIEWER));
+        return "admin/assign_reviewer";
+    }
+
+    @PostMapping("/ui/paper/{id}/assign/manual")
+    public String assignReviewerManual(@PathVariable Long id, @RequestParam Long reviewerId,
+                                        org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        try {
+            Paper paper = paperRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Paper not found"));
+            User reviewer = userRepository.findById(reviewerId)
+                    .orElseThrow(() -> new IllegalArgumentException("Reviewer not found"));
+            reviewAssignmentService.assignReviewer(actingUser(), paper, reviewer);
+            redirectAttributes.addFlashAttribute("message", "Reviewer assigned.");
+        } catch (SecurityException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/decisions/ui/paper/" + id + "/assign";
+    }
+
+    @PostMapping("/ui/paper/{id}/assign/auto")
+    public String assignReviewerAuto(@PathVariable Long id,
+                                      org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        try {
+            reviewAssignmentService.autoAssignReviewers(actingUser(), id);
+            redirectAttributes.addFlashAttribute("message", "Reviewers auto-assigned.");
+        } catch (SecurityException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/decisions/ui/paper/" + id + "/assign";
     }
 
     @GetMapping("/ui/camera-ready")

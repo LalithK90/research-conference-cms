@@ -46,8 +46,8 @@
                         <span class="badge bg-secondary" th:text="${paper.status}">SUBMITTED</span>
                     </td>
                     <td>
-                        <a href="#" class="btn btn-sm btn-primary">View</a>
-                        <a href="#" class="btn btn-sm btn-info">Assign Reviewer</a>
+                        <a th:href="@{'/admin/decisions/ui/paper/' + ${paper.id}}" class="btn btn-sm btn-primary">View</a>
+                        <a th:href="@{'/admin/decisions/ui/paper/' + ${paper.id} + '/assign'}" class="btn btn-sm btn-info">Assign Reviewer</a>
                     </td>
                 </tr>
             </tbody>

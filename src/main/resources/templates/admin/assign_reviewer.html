@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/admin_layout :: head('Assign Reviewer')}"></head>
+
+<body>
+    <nav th:replace="~{fragments/admin_layout :: nav}"></nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>Assign Reviewer</h2>
+            <a th:href="@{'/admin/decisions/ui/paper/' + ${paper.id}}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i>Back to Paper
+            </a>
+        </div>
+
+        <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title" th:text="${paper.title}"></h5>
+                <p class="text-muted mb-0">
+                    Status: <span class="badge bg-secondary" th:text="${paper.status}"></span>
+                </p>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Current Assignments</h5>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Reviewer</th>
+                            <th>Status</th>
+                            <th>Assigned At</th>
+                            <th>Due Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="a : ${assignments}">
+                            <td th:text="${a.reviewer.fullName}"></td>
+                            <td><span class="badge bg-secondary" th:text="${a.status}"></span></td>
+                            <td th:text="${a.assignedAt}"></td>
+                            <td th:text="${a.dueDate}"></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(assignments)}">
+                            <td colspan="4" class="text-muted">No reviewers assigned yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Manual Assignment</h5>
+                        <form method="post" th:action="@{'/admin/decisions/ui/paper/' + ${paper.id} + '/assign/manual'}">
+                            <div class="mb-3">
+                                <label for="reviewerId" class="form-label">Reviewer</label>
+                                <select class="form-select" id="reviewerId" name="reviewerId" required>
+                                    <option value="" disabled selected>Choose a reviewer</option>
+                                    <option th:each="r : ${reviewers}" th:value="${r.id}" th:text="${r.fullName} + ' (' + ${r.email} + ')'"></option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-user-plus me-1"></i>Assign
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Auto-Assignment</h5>
+                        <p class="text-muted">
+                            Automatically assigns the top 2 available reviewers by bid score and current
+                            load, excluding anyone with a declared conflict. Only works while the paper
+                            is in SUBMITTED status.
+                        </p>
+                        <form method="post" th:action="@{'/admin/decisions/ui/paper/' + ${paper.id} + '/assign/auto'}">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Auto-Assign
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:replace="~{fragments/admin_layout :: scripts}"></script>
+</body>
+
+</html>
