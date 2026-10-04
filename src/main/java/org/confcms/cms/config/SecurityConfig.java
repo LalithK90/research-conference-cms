@@ -66,6 +66,15 @@ public class SecurityConfig {
             .logout(logout -> logout
                 .logoutSuccessUrl("/")
                 .permitAll()
+            )
+            // A session that has timed out server-side (server.servlet.session.timeout=30m)
+            // sends the next request's JSESSIONID cookie for a session Tomcat no longer has;
+            // without this, Spring Security's default handling of that case isn't a clear
+            // "you were logged out due to inactivity" redirect. invalidSessionUrl covers both
+            // true inactivity-timeout and any other reason the session is no longer valid
+            // (server restart, invalidated cookie), since the two aren't distinguishable here.
+            .sessionManagement(session -> session
+                .invalidSessionUrl("/login?expired")
             );
 
         // Only register oauth2Login when at least one provider (Google/ORCID) is actually
