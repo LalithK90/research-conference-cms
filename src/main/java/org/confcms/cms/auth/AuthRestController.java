@@ -30,16 +30,20 @@ public class AuthRestController {
 
     @PostMapping("/magic/request")
     public ResponseEntity<?> requestMagicLink(@RequestParam String email) {
-        // Create magic link (throws if user not found)
-        MagicLink link = magicLinkService.createMagicLinkForEmail(email);
+        // createMagicLinkForEmail throws for an unknown email; swallow that here so the
+        // response is identical either way -- otherwise this endpoint is a user-enumeration
+        // oracle despite its own response text claiming not to be one.
+        try {
+            MagicLink link = magicLinkService.createMagicLinkForEmail(email);
 
-        // Build a URL. In production use app host config.
-        String url = String.format("http://localhost:8080/auth/magic/verify?token=%s", link.getToken());
+            // Build a URL. In production use app host config.
+            String url = String.format("http://localhost:8080/auth/magic/verify?token=%s", link.getToken());
 
-        // Send email (best-effort)
-        String subject = "Your magic login link";
-        String body = "Click to sign in: " + url + "\nLink expires at: " + link.getExpiresAt();
-        emailService.sendSimpleEmail(email, subject, body);
+            String subject = "Your magic login link";
+            String body = "Click to sign in: " + url + "\nLink expires at: " + link.getExpiresAt();
+            emailService.sendSimpleEmail(email, subject, body);
+        } catch (IllegalArgumentException ignored) {
+        }
 
         return ResponseEntity.ok("Magic link sent if the account exists");
     }
