@@ -4,7 +4,7 @@ import org.confcms.cms.registration.domain.PaymentStatus;
 import org.confcms.cms.registration.domain.Registration;
 import org.confcms.cms.registration.repository.RegistrationRepository;
 import org.confcms.cms.registration.service.RegistrationService;
-import org.confcms.cms.service.ConferenceService;
+import org.confcms.cms.conference.ConferenceService;
 import org.confcms.cms.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;

@@ -1,4 +1,4 @@
-package org.confcms.cms.domain;
+package org.confcms.cms.conference;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

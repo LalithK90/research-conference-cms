@@ -1,6 +1,6 @@
 package org.confcms.cms.registration.service;
 
-import org.confcms.cms.domain.Conference;
+import org.confcms.cms.conference.Conference;
 import org.confcms.cms.user.User;
 import org.confcms.cms.registration.domain.PaymentStatus;
 import org.confcms.cms.registration.domain.Registration;
@@ -46,11 +46,11 @@ class RegistrationServiceTest {
         return u;
     }
 
-    private Conference conferenceWithProvider(long id, org.confcms.cms.domain.PaymentProvider provider) {
+    private Conference conferenceWithProvider(long id, org.confcms.cms.conference.PaymentProvider provider) {
         Conference c = new Conference();
         c.setId(id);
         if (provider != null) {
-            org.confcms.cms.domain.ConferencePaymentConfig config = new org.confcms.cms.domain.ConferencePaymentConfig();
+            org.confcms.cms.conference.ConferencePaymentConfig config = new org.confcms.cms.conference.ConferencePaymentConfig();
             config.setProvider(provider);
             c.setPaymentConfig(config);
         }
@@ -60,7 +60,7 @@ class RegistrationServiceTest {
     @Test
     void registerWithFreeProviderSetsPendingAndIgnoresSlip() {
         User u = user(1L);
-        Conference c = conferenceWithProvider(10L, org.confcms.cms.domain.PaymentProvider.FREE);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.conference.PaymentProvider.FREE);
         when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(1L, 10L, PaymentStatus.FAILED))
                 .thenReturn(Optional.empty());
         when(registrationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -75,7 +75,7 @@ class RegistrationServiceTest {
     @Test
     void registerWithVirtualTicketTypeResolvesToTwentyFive() {
         User u = user(1L);
-        Conference c = conferenceWithProvider(10L, org.confcms.cms.domain.PaymentProvider.FREE);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.conference.PaymentProvider.FREE);
         when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(1L, 10L, PaymentStatus.FAILED))
                 .thenReturn(Optional.empty());
         when(registrationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -88,7 +88,7 @@ class RegistrationServiceTest {
     @Test
     void registerWithUnknownTicketTypeThrows() {
         User u = user(1L);
-        Conference c = conferenceWithProvider(10L, org.confcms.cms.domain.PaymentProvider.FREE);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.conference.PaymentProvider.FREE);
 
         // Ticket-type validation happens before the duplicate-registration lookup in
         // RegistrationService.register, so no repository stub is needed here.
@@ -100,7 +100,7 @@ class RegistrationServiceTest {
     @Test
     void registerWithLocalBankAndValidSlipSetsAwaitingVerification() {
         User u = user(1L);
-        Conference c = conferenceWithProvider(10L, org.confcms.cms.domain.PaymentProvider.LOCAL_BANK);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.conference.PaymentProvider.LOCAL_BANK);
         MultipartFile slip = new MockMultipartFile("bankSlip", "slip.pdf", "application/pdf",
                 "%PDF-1.4 fake content".getBytes());
         when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(1L, 10L, PaymentStatus.FAILED))
@@ -118,7 +118,7 @@ class RegistrationServiceTest {
     @Test
     void registerWithLocalBankAndNoSlipThrows() {
         User u = user(1L);
-        Conference c = conferenceWithProvider(10L, org.confcms.cms.domain.PaymentProvider.LOCAL_BANK);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.conference.PaymentProvider.LOCAL_BANK);
         when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(1L, 10L, PaymentStatus.FAILED))
                 .thenReturn(Optional.empty());
 
@@ -132,7 +132,7 @@ class RegistrationServiceTest {
     @Test
     void registerWithLocalBankAndNonPdfNonImageSlipThrows() {
         User u = user(1L);
-        Conference c = conferenceWithProvider(10L, org.confcms.cms.domain.PaymentProvider.LOCAL_BANK);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.conference.PaymentProvider.LOCAL_BANK);
         MultipartFile badFile = new MockMultipartFile("bankSlip", "slip.txt", "text/plain",
                 "just some text".getBytes());
         when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(1L, 10L, PaymentStatus.FAILED))
@@ -146,7 +146,7 @@ class RegistrationServiceTest {
     @Test
     void registerRejectsWhenAnActiveRegistrationAlreadyExists() {
         User u = user(1L);
-        Conference c = conferenceWithProvider(10L, org.confcms.cms.domain.PaymentProvider.FREE);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.conference.PaymentProvider.FREE);
         when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(1L, 10L, PaymentStatus.FAILED))
                 .thenReturn(Optional.of(new Registration()));
 
@@ -279,7 +279,7 @@ class RegistrationServiceTest {
     @Test
     void reuploadSlipStoresNewFileResetsStatusAndClearsRejectionReason() {
         User u = user(1L);
-        Conference c = conferenceWithProvider(10L, org.confcms.cms.domain.PaymentProvider.LOCAL_BANK);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.conference.PaymentProvider.LOCAL_BANK);
         Registration reg = new Registration();
         reg.setUser(u);
         reg.setConference(c);
@@ -306,7 +306,7 @@ class RegistrationServiceTest {
         // re-upload the OLD rejected row too, which would leave two simultaneously-active
         // registrations for the same user+conference.
         User u = user(1L);
-        Conference c = conferenceWithProvider(10L, org.confcms.cms.domain.PaymentProvider.LOCAL_BANK);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.conference.PaymentProvider.LOCAL_BANK);
         Registration staleRejected = new Registration();
         staleRejected.setUser(u);
         staleRejected.setConference(c);

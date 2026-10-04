@@ -1,6 +1,6 @@
 package org.confcms.cms.submission.dto;
 
-import org.confcms.cms.domain.Conference;
+import org.confcms.cms.conference.Conference;
 import lombok.Getter;
 
 import java.time.LocalDate;

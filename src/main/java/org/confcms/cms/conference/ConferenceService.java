@@ -1,7 +1,5 @@
-package org.confcms.cms.service;
+package org.confcms.cms.conference;
 
-import org.confcms.cms.domain.Conference;
-import org.confcms.cms.repository.ConferenceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

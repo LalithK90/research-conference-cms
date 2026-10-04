@@ -1,4 +1,4 @@
-package org.confcms.cms.domain;
+package org.confcms.cms.conference;
 
 import org.confcms.cms.user.User;
 

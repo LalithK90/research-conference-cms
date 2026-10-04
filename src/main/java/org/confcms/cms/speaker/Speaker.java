@@ -1,7 +1,7 @@
 package org.confcms.cms.speaker;
 
 import org.confcms.cms.core.domain.BaseEntity;
-import org.confcms.cms.domain.Conference;
+import org.confcms.cms.conference.Conference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

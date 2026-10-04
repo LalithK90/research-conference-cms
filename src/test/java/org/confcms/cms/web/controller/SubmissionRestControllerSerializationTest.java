@@ -1,7 +1,7 @@
 package org.confcms.cms.web.controller;
 
-import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.SubTheme;
+import org.confcms.cms.conference.Conference;
+import org.confcms.cms.conference.SubTheme;
 import org.confcms.cms.submission.domain.Paper;
 import org.confcms.cms.submission.domain.PaperAuthor;
 import org.confcms.cms.submission.domain.PaperStatus;

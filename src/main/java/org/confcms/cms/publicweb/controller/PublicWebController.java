@@ -1,15 +1,15 @@
 package org.confcms.cms.publicweb.controller;
 
-import org.confcms.cms.domain.Conference;
+import org.confcms.cms.conference.Conference;
 import org.confcms.cms.speaker.Speaker;
 import org.confcms.cms.speaker.SpeakerType;
 import org.confcms.cms.sponsor.Sponsor;
 import org.confcms.cms.sponsor.SponsorTier;
-import org.confcms.cms.repository.ConferenceRepository;
+import org.confcms.cms.conference.ConferenceRepository;
 import org.confcms.cms.speaker.SpeakerRepository;
 import org.confcms.cms.sponsor.SponsorRepository;
-import org.confcms.cms.service.CommitteeService;
-import org.confcms.cms.service.ConferenceService;
+import org.confcms.cms.conference.CommitteeService;
+import org.confcms.cms.conference.ConferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Controller;

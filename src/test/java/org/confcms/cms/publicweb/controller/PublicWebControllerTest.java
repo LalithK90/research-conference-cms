@@ -1,8 +1,8 @@
 package org.confcms.cms.publicweb.controller;
 
-import org.confcms.cms.repository.ConferenceRepository;
-import org.confcms.cms.service.CommitteeService;
-import org.confcms.cms.service.ConferenceService;
+import org.confcms.cms.conference.ConferenceRepository;
+import org.confcms.cms.conference.CommitteeService;
+import org.confcms.cms.conference.ConferenceService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -50,7 +50,7 @@ class PublicWebControllerTest {
 
     @Test
     void speakersSplitsIntoPlenaryAndKeynoteLists() {
-        org.confcms.cms.domain.Conference conference = new org.confcms.cms.domain.Conference();
+        org.confcms.cms.conference.Conference conference = new org.confcms.cms.conference.Conference();
         conference.setId(1L);
         org.mockito.Mockito.when(conferenceService.getActiveConference()).thenReturn(conference);
 
@@ -71,7 +71,7 @@ class PublicWebControllerTest {
 
     @Test
     void sponsorsGroupsByTierInDeclarationOrder() {
-        org.confcms.cms.domain.Conference conference = new org.confcms.cms.domain.Conference();
+        org.confcms.cms.conference.Conference conference = new org.confcms.cms.conference.Conference();
         conference.setId(1L);
         org.mockito.Mockito.when(conferenceService.getActiveConference()).thenReturn(conference);
 
@@ -110,15 +110,15 @@ class PublicWebControllerTest {
 
     @Test
     void pastConferencesListsOnlyInactiveConferencesNewestFirst() {
-        org.confcms.cms.domain.Conference active = new org.confcms.cms.domain.Conference();
+        org.confcms.cms.conference.Conference active = new org.confcms.cms.conference.Conference();
         active.setActive(true);
         active.setStartDate(java.time.LocalDate.of(2026, 1, 1));
 
-        org.confcms.cms.domain.Conference older = new org.confcms.cms.domain.Conference();
+        org.confcms.cms.conference.Conference older = new org.confcms.cms.conference.Conference();
         older.setActive(false);
         older.setStartDate(java.time.LocalDate.of(2024, 1, 1));
 
-        org.confcms.cms.domain.Conference newer = new org.confcms.cms.domain.Conference();
+        org.confcms.cms.conference.Conference newer = new org.confcms.cms.conference.Conference();
         newer.setActive(false);
         newer.setStartDate(java.time.LocalDate.of(2025, 1, 1));
 
@@ -133,7 +133,7 @@ class PublicWebControllerTest {
 
     @Test
     void pastConferenceAboutLoadsTheRequestedConferenceNotTheActiveOne() {
-        org.confcms.cms.domain.Conference target = new org.confcms.cms.domain.Conference();
+        org.confcms.cms.conference.Conference target = new org.confcms.cms.conference.Conference();
         target.setId(42L);
         target.setTitle("2024 Edition");
         org.mockito.Mockito.when(conferenceRepository.findById(42L)).thenReturn(java.util.Optional.of(target));

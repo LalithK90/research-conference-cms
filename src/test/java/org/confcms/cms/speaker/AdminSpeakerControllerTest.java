@@ -1,7 +1,7 @@
 package org.confcms.cms.speaker;
 
-import org.confcms.cms.domain.Conference;
-import org.confcms.cms.repository.ConferenceRepository;
+import org.confcms.cms.conference.Conference;
+import org.confcms.cms.conference.ConferenceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,6 +1,6 @@
 package org.confcms.cms.conflictdeclaration;
 
-import org.confcms.cms.domain.Conference;
+import org.confcms.cms.conference.Conference;
 import org.confcms.cms.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

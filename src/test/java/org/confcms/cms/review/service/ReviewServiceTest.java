@@ -1,6 +1,6 @@
 package org.confcms.cms.review.service;
 
-import org.confcms.cms.domain.Conference;
+import org.confcms.cms.conference.Conference;
 import org.confcms.cms.user.User;
 import org.confcms.cms.review.domain.ReviewAssignment;
 import org.confcms.cms.review.dto.PaperReviewView;

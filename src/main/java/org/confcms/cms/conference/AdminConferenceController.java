@@ -1,16 +1,7 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.conference;
 
-import org.confcms.cms.domain.CommitteeRole;
-import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.ConferenceCommitteeRole;
-import org.confcms.cms.domain.ConferencePaymentConfig;
-import org.confcms.cms.domain.PaymentProvider;
-import org.confcms.cms.domain.SubTheme;
 import org.confcms.cms.user.User;
-import org.confcms.cms.repository.ConferenceRepository;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.service.CommitteeService;
-import org.confcms.cms.service.ConferenceService;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

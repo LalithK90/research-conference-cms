@@ -1,7 +1,5 @@
-package org.confcms.cms.repository;
+package org.confcms.cms.conference;
 
-import org.confcms.cms.domain.CommitteeRole;
-import org.confcms.cms.domain.ConferenceCommitteeRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

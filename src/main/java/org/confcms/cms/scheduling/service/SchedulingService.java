@@ -1,7 +1,7 @@
 package org.confcms.cms.scheduling.service;
 
-import org.confcms.cms.domain.Conference;
-import org.confcms.cms.repository.ConferenceRepository;
+import org.confcms.cms.conference.Conference;
+import org.confcms.cms.conference.ConferenceRepository;
 import org.confcms.cms.scheduling.domain.Presentation;
 import org.confcms.cms.scheduling.domain.Room;
 import org.confcms.cms.scheduling.domain.Session;

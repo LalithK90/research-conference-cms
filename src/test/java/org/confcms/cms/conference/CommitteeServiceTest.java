@@ -1,10 +1,6 @@
-package org.confcms.cms.service;
+package org.confcms.cms.conference;
 
-import org.confcms.cms.domain.CommitteeRole;
-import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.ConferenceCommitteeRole;
 import org.confcms.cms.user.User;
-import org.confcms.cms.repository.ConferenceCommitteeRoleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

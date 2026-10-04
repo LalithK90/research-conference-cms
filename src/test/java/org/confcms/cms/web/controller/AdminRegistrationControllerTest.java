@@ -1,11 +1,11 @@
 package org.confcms.cms.web.controller;
 
-import org.confcms.cms.domain.Conference;
+import org.confcms.cms.conference.Conference;
 import org.confcms.cms.registration.domain.PaymentStatus;
 import org.confcms.cms.registration.domain.Registration;
 import org.confcms.cms.registration.repository.RegistrationRepository;
 import org.confcms.cms.registration.service.RegistrationService;
-import org.confcms.cms.service.ConferenceService;
+import org.confcms.cms.conference.ConferenceService;
 import org.confcms.cms.service.FileStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

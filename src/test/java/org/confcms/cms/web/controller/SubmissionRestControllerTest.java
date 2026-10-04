@@ -71,7 +71,7 @@ class SubmissionRestControllerTest {
         Paper saved = new Paper();
         saved.setId(42L);
         saved.setTitle("Title");
-        saved.setConference(new org.confcms.cms.domain.Conference());
+        saved.setConference(new org.confcms.cms.conference.Conference());
         when(submissionService.submitPaper(any(User.class), any(), any(), any(), any(), any())).thenReturn(saved);
 
         ResponseEntity<?> response = controller.submitPaper("Title", "Abstract", "track", authorsJson, file);

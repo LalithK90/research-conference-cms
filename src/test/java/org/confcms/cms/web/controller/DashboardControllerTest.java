@@ -1,7 +1,7 @@
 package org.confcms.cms.web.controller;
 
 import org.confcms.cms.core.security.Role;
-import org.confcms.cms.domain.Conference;
+import org.confcms.cms.conference.Conference;
 import org.confcms.cms.user.User;
 import org.confcms.cms.registration.domain.PaymentStatus;
 import org.confcms.cms.registration.domain.Registration;

@@ -2,7 +2,7 @@ package org.confcms.cms.submission.service;
 
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.service.ConferenceService;
+import org.confcms.cms.conference.ConferenceService;
 import org.confcms.cms.service.FileStorageService;
 import org.confcms.cms.service.EmailService;
 import org.confcms.cms.personinvitation.PersonInvitationService;

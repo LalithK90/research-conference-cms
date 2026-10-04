@@ -1,6 +1,6 @@
 package org.confcms.cms.conflictdeclaration;
 
-import org.confcms.cms.domain.Conference;
+import org.confcms.cms.conference.Conference;
 import org.confcms.cms.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

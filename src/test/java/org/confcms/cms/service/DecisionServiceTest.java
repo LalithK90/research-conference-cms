@@ -1,7 +1,8 @@
 package org.confcms.cms.service;
 
-import org.confcms.cms.domain.CommitteeRole;
-import org.confcms.cms.domain.Conference;
+import org.confcms.cms.conference.CommitteeRole;
+import org.confcms.cms.conference.CommitteeService;
+import org.confcms.cms.conference.Conference;
 import org.confcms.cms.user.User;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.review.domain.Review;

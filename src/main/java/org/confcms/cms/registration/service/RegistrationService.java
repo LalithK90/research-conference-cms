@@ -1,7 +1,7 @@
 package org.confcms.cms.registration.service;
 
-import org.confcms.cms.domain.Conference;
-import org.confcms.cms.domain.PaymentProvider;
+import org.confcms.cms.conference.Conference;
+import org.confcms.cms.conference.PaymentProvider;
 import org.confcms.cms.user.User;
 import org.confcms.cms.registration.domain.PaymentStatus;
 import org.confcms.cms.registration.domain.Registration;

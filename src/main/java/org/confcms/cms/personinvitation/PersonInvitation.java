@@ -2,7 +2,7 @@ package org.confcms.cms.personinvitation;
 
 import org.confcms.cms.user.User;
 import org.confcms.cms.core.domain.BaseEntity;
-import org.confcms.cms.domain.Conference;
+import org.confcms.cms.conference.Conference;
 import org.confcms.cms.review.domain.ReviewDecline;
 import org.confcms.cms.submission.domain.Paper;
 import jakarta.persistence.*;

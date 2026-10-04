@@ -4,7 +4,7 @@ import org.confcms.cms.core.security.Role;
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.review.repository.ReviewRepository;
-import org.confcms.cms.service.CommitteeService;
+import org.confcms.cms.conference.CommitteeService;
 import org.confcms.cms.service.DecisionService;
 import org.confcms.cms.submission.repository.PaperRepository;
 import lombok.RequiredArgsConstructor;

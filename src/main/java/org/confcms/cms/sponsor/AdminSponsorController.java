@@ -1,7 +1,7 @@
 package org.confcms.cms.sponsor;
 
-import org.confcms.cms.domain.Conference;
-import org.confcms.cms.repository.ConferenceRepository;
+import org.confcms.cms.conference.Conference;
+import org.confcms.cms.conference.ConferenceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
