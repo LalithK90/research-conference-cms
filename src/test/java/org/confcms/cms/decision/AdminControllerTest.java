@@ -1,4 +1,4 @@
-package org.confcms.cms.admin.controller;
+package org.confcms.cms.decision;
 
 import org.confcms.cms.paper.Paper;
 import org.confcms.cms.paper.PaperVersion;

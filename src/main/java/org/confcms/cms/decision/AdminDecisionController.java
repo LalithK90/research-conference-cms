@@ -1,8 +1,7 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.decision;
 
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.service.DecisionService;
 import org.confcms.cms.paper.Paper;
 import org.confcms.cms.paper.PaperStatus;
 import org.confcms.cms.paper.RevisionResolution;

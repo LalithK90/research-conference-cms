@@ -1,8 +1,9 @@
-package org.confcms.cms.service;
+package org.confcms.cms.decision;
 
 import org.confcms.cms.user.User;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.conference.CommitteeService;
+import org.confcms.cms.service.EmailService;
 import org.confcms.cms.paper.Paper;
 import org.confcms.cms.paper.PaperStatus;
 import org.confcms.cms.paper.PaperVersion;

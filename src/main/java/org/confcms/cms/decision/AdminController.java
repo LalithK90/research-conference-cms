@@ -1,4 +1,4 @@
-package org.confcms.cms.admin.controller;
+package org.confcms.cms.decision;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.confcms.cms.paper.Paper;

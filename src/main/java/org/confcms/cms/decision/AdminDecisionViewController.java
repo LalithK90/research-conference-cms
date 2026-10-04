@@ -1,11 +1,10 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.decision;
 
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.review.ReviewRepository;
 import org.confcms.cms.conference.CommitteeService;
-import org.confcms.cms.service.DecisionService;
 import org.confcms.cms.paper.PaperRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;

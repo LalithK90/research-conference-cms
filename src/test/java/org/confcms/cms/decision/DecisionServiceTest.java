@@ -1,8 +1,9 @@
-package org.confcms.cms.service;
+package org.confcms.cms.decision;
 
 import org.confcms.cms.conference.CommitteeRole;
 import org.confcms.cms.conference.CommitteeService;
 import org.confcms.cms.conference.Conference;
+import org.confcms.cms.service.EmailService;
 import org.confcms.cms.user.User;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.review.Review;

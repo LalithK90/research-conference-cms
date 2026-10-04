@@ -1,4 +1,4 @@
-package org.confcms.cms.service;
+package org.confcms.cms.decision;
 
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.paper.Paper;
