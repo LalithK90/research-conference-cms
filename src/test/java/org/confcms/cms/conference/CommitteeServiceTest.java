@@ -99,4 +99,18 @@ class CommitteeServiceTest {
 
         assertThat(service.hasAnyCommitteeRole(user, conference)).isFalse();
     }
+
+    @Test
+    void getChairOrCoChairConferenceIdsReturnsOneQueryResultAsASet() {
+        when(repository.findChairOrCoChairConferenceIds(10L)).thenReturn(List.of(1L, 2L, 2L));
+
+        assertThat(service.getChairOrCoChairConferenceIds(user)).containsExactlyInAnyOrder(1L, 2L);
+    }
+
+    @Test
+    void getChairOrCoChairConferenceIdsReturnsEmptySetWhenUserChairsNothing() {
+        when(repository.findChairOrCoChairConferenceIds(10L)).thenReturn(List.of());
+
+        assertThat(service.getChairOrCoChairConferenceIds(user)).isEmpty();
+    }
 }

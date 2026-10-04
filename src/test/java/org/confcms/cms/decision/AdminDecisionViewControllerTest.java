@@ -173,8 +173,8 @@ class AdminDecisionViewControllerTest {
                 .thenReturn(java.util.List.of(ownPaper, otherPaper));
         when(paperRepository.findByStatus(org.confcms.cms.paper.PaperStatus.CAMERA_READY_SUBMITTED))
                 .thenReturn(java.util.List.of());
-        when(committeeService.isChairOrCoChair(chair, conference)).thenReturn(true);
-        when(committeeService.isChairOrCoChair(chair, otherConference)).thenReturn(false);
+        when(committeeService.getChairOrCoChairConferenceIds(chair))
+                .thenReturn(java.util.Set.of(conference.getId()));
 
         Model model = new ExtendedModelMap();
         controller.cameraReadyStatus(model);

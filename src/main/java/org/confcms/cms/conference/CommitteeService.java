@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +20,14 @@ public class CommitteeService {
 
     public boolean isChairOrCoChair(User user, Conference conference) {
         return hasRole(user, conference, CommitteeRole.CHAIR) || hasRole(user, conference, CommitteeRole.CO_CHAIR);
+    }
+
+    // One query for every conference this user chairs or co-chairs, as a Set for O(1)
+    // membership checks against a list of papers that may span many conferences -- use this
+    // instead of calling isChairOrCoChair once per paper, which is 2 queries per paper (one
+    // for each role) and doesn't scale past a handful of papers.
+    public Set<Long> getChairOrCoChairConferenceIds(User user) {
+        return Set.copyOf(repository.findChairOrCoChairConferenceIds(user.getId()));
     }
 
     public boolean hasAnyCommitteeRole(User user, Conference conference) {

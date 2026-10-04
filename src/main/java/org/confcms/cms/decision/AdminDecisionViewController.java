@@ -72,9 +72,18 @@ public class AdminDecisionViewController {
         papers.addAll(paperRepository.findByStatus(org.confcms.cms.paper.PaperStatus.CAMERA_READY_SUBMITTED));
 
         boolean isAdmin = actingUser.getRole() == Role.ADMIN;
-        java.util.List<org.confcms.cms.paper.Paper> visible = isAdmin ? papers : papers.stream()
-                .filter(p -> committeeService.isChairOrCoChair(actingUser, p.getConference()))
-                .toList();
+        java.util.List<org.confcms.cms.paper.Paper> visible;
+        if (isAdmin) {
+            visible = papers;
+        } else {
+            // One query for every conference this user chairs/co-chairs, instead of up to 2
+            // queries per paper (isChairOrCoChair checks CHAIR and CO_CHAIR separately) --
+            // the N+1 this replaced didn't scale past a handful of papers.
+            var chairOrCoChairConferenceIds = committeeService.getChairOrCoChairConferenceIds(actingUser);
+            visible = papers.stream()
+                    .filter(p -> chairOrCoChairConferenceIds.contains(p.getConference().getId()))
+                    .toList();
+        }
 
         model.addAttribute("papers", visible);
         return "admin/camera_ready";
