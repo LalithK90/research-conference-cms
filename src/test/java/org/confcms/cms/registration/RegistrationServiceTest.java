@@ -2,6 +2,7 @@ package org.confcms.cms.registration;
 
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.user.User;
+import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.service.FileStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.quality.Strictness;
+import org.mockito.junit.jupiter.MockitoSettings;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,18 +26,22 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class RegistrationServiceTest {
 
     @Mock
     private RegistrationRepository registrationRepository;
     @Mock
     private FileStorageService fileStorageService;
+    @Mock
+    private UserRepository userRepository;
 
     private RegistrationService service;
 
     @BeforeEach
     void setUp() {
-        service = new RegistrationService(registrationRepository, fileStorageService);
+        service = new RegistrationService(registrationRepository, fileStorageService, userRepository);
+        when(userRepository.findByIdForUpdate(any())).thenReturn(Optional.empty());
     }
 
     private User user(long id) {
@@ -67,6 +74,22 @@ class RegistrationServiceTest {
         assertThat(result.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
         assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("100"));
         verify(fileStorageService, never()).store(any());
+    }
+
+    // Locking this user's row (rather than the conference's) is what keeps two concurrent
+    // registration attempts BY THE SAME user from racing past the duplicate-registration check
+    // below before either commits, without serializing unrelated users against each other.
+    @Test
+    void registerLocksTheUsersRowBeforeCheckingForAnExistingRegistration() {
+        User u = user(1L);
+        Conference c = conferenceWithProvider(10L, org.confcms.cms.conference.PaymentProvider.FREE);
+        when(registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(1L, 10L, PaymentStatus.FAILED))
+                .thenReturn(Optional.empty());
+        when(registrationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.register(u, c, "REGULAR", null);
+
+        verify(userRepository).findByIdForUpdate(1L);
     }
 
     @Test

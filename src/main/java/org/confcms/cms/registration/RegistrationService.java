@@ -3,6 +3,7 @@ package org.confcms.cms.registration;
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.conference.PaymentProvider;
 import org.confcms.cms.user.User;
+import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class RegistrationService {
 
     private final RegistrationRepository registrationRepository;
     private final FileStorageService fileStorageService;
+    private final UserRepository userRepository;
 
     @Transactional
     public Registration register(User user, Conference conference, String ticketType, MultipartFile bankSlip) {
@@ -38,6 +40,12 @@ public class RegistrationService {
         if (amount == null) {
             throw new IllegalArgumentException("Unknown ticket type: " + ticketType);
         }
+
+        // Locks this user's row for the rest of the transaction, so a second concurrent
+        // register() call for the same user (double-submit, two browser tabs) blocks here
+        // instead of racing past the check below before either commits. Doesn't lock other
+        // users against each other -- see UserRepository.findByIdForUpdate.
+        userRepository.findByIdForUpdate(user.getId());
 
         registrationRepository.findByUserIdAndConferenceIdAndPaymentStatusNot(
                         user.getId(), conference.getId(), PaymentStatus.FAILED)
