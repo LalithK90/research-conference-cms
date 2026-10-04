@@ -1,4 +1,4 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.paper;
 
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.DeserializationFeature;
@@ -6,11 +6,6 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.user.User;
-import org.confcms.cms.submission.domain.Paper;
-import org.confcms.cms.submission.domain.PaperAuthor;
-import org.confcms.cms.submission.dto.AuthorRequestDto;
-import org.confcms.cms.submission.dto.PaperResponseDto;
-import org.confcms.cms.submission.service.SubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;

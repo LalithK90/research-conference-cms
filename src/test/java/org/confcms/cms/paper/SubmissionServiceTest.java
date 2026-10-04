@@ -1,4 +1,4 @@
-package org.confcms.cms.submission.service;
+package org.confcms.cms.paper;
 
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.user.User;
@@ -7,12 +7,6 @@ import org.confcms.cms.conference.ConferenceService;
 import org.confcms.cms.service.EmailService;
 import org.confcms.cms.service.FileStorageService;
 import org.confcms.cms.personinvitation.PersonInvitationService;
-import org.confcms.cms.submission.domain.Paper;
-import org.confcms.cms.submission.domain.PaperAuthor;
-import org.confcms.cms.submission.domain.PaperStatus;
-import org.confcms.cms.submission.domain.PaperVersion;
-import org.confcms.cms.submission.repository.PaperRepository;
-import org.confcms.cms.submission.repository.PaperVersionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

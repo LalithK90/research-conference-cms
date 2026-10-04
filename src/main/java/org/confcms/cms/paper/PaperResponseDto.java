@@ -1,6 +1,5 @@
-package org.confcms.cms.submission.dto;
+package org.confcms.cms.paper;
 
-import org.confcms.cms.submission.domain.Paper;
 import lombok.Getter;
 
 import java.util.List;

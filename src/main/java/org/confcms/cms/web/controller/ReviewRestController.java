@@ -11,8 +11,8 @@ import org.confcms.cms.review.service.ReviewService;
 import org.confcms.cms.review.repository.ReviewAssignmentRepository;
 import org.confcms.cms.review.repository.ReviewRepository;
 import org.confcms.cms.accesslog.AccessLogService;
-import org.confcms.cms.submission.domain.Paper;
-import org.confcms.cms.submission.repository.PaperRepository;
+import org.confcms.cms.paper.Paper;
+import org.confcms.cms.paper.PaperRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -134,7 +134,7 @@ public class ReviewRestController {
     public ResponseEntity<?> downloadPaperForReview(@PathVariable Long assignmentId, jakarta.servlet.http.HttpServletRequest request) {
         try {
             Paper paper = reviewService.getOwnedAssignment(actingUser(), assignmentId).getPaper();
-            org.confcms.cms.submission.domain.PaperVersion version = reviewService.getLatestVersion(paper);
+            org.confcms.cms.paper.PaperVersion version = reviewService.getLatestVersion(paper);
             Resource resource = new UrlResource(fileStorageService.load(version.getFilePath()).toUri());
             accessLogService.logDownload(actingUser(), version, request);
             return ResponseEntity.ok()

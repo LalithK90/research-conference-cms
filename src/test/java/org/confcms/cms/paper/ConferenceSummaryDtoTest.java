@@ -1,4 +1,4 @@
-package org.confcms.cms.submission.dto;
+package org.confcms.cms.paper;
 
 import org.confcms.cms.conference.Conference;
 import org.junit.jupiter.api.Test;

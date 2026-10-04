@@ -1,10 +1,10 @@
 package org.confcms.cms.admin.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.confcms.cms.submission.domain.Paper;
-import org.confcms.cms.submission.domain.PaperVersion;
-import org.confcms.cms.submission.repository.PaperVersionRepository;
-import org.confcms.cms.submission.service.SubmissionService;
+import org.confcms.cms.paper.Paper;
+import org.confcms.cms.paper.PaperVersion;
+import org.confcms.cms.paper.PaperVersionRepository;
+import org.confcms.cms.paper.SubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;

@@ -2,7 +2,7 @@ package org.confcms.cms.accesslog;
 
 import org.confcms.cms.user.User;
 import org.confcms.cms.service.GeoLocationService;
-import org.confcms.cms.submission.domain.PaperVersion;
+import org.confcms.cms.paper.PaperVersion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

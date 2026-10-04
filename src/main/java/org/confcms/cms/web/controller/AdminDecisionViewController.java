@@ -6,7 +6,7 @@ import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.review.repository.ReviewRepository;
 import org.confcms.cms.conference.CommitteeService;
 import org.confcms.cms.service.DecisionService;
-import org.confcms.cms.submission.repository.PaperRepository;
+import org.confcms.cms.paper.PaperRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -68,12 +68,12 @@ public class AdminDecisionViewController {
     @GetMapping("/ui/camera-ready")
     public String cameraReadyStatus(Model model) {
         User actingUser = actingUser();
-        java.util.List<org.confcms.cms.submission.domain.Paper> papers = new java.util.ArrayList<>();
-        papers.addAll(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED));
-        papers.addAll(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.CAMERA_READY_SUBMITTED));
+        java.util.List<org.confcms.cms.paper.Paper> papers = new java.util.ArrayList<>();
+        papers.addAll(paperRepository.findByStatus(org.confcms.cms.paper.PaperStatus.ACCEPTED));
+        papers.addAll(paperRepository.findByStatus(org.confcms.cms.paper.PaperStatus.CAMERA_READY_SUBMITTED));
 
         boolean isAdmin = actingUser.getRole() == Role.ADMIN;
-        java.util.List<org.confcms.cms.submission.domain.Paper> visible = isAdmin ? papers : papers.stream()
+        java.util.List<org.confcms.cms.paper.Paper> visible = isAdmin ? papers : papers.stream()
                 .filter(p -> committeeService.isChairOrCoChair(actingUser, p.getConference()))
                 .toList();
 

@@ -7,9 +7,9 @@ import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.review.repository.ReviewRepository;
 import org.confcms.cms.conference.CommitteeService;
 import org.confcms.cms.service.DecisionService;
-import org.confcms.cms.submission.domain.Paper;
-import org.confcms.cms.submission.domain.PaperVersion;
-import org.confcms.cms.submission.repository.PaperRepository;
+import org.confcms.cms.paper.Paper;
+import org.confcms.cms.paper.PaperVersion;
+import org.confcms.cms.paper.PaperRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -127,17 +127,17 @@ class AdminDecisionViewControllerTest {
 
         Paper acceptedPaper = new Paper();
         acceptedPaper.setId(6L);
-        acceptedPaper.setStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED);
+        acceptedPaper.setStatus(org.confcms.cms.paper.PaperStatus.ACCEPTED);
         acceptedPaper.setConference(conference);
 
         Paper cameraReadyPaper = new Paper();
         cameraReadyPaper.setId(7L);
-        cameraReadyPaper.setStatus(org.confcms.cms.submission.domain.PaperStatus.CAMERA_READY_SUBMITTED);
+        cameraReadyPaper.setStatus(org.confcms.cms.paper.PaperStatus.CAMERA_READY_SUBMITTED);
         cameraReadyPaper.setConference(conference);
 
-        when(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED))
+        when(paperRepository.findByStatus(org.confcms.cms.paper.PaperStatus.ACCEPTED))
                 .thenReturn(java.util.List.of(acceptedPaper));
-        when(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.CAMERA_READY_SUBMITTED))
+        when(paperRepository.findByStatus(org.confcms.cms.paper.PaperStatus.CAMERA_READY_SUBMITTED))
                 .thenReturn(java.util.List.of(cameraReadyPaper));
 
         Model model = new ExtendedModelMap();
@@ -162,17 +162,17 @@ class AdminDecisionViewControllerTest {
 
         Paper ownPaper = new Paper();
         ownPaper.setId(6L);
-        ownPaper.setStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED);
+        ownPaper.setStatus(org.confcms.cms.paper.PaperStatus.ACCEPTED);
         ownPaper.setConference(conference);
 
         Paper otherPaper = new Paper();
         otherPaper.setId(8L);
-        otherPaper.setStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED);
+        otherPaper.setStatus(org.confcms.cms.paper.PaperStatus.ACCEPTED);
         otherPaper.setConference(otherConference);
 
-        when(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.ACCEPTED))
+        when(paperRepository.findByStatus(org.confcms.cms.paper.PaperStatus.ACCEPTED))
                 .thenReturn(java.util.List.of(ownPaper, otherPaper));
-        when(paperRepository.findByStatus(org.confcms.cms.submission.domain.PaperStatus.CAMERA_READY_SUBMITTED))
+        when(paperRepository.findByStatus(org.confcms.cms.paper.PaperStatus.CAMERA_READY_SUBMITTED))
                 .thenReturn(java.util.List.of());
         when(committeeService.isChairOrCoChair(chair, conference)).thenReturn(true);
         when(committeeService.isChairOrCoChair(chair, otherConference)).thenReturn(false);

@@ -1,6 +1,5 @@
-package org.confcms.cms.submission.dto;
+package org.confcms.cms.paper;
 
-import org.confcms.cms.submission.domain.PaperVersion;
 import lombok.Getter;
 
 import java.time.Instant;

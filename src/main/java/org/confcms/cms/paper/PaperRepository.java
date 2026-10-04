@@ -1,7 +1,5 @@
-package org.confcms.cms.submission.repository;
+package org.confcms.cms.paper;
 
-import org.confcms.cms.submission.domain.Paper;
-import org.confcms.cms.submission.domain.PaperStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

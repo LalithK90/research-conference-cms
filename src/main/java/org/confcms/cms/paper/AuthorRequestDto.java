@@ -1,4 +1,4 @@
-package org.confcms.cms.submission.dto;
+package org.confcms.cms.paper;
 
 import lombok.Getter;
 import lombok.Setter;

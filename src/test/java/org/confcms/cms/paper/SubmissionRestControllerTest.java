@@ -1,9 +1,7 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.paper;
 
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.submission.domain.Paper;
-import org.confcms.cms.submission.service.SubmissionService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,7 +75,7 @@ class SubmissionRestControllerTest {
         ResponseEntity<?> response = controller.submitPaper("Title", "Abstract", "track", authorsJson, file);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
-        assertThat(response.getBody()).isInstanceOf(org.confcms.cms.submission.dto.PaperResponseDto.class);
-        assertThat(((org.confcms.cms.submission.dto.PaperResponseDto) response.getBody()).getId()).isEqualTo(42L);
+        assertThat(response.getBody()).isInstanceOf(org.confcms.cms.paper.PaperResponseDto.class);
+        assertThat(((org.confcms.cms.paper.PaperResponseDto) response.getBody()).getId()).isEqualTo(42L);
     }
 }

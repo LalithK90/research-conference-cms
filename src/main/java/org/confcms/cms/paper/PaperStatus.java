@@ -1,4 +1,4 @@
-package org.confcms.cms.submission.domain;
+package org.confcms.cms.paper;
 
 public enum PaperStatus {
     SUBMITTED,

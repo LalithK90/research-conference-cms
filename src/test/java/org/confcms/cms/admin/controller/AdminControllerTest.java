@@ -1,9 +1,9 @@
 package org.confcms.cms.admin.controller;
 
-import org.confcms.cms.submission.domain.Paper;
-import org.confcms.cms.submission.domain.PaperVersion;
-import org.confcms.cms.submission.repository.PaperVersionRepository;
-import org.confcms.cms.submission.service.SubmissionService;
+import org.confcms.cms.paper.Paper;
+import org.confcms.cms.paper.PaperVersion;
+import org.confcms.cms.paper.PaperVersionRepository;
+import org.confcms.cms.paper.SubmissionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -3,7 +3,7 @@ package org.confcms.cms.web.controller;
 import org.confcms.cms.user.User;
 import org.confcms.cms.registration.repository.RegistrationRepository;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.submission.service.SubmissionService;
+import org.confcms.cms.paper.SubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;

@@ -3,7 +3,7 @@ package org.confcms.cms.accesslog;
 import org.confcms.cms.user.User;
 
 import org.confcms.cms.core.domain.BaseEntity;
-import org.confcms.cms.submission.domain.PaperVersion;
+import org.confcms.cms.paper.PaperVersion;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

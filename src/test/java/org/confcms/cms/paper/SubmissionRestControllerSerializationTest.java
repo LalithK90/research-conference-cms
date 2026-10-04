@@ -1,12 +1,7 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.paper;
 
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.conference.SubTheme;
-import org.confcms.cms.submission.domain.Paper;
-import org.confcms.cms.submission.domain.PaperAuthor;
-import org.confcms.cms.submission.domain.PaperStatus;
-import org.confcms.cms.submission.domain.PaperVersion;
-import org.confcms.cms.submission.dto.PaperResponseDto;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 

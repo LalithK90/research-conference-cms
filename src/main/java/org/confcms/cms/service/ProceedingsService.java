@@ -1,10 +1,10 @@
 package org.confcms.cms.service;
 
 import org.confcms.cms.conference.Conference;
-import org.confcms.cms.submission.domain.Paper;
-import org.confcms.cms.submission.domain.PaperStatus;
-import org.confcms.cms.submission.domain.PaperVersion;
-import org.confcms.cms.submission.repository.PaperRepository;
+import org.confcms.cms.paper.Paper;
+import org.confcms.cms.paper.PaperStatus;
+import org.confcms.cms.paper.PaperVersion;
+import org.confcms.cms.paper.PaperRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;

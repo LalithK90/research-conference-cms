@@ -1,6 +1,5 @@
-package org.confcms.cms.submission.dto;
+package org.confcms.cms.paper;
 
-import org.confcms.cms.submission.domain.PaperVersion;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

@@ -1,4 +1,4 @@
-package org.confcms.cms.submission.service;
+package org.confcms.cms.paper;
 
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
@@ -6,9 +6,6 @@ import org.confcms.cms.conference.ConferenceService;
 import org.confcms.cms.service.FileStorageService;
 import org.confcms.cms.service.EmailService;
 import org.confcms.cms.personinvitation.PersonInvitationService;
-import org.confcms.cms.submission.domain.*;
-import org.confcms.cms.submission.repository.PaperRepository;
-import org.confcms.cms.submission.repository.PaperVersionRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -8,7 +8,7 @@ import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.review.domain.ReviewAssignment;
 import org.confcms.cms.review.domain.ReviewDecline;
-import org.confcms.cms.submission.domain.Paper;
+import org.confcms.cms.paper.Paper;
 import org.confcms.cms.auth.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -283,7 +283,7 @@ class PersonInvitationServiceTest {
     void inviteCoAuthorCreatesInvitedStatusDirectly() {
         Paper paper = new Paper();
         paper.setConference(conference);
-        org.confcms.cms.submission.domain.PaperAuthor author = new org.confcms.cms.submission.domain.PaperAuthor();
+        org.confcms.cms.paper.PaperAuthor author = new org.confcms.cms.paper.PaperAuthor();
         author.setFullName("Co Author");
         author.setEmail("coauthor@example.com");
 

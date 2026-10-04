@@ -1,7 +1,7 @@
 package org.confcms.cms.scheduling.domain;
 
 import org.confcms.cms.core.domain.BaseEntity;
-import org.confcms.cms.submission.domain.Paper;
+import org.confcms.cms.paper.Paper;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
