@@ -1,48 +1,65 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8" />
-    <title>Camera-Ready Status</title>
-    <style>
-        table { border-collapse: collapse; width: 100%; }
-        th, td { padding: 8px; border: 1px solid #ddd; }
-        th { background: #f4f4f4; }
-    </style>
-</head>
+
+<head th:replace="~{fragments/admin_layout :: head('Camera-Ready Status')}"></head>
+
 <body>
-<h1>Camera-Ready Status</h1>
-<a th:href="@{/admin/decisions/ui}">Back to Decision Suggestions</a>
+    <nav th:replace="~{fragments/admin_layout :: nav}"></nav>
 
-<div>
-    <h2>Generate Proceedings</h2>
-    <ul>
-        <li th:each="c : ${conferences}">
-            <span th:text="${c.title}"></span>
-            &mdash;
-            <a th:href="@{'/admin/decisions/proceedings/' + ${c.id} + '/pdf'}">Download Proceedings PDF</a>
-            |
-            <a th:href="@{'/admin/decisions/proceedings/' + ${c.id} + '/bibtex'}">Export BibTeX</a>
-        </li>
-    </ul>
-</div>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>Camera-Ready Status</h2>
+            <a th:href="@{/admin/decisions/ui}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i>Back to Decision Suggestions
+            </a>
+        </div>
 
-<table>
-    <thead>
-        <tr><th>Paper ID</th><th>Title</th><th>Conference</th><th>Status</th><th>Camera-Ready</th></tr>
-    </thead>
-    <tbody>
-    <tr th:each="p : ${papers}" th:with="cameraReadyVersions=${p.versions.?[cameraReady]}">
-        <td th:text="${p.id}"></td>
-        <td><a th:href="@{'/admin/decisions/ui/paper/' + ${p.id}}" th:text="${p.title}"></a></td>
-        <td th:text="${p.conference.title}"></td>
-        <td th:text="${p.status}"></td>
-        <td>
-            <span th:if="${!#lists.isEmpty(cameraReadyVersions)}"
-                  th:text="'Submitted on ' + ${cameraReadyVersions[0].copyrightTransferAgreedAt}"></span>
-            <span th:if="${#lists.isEmpty(cameraReadyVersions)}">Not yet submitted</span>
-        </td>
-    </tr>
-    </tbody>
-</table>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="card-title">Generate Proceedings</h3>
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center" th:each="c : ${conferences}">
+                        <span th:text="${c.title}"></span>
+                        <span>
+                            <a th:href="@{'/admin/decisions/proceedings/' + ${c.id} + '/pdf'}" class="btn btn-sm btn-primary">
+                                <i class="fa-solid fa-file-pdf me-1"></i>Proceedings PDF
+                            </a>
+                            <a th:href="@{'/admin/decisions/proceedings/' + ${c.id} + '/bibtex'}" class="btn btn-sm btn-outline-primary">
+                                <i class="fa-solid fa-file-export me-1"></i>Export BibTeX
+                            </a>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Paper ID</th>
+                    <th>Title</th>
+                    <th>Conference</th>
+                    <th>Status</th>
+                    <th>Camera-Ready</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="p : ${papers}" th:with="cameraReadyVersions=${p.versions.?[cameraReady]}">
+                    <td th:text="${p.id}"></td>
+                    <td><a th:href="@{'/admin/decisions/ui/paper/' + ${p.id}}" th:text="${p.title}"></a></td>
+                    <td th:text="${p.conference.title}"></td>
+                    <td><span class="badge bg-secondary" th:text="${p.status}"></span></td>
+                    <td>
+                        <span th:if="${!#lists.isEmpty(cameraReadyVersions)}"
+                              th:text="'Submitted on ' + ${cameraReadyVersions[0].copyrightTransferAgreedAt}"></span>
+                        <span th:if="${#lists.isEmpty(cameraReadyVersions)}" class="text-muted">Not yet submitted</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script th:replace="~{fragments/admin_layout :: scripts}"></script>
 </body>
+
 </html>

@@ -1,23 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 
-<head>
-    <title>Create Conference</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .payment-section {
-            display: none;
-        }
-    </style>
-</head>
+<head th:replace="~{fragments/admin_layout :: head('Create Conference')}"></head>
 
 <body>
-    <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/admin/dashboard">CMS Admin</a>
-            <a class="btn btn-outline-light" href="/logout">Logout</a>
-        </div>
-    </nav>
+    <nav th:replace="~{fragments/admin_layout :: nav}"></nav>
 
     <div class="container mt-5">
         <div class="card shadow-sm">
@@ -141,7 +128,7 @@
                     </div>
 
                     <!-- Stripe Fields -->
-                    <div id="stripe-section" class="payment-section card bg-light mb-3">
+                    <div id="stripe-section" class="payment-section d-none card bg-light mb-3">
                         <div class="card-body">
                             <h6>Stripe Configuration</h6>
                             <div class="mb-2">
@@ -158,7 +145,7 @@
                     </div>
 
                     <!-- PayPal Fields -->
-                    <div id="paypal-section" class="payment-section card bg-light mb-3">
+                    <div id="paypal-section" class="payment-section d-none card bg-light mb-3">
                         <div class="card-body">
                             <h6>PayPal Configuration</h6>
                             <div class="mb-2">
@@ -175,7 +162,7 @@
                     </div>
 
                     <!-- Bank Fields -->
-                    <div id="bank-section" class="payment-section card bg-light mb-3">
+                    <div id="bank-section" class="payment-section d-none card bg-light mb-3">
                         <div class="card-body">
                             <h6>Local Bank Transfer Instructions</h6>
                             <div class="mb-2">
@@ -247,6 +234,8 @@
         // Run on load to set initial state
         window.onload = togglePaymentFields;
     </script>
+
+    <script th:replace="~{fragments/admin_layout :: scripts}"></script>
 </body>
 
 </html>

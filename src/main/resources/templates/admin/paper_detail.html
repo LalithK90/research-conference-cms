@@ -1,118 +1,148 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8" />
-    <title>Paper Detail</title>
-    <style>
-        .section { margin-bottom: 20px; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { padding: 8px; border: 1px solid #ddd; }
-        th { background: #f4f4f4; }
-    </style>
-</head>
+
+<head th:replace="~{fragments/admin_layout :: head('Paper Detail')}"></head>
+
 <body>
-<h1>Paper Detail</h1>
-<div th:if="${error}">
-    <p th:text="${error}"></p>
-</div>
-<div th:if="${paper}">
-    <div class="section">
-        <h2 th:text="${paper.title}"></h2>
-        <p><strong>Track:</strong> <span th:text="${paper.track}"></span></p>
-        <p><strong>Status:</strong> <span th:text="${paper.status}"></span></p>
-        <p><strong>Submitter:</strong> <span th:text="${paper.submitter.fullName}"></span> (<span th:text="${paper.submitter.email}"></span>)</p>
-    </div>
+    <nav th:replace="~{fragments/admin_layout :: nav}"></nav>
 
-    <div class="section">
-        <h3>Authors</h3>
-        <ul>
-            <li th:each="a : ${paper.authors}" th:text="${a.fullName + ' &lt;' + a.email + '&gt;'}"></li>
-        </ul>
-    </div>
+    <div class="container mt-4">
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
-    <div class="section">
-        <h3>Versions</h3>
-        <table>
-            <thead>
-                <tr><th>Version</th><th>Filename</th><th>File Path</th><th>Plagiarism/Similarity</th><th>Camera-Ready</th></tr>
-            </thead>
-            <tbody>
-                <tr th:each="v : ${paper.versions}">
-                    <td th:text="${v.versionNumber}"></td>
-                    <td th:text="${v.originalFilename}"></td>
-                    <td th:text="${v.filePath}"></td>
-                    <td>
-                        <div th:if="${v.plagiarismScore != null}">
-                            <strong th:text="${v.plagiarismScore} + '%'"></strong>
-                            <span th:if="${v.plagiarismNote != null}" th:text="' - ' + ${v.plagiarismNote}"></span>
-                        </div>
-                        <form th:action="@{'/admin/decisions/version/' + ${v.id} + '/plagiarism-check'}" method="post">
-                            <input type="number" step="0.1" min="0" max="100" name="score" placeholder="Score %"
-                                   th:value="${v.plagiarismScore}" />
-                            <input type="text" name="note" placeholder="Note (checked with...)"
-                                   th:value="${v.plagiarismNote}" />
-                            <button type="submit">Save</button>
+        <div th:if="${paper}">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 th:text="${paper.title}"></h2>
+                    <p class="mb-1"><strong>Track:</strong> <span th:text="${paper.track}"></span></p>
+                    <p class="mb-1">
+                        <strong>Status:</strong>
+                        <span class="badge bg-secondary" th:text="${paper.status}"></span>
+                    </p>
+                    <p class="mb-0">
+                        <strong>Submitter:</strong> <span th:text="${paper.submitter.fullName}"></span>
+                        (<span th:text="${paper.submitter.email}"></span>)
+                    </p>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title">Authors</h3>
+                    <ul class="mb-0">
+                        <li th:each="a : ${paper.authors}" th:text="${a.fullName + ' <' + a.email + '>'}"></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title">Versions</h3>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Version</th>
+                                <th>Filename</th>
+                                <th>File Path</th>
+                                <th>Plagiarism/Similarity</th>
+                                <th>Camera-Ready</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="v : ${paper.versions}">
+                                <td th:text="${v.versionNumber}"></td>
+                                <td th:text="${v.originalFilename}"></td>
+                                <td th:text="${v.filePath}"></td>
+                                <td>
+                                    <div th:if="${v.plagiarismScore != null}" class="mb-2">
+                                        <strong th:text="${v.plagiarismScore} + '%'"></strong>
+                                        <span th:if="${v.plagiarismNote != null}" th:text="' - ' + ${v.plagiarismNote}"></span>
+                                    </div>
+                                    <form th:action="@{'/admin/decisions/version/' + ${v.id} + '/plagiarism-check'}" method="post"
+                                          class="d-flex gap-2">
+                                        <input type="number" step="0.1" min="0" max="100" name="score" placeholder="Score %"
+                                               class="form-control form-control-sm" th:value="${v.plagiarismScore}" />
+                                        <input type="text" name="note" placeholder="Note (checked with...)"
+                                               class="form-control form-control-sm" th:value="${v.plagiarismNote}" />
+                                        <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                    </form>
+                                </td>
+                                <td>
+                                    <span th:if="${v.cameraReady}">
+                                        Yes (<span th:text="${v.copyrightTransferAgreedAt}"></span>)
+                                    </span>
+                                    <span th:unless="${v.cameraReady}">-</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title">Reviews</h3>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Reviewer</th>
+                                <th>Score</th>
+                                <th>Comments</th>
+                                <th>Confidential</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="r : ${reviews}">
+                                <td th:text="${r.reviewer.fullName}"></td>
+                                <td th:text="${r.score}"></td>
+                                <td th:text="${r.comments}"></td>
+                                <td th:text="${r.confidentialComments}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Decision</h3>
+                    <div class="mb-3">
+                        <form th:action="@{'/admin/decisions/' + ${paper.id} + '/apply?decision=ACCEPT'}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-success">Accept</button>
                         </form>
-                    </td>
-                    <td>
-                        <span th:if="${v.cameraReady}">
-                            Yes (<span th:text="${v.copyrightTransferAgreedAt}"></span>)
-                        </span>
-                        <span th:unless="${v.cameraReady}">-</span>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                        <form th:action="@{'/admin/decisions/' + ${paper.id} + '/apply?decision=REJECT'}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-danger">Reject</button>
+                        </form>
+                        <form th:action="@{'/admin/decisions/' + ${paper.id} + '/apply?decision=BORDERLINE'}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-secondary">Borderline</button>
+                        </form>
+                    </div>
+
+                    <form th:if="${paper.status.name() == 'UNDER_REVIEW' or paper.status.name() == 'MINOR_REVISION' or paper.status.name() == 'MAJOR_REVISION'}"
+                          th:action="@{'/admin/decisions/' + ${paper.id} + '/request-revision'}" method="post"
+                          class="d-flex gap-2 mb-3">
+                        <select name="revisionType" class="form-select w-auto">
+                            <option value="MINOR_REVISION">Minor Revision</option>
+                            <option value="MAJOR_REVISION">Major Revision</option>
+                        </select>
+                        <input type="date" name="dueDate" required="required" class="form-control w-auto" />
+                        <button type="submit" class="btn btn-primary">Request Revision</button>
+                    </form>
+
+                    <form th:if="${paper.status.name() == 'MINOR_REVISION' or paper.status.name() == 'MAJOR_REVISION'}"
+                          th:action="@{'/admin/decisions/' + ${paper.id} + '/resolve-revision'}" method="post"
+                          class="d-flex gap-2">
+                        <select name="resolution" class="form-select w-auto">
+                            <option value="ACCEPT_DIRECTLY">Accept Directly</option>
+                            <option value="SEND_BACK_TO_REVIEWERS">Send Back to Reviewers</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">Resolve Revision</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="section">
-        <h3>Reviews</h3>
-        <table>
-            <thead>
-                <tr><th>Reviewer</th><th>Score</th><th>Comments</th><th>Confidential</th></tr>
-            </thead>
-            <tbody>
-                <tr th:each="r : ${reviews}">
-                    <td th:text="${r.reviewer.fullName}"></td>
-                    <td th:text="${r.score}"></td>
-                    <td th:text="${r.comments}"></td>
-                    <td th:text="${r.confidentialComments}"></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="section">
-        <h3>Decision</h3>
-        <form th:action="@{'/admin/decisions/' + ${paper.id} + '/apply?decision=ACCEPT'}" method="post">
-            <button type="submit">Accept</button>
-        </form>
-        <form th:action="@{'/admin/decisions/' + ${paper.id} + '/apply?decision=REJECT'}" method="post">
-            <button type="submit">Reject</button>
-        </form>
-        <form th:action="@{'/admin/decisions/' + ${paper.id} + '/apply?decision=BORDERLINE'}" method="post">
-            <button type="submit">Borderline</button>
-        </form>
-
-        <form th:if="${paper.status.name() == 'UNDER_REVIEW' or paper.status.name() == 'MINOR_REVISION' or paper.status.name() == 'MAJOR_REVISION'}"
-              th:action="@{'/admin/decisions/' + ${paper.id} + '/request-revision'}" method="post">
-            <select name="revisionType">
-                <option value="MINOR_REVISION">Minor Revision</option>
-                <option value="MAJOR_REVISION">Major Revision</option>
-            </select>
-            <input type="date" name="dueDate" required="required" />
-            <button type="submit">Request Revision</button>
-        </form>
-
-        <form th:if="${paper.status.name() == 'MINOR_REVISION' or paper.status.name() == 'MAJOR_REVISION'}"
-              th:action="@{'/admin/decisions/' + ${paper.id} + '/resolve-revision'}" method="post">
-            <select name="resolution">
-                <option value="ACCEPT_DIRECTLY">Accept Directly</option>
-                <option value="SEND_BACK_TO_REVIEWERS">Send Back to Reviewers</option>
-            </select>
-            <button type="submit">Resolve Revision</button>
-        </form>
-    </div>
-</div>
+    <script th:replace="~{fragments/admin_layout :: scripts}"></script>
 </body>
+
 </html>
