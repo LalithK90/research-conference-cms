@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/public_layout :: head('Not Available')}"></head>
+
+<body>
+    <nav th:replace="~{fragments/public_layout :: nav}"></nav>
+
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center">
+                <h1 class="mb-4">No Conference Currently Configured</h1>
+                <p class="lead">This page isn't available yet because no conference has been
+                    set up as active. Please check back later.</p>
+                <a href="/" class="btn btn-brand-primary mt-3">Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="~{fragments/public_layout :: footer}"></footer>
+    <script th:replace="~{fragments/public_layout :: scripts}"></script>
+</body>
+
+</html>

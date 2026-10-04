@@ -13,7 +13,7 @@ public class ConferenceService {
     @Transactional(readOnly = true)
     public Conference getActiveConference() {
         return conferenceRepository.findByIsActiveTrue()
-                .orElseThrow(() -> new IllegalStateException("No active conference found"));
+                .orElseThrow(() -> new NoActiveConferenceException("No active conference found"));
     }
 
     @Transactional
