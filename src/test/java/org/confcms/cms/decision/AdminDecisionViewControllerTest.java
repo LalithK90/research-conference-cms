@@ -1,11 +1,12 @@
 package org.confcms.cms.decision;
 
 import org.confcms.cms.core.security.Role;
+import org.confcms.cms.conference.CommitteeService;
 import org.confcms.cms.conference.Conference;
+import org.confcms.cms.conference.ConferenceRepository;
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.review.ReviewRepository;
-import org.confcms.cms.conference.CommitteeService;
 import org.confcms.cms.paper.Paper;
 import org.confcms.cms.paper.PaperVersion;
 import org.confcms.cms.paper.PaperRepository;
@@ -14,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.ExtendedModelMap;
@@ -23,6 +26,11 @@ import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +46,10 @@ class AdminDecisionViewControllerTest {
     private CommitteeService committeeService;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private ConferenceRepository conferenceRepository;
+    @Mock
+    private ProceedingsService proceedingsService;
 
     private AdminDecisionViewController controller;
     private Conference conference;
@@ -45,7 +57,8 @@ class AdminDecisionViewControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new AdminDecisionViewController(decisionService, paperRepository, reviewRepository, committeeService, userRepository);
+        controller = new AdminDecisionViewController(decisionService, paperRepository, reviewRepository,
+                committeeService, userRepository, conferenceRepository, proceedingsService);
 
         conference = new Conference();
         conference.setId(1L);
@@ -182,5 +195,87 @@ class AdminDecisionViewControllerTest {
         @SuppressWarnings("unchecked")
         java.util.List<Paper> papers = (java.util.List<Paper>) model.getAttribute("papers");
         assertThat(papers).containsExactly(ownPaper);
+    }
+
+    @Test
+    void downloadProceedingsPdfAllowsAdminForAnyConference() throws Exception {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setEmail("admin@example.com");
+        admin.setRole(Role.ADMIN);
+        authenticateAs(admin);
+
+        when(conferenceRepository.findById(1L)).thenReturn(Optional.of(conference));
+
+        ResponseEntity<?> response = controller.downloadProceedingsPdf(1L);
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        verify(proceedingsService).generateProceedings(eq(conference), any());
+    }
+
+    @Test
+    void downloadProceedingsPdfAllowsChairOfThatConference() throws Exception {
+        User chair = new User();
+        chair.setId(41L);
+        chair.setEmail("chair@example.com");
+        chair.setRole(Role.REVIEWER);
+        authenticateAs(chair);
+
+        when(conferenceRepository.findById(1L)).thenReturn(Optional.of(conference));
+        when(committeeService.isChairOrCoChair(chair, conference)).thenReturn(true);
+
+        ResponseEntity<?> response = controller.downloadProceedingsPdf(1L);
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+    }
+
+    @Test
+    void downloadProceedingsPdfDeniesNonChairNonAdmin() throws Exception {
+        User stranger = new User();
+        stranger.setId(42L);
+        stranger.setEmail("stranger@example.com");
+        stranger.setRole(Role.REVIEWER);
+        authenticateAs(stranger);
+
+        when(conferenceRepository.findById(1L)).thenReturn(Optional.of(conference));
+        when(committeeService.isChairOrCoChair(stranger, conference)).thenReturn(false);
+
+        assertThatThrownBy(() -> controller.downloadProceedingsPdf(1L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(proceedingsService, never()).generateProceedings(any(), any());
+    }
+
+    @Test
+    void downloadBibTeXAllowsAdminForAnyConference() throws Exception {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setEmail("admin@example.com");
+        admin.setRole(Role.ADMIN);
+        authenticateAs(admin);
+
+        when(conferenceRepository.findById(1L)).thenReturn(Optional.of(conference));
+
+        ResponseEntity<?> response = controller.downloadBibTeX(1L);
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        verify(proceedingsService).exportBibTeX(eq(conference), any());
+    }
+
+    @Test
+    void downloadBibTeXDeniesNonChairNonAdmin() throws Exception {
+        User stranger = new User();
+        stranger.setId(42L);
+        stranger.setEmail("stranger@example.com");
+        stranger.setRole(Role.REVIEWER);
+        authenticateAs(stranger);
+
+        when(conferenceRepository.findById(1L)).thenReturn(Optional.of(conference));
+        when(committeeService.isChairOrCoChair(stranger, conference)).thenReturn(false);
+
+        assertThatThrownBy(() -> controller.downloadBibTeX(1L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(proceedingsService, never()).exportBibTeX(any(), any());
     }
 }

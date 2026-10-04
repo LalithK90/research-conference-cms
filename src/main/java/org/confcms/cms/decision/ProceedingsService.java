@@ -30,7 +30,8 @@ public class ProceedingsService {
     private final PaperRepository paperRepository;
 
     public void generateProceedings(Conference conference, String outputPath) throws IOException {
-        List<Paper> acceptedPapers = new ArrayList<>(paperRepository.findByStatus(PaperStatus.CAMERA_READY_SUBMITTED));
+        List<Paper> acceptedPapers = new ArrayList<>(
+                paperRepository.findByConferenceIdAndStatus(conference.getId(), PaperStatus.CAMERA_READY_SUBMITTED));
         acceptedPapers.sort(Comparator.comparing(Paper::getTitle));
 
         PDFMergerUtility merger = new PDFMergerUtility();
@@ -95,7 +96,8 @@ public class ProceedingsService {
     }
 
     public void exportBibTeX(Conference conference, String outputPath) throws IOException {
-        List<Paper> acceptedPapers = paperRepository.findByStatus(PaperStatus.CAMERA_READY_SUBMITTED);
+        List<Paper> acceptedPapers =
+                paperRepository.findByConferenceIdAndStatus(conference.getId(), PaperStatus.CAMERA_READY_SUBMITTED);
 
         try (FileWriter writer = new FileWriter(outputPath)) {
             for (Paper paper : acceptedPapers) {

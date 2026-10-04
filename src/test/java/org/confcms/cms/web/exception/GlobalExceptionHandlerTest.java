@@ -2,6 +2,8 @@ package org.confcms.cms.web.exception;
 
 import org.confcms.cms.conference.NoActiveConferenceException;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
@@ -26,6 +28,14 @@ class GlobalExceptionHandlerTest {
 
         assertThat(view).isEqualTo("error");
         assertThat(model.getAttribute("error")).isEqualTo("some other failure");
+    }
+
+    @Test
+    void handleAccessDeniedReturnsForbiddenStatus() {
+        var response = handler.handleAccessDenied(new AccessDeniedException("Not authorized"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).isEqualTo("Not authorized");
     }
 
     @Test

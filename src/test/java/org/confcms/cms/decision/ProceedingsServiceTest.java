@@ -25,37 +25,43 @@ class ProceedingsServiceTest {
     private PaperRepository paperRepository;
 
     @Test
-    void generateProceedingsOnlyQueriesCameraReadySubmittedPapers() throws Exception {
+    void generateProceedingsOnlyQueriesCameraReadySubmittedPapersForThisConference() throws Exception {
         ProceedingsService service = new ProceedingsService(paperRepository);
-        when(paperRepository.findByStatus(PaperStatus.CAMERA_READY_SUBMITTED)).thenReturn(List.of());
 
         Conference conference = new Conference();
+        conference.setId(42L);
         conference.setTitle("Test Conf");
         conference.setStartDate(LocalDate.of(2026, 1, 1));
+
+        when(paperRepository.findByConferenceIdAndStatus(42L, PaperStatus.CAMERA_READY_SUBMITTED))
+                .thenReturn(List.of());
 
         File outputFile = File.createTempFile("proceedings-test", ".pdf");
         outputFile.deleteOnExit();
 
         service.generateProceedings(conference, outputFile.getAbsolutePath());
 
-        verify(paperRepository).findByStatus(PaperStatus.CAMERA_READY_SUBMITTED);
+        verify(paperRepository).findByConferenceIdAndStatus(42L, PaperStatus.CAMERA_READY_SUBMITTED);
     }
 
     @Test
-    void exportBibTeXOnlyQueriesCameraReadySubmittedPapers() throws Exception {
+    void exportBibTeXOnlyQueriesCameraReadySubmittedPapersForThisConference() throws Exception {
         ProceedingsService service = new ProceedingsService(paperRepository);
-        when(paperRepository.findByStatus(PaperStatus.CAMERA_READY_SUBMITTED)).thenReturn(List.of());
 
         Conference conference = new Conference();
+        conference.setId(42L);
         conference.setTitle("Test Conf");
         conference.setStartDate(LocalDate.of(2026, 1, 1));
+
+        when(paperRepository.findByConferenceIdAndStatus(42L, PaperStatus.CAMERA_READY_SUBMITTED))
+                .thenReturn(List.of());
 
         File outputFile = File.createTempFile("bibtex-test", ".bib");
         outputFile.deleteOnExit();
 
         service.exportBibTeX(conference, outputFile.getAbsolutePath());
 
-        verify(paperRepository).findByStatus(PaperStatus.CAMERA_READY_SUBMITTED);
+        verify(paperRepository).findByConferenceIdAndStatus(42L, PaperStatus.CAMERA_READY_SUBMITTED);
     }
 
     @Test
@@ -90,11 +96,13 @@ class ProceedingsServiceTest {
         laterVersion.setCameraReady(false);
         paper.getVersions().add(laterVersion);
 
-        when(paperRepository.findByStatus(PaperStatus.CAMERA_READY_SUBMITTED)).thenReturn(List.of(paper));
-
         Conference conference = new Conference();
+        conference.setId(42L);
         conference.setTitle("Test Conf");
         conference.setStartDate(LocalDate.of(2026, 1, 1));
+
+        when(paperRepository.findByConferenceIdAndStatus(42L, PaperStatus.CAMERA_READY_SUBMITTED))
+                .thenReturn(List.of(paper));
 
         File outputFile = File.createTempFile("proceedings-selection-test", ".pdf");
         outputFile.deleteOnExit();
@@ -107,6 +115,28 @@ class ProceedingsServiceTest {
         try (var merged = org.apache.pdfbox.Loader.loadPDF(outputFile)) {
             assertThat(merged.getNumberOfPages()).isEqualTo(3);
         }
+    }
+
+    @Test
+    void generateProceedingsNeverIncludesAnotherConferencesPapers() throws Exception {
+        ProceedingsService service = new ProceedingsService(paperRepository);
+
+        Conference conference = new Conference();
+        conference.setId(42L);
+        conference.setTitle("Test Conf");
+        conference.setStartDate(LocalDate.of(2026, 1, 1));
+
+        // Only conference 42's papers should ever be queried -- a paper belonging to a
+        // different conference (99) must never leak into this conference's proceedings.
+        when(paperRepository.findByConferenceIdAndStatus(42L, PaperStatus.CAMERA_READY_SUBMITTED))
+                .thenReturn(List.of());
+
+        File outputFile = File.createTempFile("proceedings-scope-test", ".pdf");
+        outputFile.deleteOnExit();
+
+        service.generateProceedings(conference, outputFile.getAbsolutePath());
+
+        verify(paperRepository, org.mockito.Mockito.never()).findByStatus(org.mockito.ArgumentMatchers.any());
     }
 
     private void writeMinimalPdf(File file, int pageCount) throws Exception {
