@@ -4,8 +4,11 @@ import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.service.EmailService;
 import org.confcms.cms.user.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.concurrent.Executor;
 
 @RestController
 @RequestMapping("/auth")
@@ -16,6 +19,8 @@ public class AuthRestController {
     private final MagicLinkService magicLinkService;
     private final EmailService emailService;
     private final UserRepository userRepository;
+    @Qualifier("emailExecutor")
+    private final Executor mailExecutor;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestParam String email,
@@ -43,6 +48,14 @@ public class AuthRestController {
             String body = "Click to sign in: " + url + "\nLink expires at: " + link.getExpiresAt();
             emailService.sendSimpleEmail(email, subject, body);
         } catch (IllegalArgumentException ignored) {
+            // Do the same "submit a task to the mail executor" work as the success branch,
+            // without ever sending mail to an unverified, attacker-supplied address (this
+            // endpoint has no rate limiting, so unconditionally emailing the request's
+            // address here would turn it into a spam/relay vector). Matching that one
+            // externally-observable submit-call cost on both branches is what closes the
+            // timing side-channel; actually sending mail is not the part that needs matching.
+            mailExecutor.execute(() -> {
+            });
         }
 
         return ResponseEntity.ok("Magic link sent if the account exists");
