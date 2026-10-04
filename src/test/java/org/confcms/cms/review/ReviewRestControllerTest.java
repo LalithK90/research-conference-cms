@@ -1,12 +1,7 @@
-package org.confcms.cms.web.controller;
+package org.confcms.cms.review;
 
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.review.domain.ReviewAssignment;
-import org.confcms.cms.review.repository.ReviewAssignmentRepository;
-import org.confcms.cms.review.repository.ReviewRepository;
-import org.confcms.cms.review.service.ReviewAssignmentService;
-import org.confcms.cms.review.service.ReviewService;
 import org.confcms.cms.accesslog.AccessLogService;
 import org.confcms.cms.service.FileStorageService;
 import org.confcms.cms.paper.Paper;

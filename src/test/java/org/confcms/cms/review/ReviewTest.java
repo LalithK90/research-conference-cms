@@ -1,4 +1,4 @@
-package org.confcms.cms.review.domain;
+package org.confcms.cms.review;
 
 import org.junit.jupiter.api.Test;
 

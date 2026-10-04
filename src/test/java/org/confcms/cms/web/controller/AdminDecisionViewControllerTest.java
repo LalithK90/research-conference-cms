@@ -4,7 +4,7 @@ import org.confcms.cms.core.security.Role;
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.review.repository.ReviewRepository;
+import org.confcms.cms.review.ReviewRepository;
 import org.confcms.cms.conference.CommitteeService;
 import org.confcms.cms.service.DecisionService;
 import org.confcms.cms.paper.Paper;

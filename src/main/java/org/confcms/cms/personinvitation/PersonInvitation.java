@@ -3,7 +3,7 @@ package org.confcms.cms.personinvitation;
 import org.confcms.cms.user.User;
 import org.confcms.cms.core.domain.BaseEntity;
 import org.confcms.cms.conference.Conference;
-import org.confcms.cms.review.domain.ReviewDecline;
+import org.confcms.cms.review.ReviewDecline;
 import org.confcms.cms.paper.Paper;
 import jakarta.persistence.*;
 import lombok.Getter;

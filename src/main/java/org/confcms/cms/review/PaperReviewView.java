@@ -1,4 +1,4 @@
-package org.confcms.cms.review.dto;
+package org.confcms.cms.review;
 
 import java.time.LocalDateTime;
 import java.util.List;

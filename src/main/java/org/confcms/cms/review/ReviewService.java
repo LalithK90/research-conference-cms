@@ -1,12 +1,6 @@
-package org.confcms.cms.review.service;
+package org.confcms.cms.review;
 
 import org.confcms.cms.user.User;
-import org.confcms.cms.review.domain.AssignmentStatus;
-import org.confcms.cms.review.domain.Review;
-import org.confcms.cms.review.domain.ReviewAssignment;
-import org.confcms.cms.review.dto.PaperReviewView;
-import org.confcms.cms.review.repository.ReviewAssignmentRepository;
-import org.confcms.cms.review.repository.ReviewRepository;
 import org.confcms.cms.paper.Paper;
 import org.confcms.cms.paper.PaperVersion;
 import org.confcms.cms.paper.PaperRepository;

@@ -1,6 +1,5 @@
-package org.confcms.cms.review.repository;
+package org.confcms.cms.review;
 
-import org.confcms.cms.review.domain.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

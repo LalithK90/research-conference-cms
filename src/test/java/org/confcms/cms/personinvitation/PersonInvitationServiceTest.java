@@ -6,8 +6,8 @@ import org.confcms.cms.conference.CommitteeService;
 import org.confcms.cms.service.EmailService;
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
-import org.confcms.cms.review.domain.ReviewAssignment;
-import org.confcms.cms.review.domain.ReviewDecline;
+import org.confcms.cms.review.ReviewAssignment;
+import org.confcms.cms.review.ReviewDecline;
 import org.confcms.cms.paper.Paper;
 import org.confcms.cms.auth.AuthService;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +38,7 @@ class PersonInvitationServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
-    private org.confcms.cms.review.service.ReviewAssignmentService reviewAssignmentService;
+    private org.confcms.cms.review.ReviewAssignmentService reviewAssignmentService;
 
     private PersonInvitationService service;
     private Conference conference;

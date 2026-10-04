@@ -1,4 +1,4 @@
-package org.confcms.cms.review.domain;
+package org.confcms.cms.review;
 
 public enum AssignmentStatus {
     PENDING,

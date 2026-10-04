@@ -1,16 +1,8 @@
-package org.confcms.cms.review.service;
+package org.confcms.cms.review;
 
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.core.security.Role;
-import org.confcms.cms.review.domain.AssignmentStatus;
-import org.confcms.cms.review.domain.BidType;
-import org.confcms.cms.review.domain.ReviewAssignment;
-import org.confcms.cms.review.domain.ReviewBid;
-import org.confcms.cms.review.domain.ReviewDecline;
-import org.confcms.cms.review.repository.ReviewAssignmentRepository;
-import org.confcms.cms.review.repository.ReviewBidRepository;
-import org.confcms.cms.review.repository.ReviewDeclineRepository;
 import org.confcms.cms.conference.CommitteeService;
 import org.confcms.cms.conflictdeclaration.ConflictDeclarationService;
 import org.confcms.cms.personinvitation.PersonInvitationService;
