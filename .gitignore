@@ -45,6 +45,11 @@ logs/
 *.log
 secrets.properties
 
+# Local config with real DB credentials / OAuth2 client secrets filled in --
+# never committed. A fresh checkout needs its own copy; see
+# application.properties.example for the template with placeholders.
+src/main/resources/application.properties
+
 ### Worktrees ###
 .worktrees/
 .playwright-mcp

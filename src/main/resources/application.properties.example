@@ -1,12 +1,12 @@
-# Default (production-shaped) profile: real MySQL datasource, Hibernate-managed
-# schema, first-run generated admin credential. No profile is force-activated
-# here -- this file *is* the default. For local development against an
-# in-memory H2 database with seeded sample data instead, opt in explicitly:
-#   SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
-# (Previously this file set spring.profiles.active=dev unconditionally, which
-# meant a plain `./gradlew bootRun` always booted the dev profile -- including
-# its static seeded admin account -- and the generated-admin-password flow
-# below never actually ran by default.)
+# Only profile: real MySQL datasource, Hibernate-managed schema, first-run
+# generated admin credential (see FirstRunAdminInitializer). No profile is
+# force-activated here -- this file *is* the only configuration this app runs
+# with. There is no H2/in-memory dev profile; local development runs against a
+# real local MySQL instance.
+#
+# This is a TEMPLATE. Copy it to application.properties (gitignored, holds
+# real local credentials) and fill in real values before first run:
+#   cp src/main/resources/application.properties.example src/main/resources/application.properties
 
 # Application
 spring.application.name=conference-cms
@@ -40,7 +40,7 @@ app.secrets.encryption-key=${PAYMENT_SECRETS_KEY}
 # Spring Boot's default sql.init.mode is "never" for a non-embedded datasource, so
 # without this data.sql would silently never run against MySQL. defer-datasource-
 # initialization delays it until after Hibernate has created the schema (ddl-auto=update
-# above), matching how application-dev.properties already runs data-dev.sql against H2.
+# above).
 spring.jpa.defer-datasource-initialization=true
 spring.sql.init.mode=always
 
@@ -91,6 +91,6 @@ logging.level.org.confcms.cms=INFO
 # DEBUG here would log verbose auth internals to whatever this deployment's log
 # aggregation is, right alongside the first-run admin password (logged once, in
 # the clear, by design -- see FirstRunAdminInitializer) -- keep it at INFO/WARN
-# in the default profile. Set it to DEBUG locally (application-dev.properties or
-# a command-line override) when actually debugging authentication.
+# normally. Set it to DEBUG locally (directly here, or a command-line override)
+# when actually debugging authentication.
 logging.level.org.springframework.security=WARN

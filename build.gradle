@@ -46,9 +46,6 @@ dependencies {
     // Dev Tools
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
-    // In-memory DB for development profile
-    runtimeOnly("com.h2database:h2")
-
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")

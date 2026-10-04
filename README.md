@@ -59,13 +59,22 @@ The system supports **multiple conferences** by allowing administrators to creat
     ```
 
 2.  **Configure Database**
-    *   Create a MySQL database named `conference_cms`.
-    *   Update `src/main/resources/application.properties` (or `application-dev.properties`) with your credentials:
-        ```properties
-        spring.datasource.url=jdbc:mysql://localhost:3306/conference_cms
-        spring.datasource.username=root
-        spring.datasource.password=your_password
+    *   `src/main/resources/application.properties` is gitignored (it holds real local
+        credentials once filled in) and not present in a fresh checkout. Copy the template
+        and fill in your own values:
+        ```bash
+        cp src/main/resources/application.properties.example src/main/resources/application.properties
         ```
+    *   At minimum, set your local MySQL credentials and a generated encryption key:
+        ```properties
+        spring.datasource.username=${DB_USER:your_mysql_user}
+        spring.datasource.password=${DB_PASS:your_mysql_password}
+        app.secrets.encryption-key=${PAYMENT_SECRETS_KEY:a-generated-key}
+        ```
+        Generate the encryption key with `openssl rand -base64 32`. The database itself
+        (`brain_boost` by default, per the JDBC URL) is created automatically on first boot.
+    *   There is no in-memory/H2 dev profile -- this is the only configuration profile, and it
+        always runs against a real local (or production) MySQL instance.
 
 3.  **Run the Application**
     *   **Mac/Linux**:
