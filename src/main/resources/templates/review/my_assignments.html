@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/admin_layout :: head('My Review Assignments')}"></head>
+
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard"><i class="fa-solid fa-clipboard-list me-2"></i>My Reviews</a>
+            <a class="btn btn-outline-light btn-sm" href="/dashboard">
+                <i class="fa-solid fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="mb-3">My Review Assignments</h2>
+
+        <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Paper</th>
+                    <th>Status</th>
+                    <th>Assigned</th>
+                    <th>Due</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="a : ${assignments}">
+                    <td th:text="${a.paper.title}"></td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${a.status.name() == 'COMPLETED' ? 'bg-success' : (a.status.name() == 'DECLINED' ? 'bg-secondary' : 'bg-warning text-dark')}"
+                              th:text="${a.status}"></span>
+                    </td>
+                    <td th:text="${a.assignedAt}"></td>
+                    <td th:text="${a.dueDate}"></td>
+                    <td>
+                        <a th:href="@{'/review/ui/assignment/' + ${a.id}}" class="btn btn-sm btn-primary">
+                            <i class="fa-solid fa-eye me-1"></i>View
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(assignments)}">
+                    <td colspan="5" class="text-muted">No review assignments yet.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script th:replace="~{fragments/admin_layout :: scripts}"></script>
+</body>
+
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/admin_layout :: head('Review Assignment')}"></head>
+
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard"><i class="fa-solid fa-clipboard-list me-2"></i>My Reviews</a>
+            <a class="btn btn-outline-light btn-sm" href="/review/ui">
+                <i class="fa-solid fa-arrow-left me-1"></i>Back to Assignments
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+        <div th:if="${paper}">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title" th:text="${paper.title}"></h3>
+                    <p class="mb-1"><strong>Track:</strong> <span th:text="${paper.track}"></span></p>
+                    <p class="mb-1">
+                        <strong>Authors:</strong>
+                        <span th:text="${#strings.listJoin(paper.authorNames, ', ')}"></span>
+                    </p>
+                    <p class="mb-1" th:if="${paper.dueDate != null}">
+                        <strong>Due:</strong> <span th:text="${paper.dueDate}"></span>
+                    </p>
+                    <p class="mb-3"><strong>Abstract:</strong></p>
+                    <p th:text="${paper.abstractText}"></p>
+                    <a th:href="@{'/review/assignment/' + ${assignment.id} + '/paper/file'}" class="btn btn-outline-primary" target="_blank">
+                        <i class="fa-solid fa-file-pdf me-1"></i>View Paper (v<span th:text="${paper.latestVersionNumber}"></span>)
+                    </a>
+                </div>
+            </div>
+
+            <div th:if="${assignment.status.name() == 'PENDING'}" class="row g-4">
+                <div class="col-md-7">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Submit Review</h5>
+                            <form method="post" th:action="@{'/review/ui/assignment/' + ${assignment.id} + '/submit'}">
+                                <div class="mb-3">
+                                    <label for="score" class="form-label">Score (1-5)</label>
+                                    <input type="number" class="form-control" id="score" name="score" min="1" max="5" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="comments" class="form-label">Comments (visible to authors)</label>
+                                    <textarea class="form-control" id="comments" name="comments" rows="4"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confidentialComments" class="form-label">Confidential Comments (chair only)</label>
+                                    <textarea class="form-control" id="confidentialComments" name="confidentialComments" rows="3"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fa-solid fa-check me-1"></i>Submit Review
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-5">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Decline This Assignment</h5>
+                            <form method="post" th:action="@{'/review/ui/assignment/' + ${assignment.id} + '/decline'}">
+                                <div class="mb-3">
+                                    <label for="reason" class="form-label">Reason</label>
+                                    <textarea class="form-control" id="reason" name="reason" rows="2" required></textarea>
+                                </div>
+                                <p class="text-muted small">Suggest a replacement -- pick one, not both:</p>
+                                <div class="mb-3">
+                                    <label for="suggestedUserId" class="form-label">An existing reviewer</label>
+                                    <select class="form-select" id="suggestedUserId" name="suggestedUserId">
+                                        <option value="">-- none --</option>
+                                        <option th:each="r : ${reviewers}" th:value="${r.id}" th:text="${r.fullName} + ' (' + ${r.email} + ')'"></option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label for="suggestedName" class="form-label">Or someone new -- name</label>
+                                    <input type="text" class="form-control" id="suggestedName" name="suggestedName">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="suggestedEmail" class="form-label">Or someone new -- email</label>
+                                    <input type="email" class="form-control" id="suggestedEmail" name="suggestedEmail">
+                                </div>
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="fa-solid fa-xmark me-1"></i>Decline
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${assignment.status.name() != 'PENDING'}" class="alert alert-info">
+                This assignment is <strong th:text="${assignment.status}"></strong> and can no longer be acted on.
+            </div>
+        </div>
+    </div>
+
+    <script th:replace="~{fragments/admin_layout :: scripts}"></script>
+</body>
+
+</html>

@@ -9,5 +9,6 @@ import java.util.List;
 public interface PaperRepository extends JpaRepository<Paper, Long> {
     List<Paper> findBySubmitterId(Long submitterId);
     List<Paper> findByStatus(PaperStatus status);
+    List<Paper> findByConferenceId(Long conferenceId);
     List<Paper> findByConferenceIdAndStatus(Long conferenceId, PaperStatus status);
 }
