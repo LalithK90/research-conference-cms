@@ -121,4 +121,88 @@ class AuthServiceTest {
 
         verify(userIdentityRepository, never()).save(any());
     }
+
+    @Test
+    void updateRoleSucceedsWhenAnotherEnabledAdminRemains() {
+        User targetAdmin = new User();
+        targetAdmin.setId(1L);
+        targetAdmin.setRole(Role.ADMIN);
+        targetAdmin.setEnabled(true);
+
+        User otherAdmin = new User();
+        otherAdmin.setId(2L);
+        otherAdmin.setEnabled(true);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(targetAdmin));
+        when(userRepository.findByRole(Role.ADMIN)).thenReturn(java.util.List.of(targetAdmin, otherAdmin));
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = service.updateRole(1L, Role.AUTHOR);
+
+        assertThat(result.getRole()).isEqualTo(Role.AUTHOR);
+    }
+
+    @Test
+    void updateRoleRejectsDemotingTheLastEnabledAdmin() {
+        User onlyAdmin = new User();
+        onlyAdmin.setId(1L);
+        onlyAdmin.setRole(Role.ADMIN);
+        onlyAdmin.setEnabled(true);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(onlyAdmin));
+        when(userRepository.findByRole(Role.ADMIN)).thenReturn(java.util.List.of(onlyAdmin));
+
+        assertThatThrownBy(() -> service.updateRole(1L, Role.AUTHOR))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("last enabled admin");
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void updateRoleAllowsNoOpChangeToSameRole() {
+        User onlyAdmin = new User();
+        onlyAdmin.setId(1L);
+        onlyAdmin.setRole(Role.ADMIN);
+        onlyAdmin.setEnabled(true);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(onlyAdmin));
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = service.updateRole(1L, Role.ADMIN);
+
+        assertThat(result.getRole()).isEqualTo(Role.ADMIN);
+        verify(userRepository, never()).findByRole(any());
+    }
+
+    @Test
+    void setEnabledRejectsDisablingTheLastEnabledAdmin() {
+        User onlyAdmin = new User();
+        onlyAdmin.setId(1L);
+        onlyAdmin.setRole(Role.ADMIN);
+        onlyAdmin.setEnabled(true);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(onlyAdmin));
+        when(userRepository.findByRole(Role.ADMIN)).thenReturn(java.util.List.of(onlyAdmin));
+
+        assertThatThrownBy(() -> service.setEnabled(1L, false))
+                .isInstanceOf(IllegalStateException.class);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void setEnabledAllowsEnablingAnAccountWithoutAnyAdminCheck() {
+        User author = new User();
+        author.setId(5L);
+        author.setRole(Role.AUTHOR);
+        author.setEnabled(false);
+
+        when(userRepository.findById(5L)).thenReturn(Optional.of(author));
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = service.setEnabled(5L, true);
+
+        assertThat(result.isEnabled()).isTrue();
+    }
 }

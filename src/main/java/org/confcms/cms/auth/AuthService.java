@@ -50,6 +50,45 @@ public class AuthService {
         return saved;
     }
 
+    // Refuses to change the role or enabled-state of the LAST enabled admin -- without this,
+    // an admin could demote or disable themselves (or the only other admin) and leave the
+    // installation with no one able to reach any /admin/** route, a state nothing in this app
+    // can recover from short of direct database access.
+    private void requireNotLastEnabledAdmin(User user) {
+        if (user.getRole() != Role.ADMIN || !user.isEnabled()) {
+            return;
+        }
+        long otherEnabledAdmins = userRepository.findByRole(Role.ADMIN).stream()
+                .filter(User::isEnabled)
+                .filter(u -> !u.getId().equals(user.getId()))
+                .count();
+        if (otherEnabledAdmins == 0) {
+            throw new IllegalStateException("Can't change the last enabled admin account.");
+        }
+    }
+
+    @Transactional
+    public User updateRole(Long userId, Role newRole) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if (newRole != user.getRole()) {
+            requireNotLastEnabledAdmin(user);
+        }
+        user.setRole(newRole);
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User setEnabled(Long userId, boolean enabled) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if (!enabled) {
+            requireNotLastEnabledAdmin(user);
+        }
+        user.setEnabled(enabled);
+        return userRepository.save(user);
+    }
+
     @Transactional
     public User createUserDirect(String email, String fullName, Role role) {
         // This user has no password to fall back on -- their only path in is an
