@@ -116,4 +116,49 @@ class ConflictDeclarationServiceTest {
 
         assertThat(result).isEmpty();
     }
+
+    @Test
+    void declareConflictByEmailSucceedsWhenEmailIsARegisteredAuthorAtThisConference() {
+        PaperAuthor paperAuthor = new PaperAuthor();
+        paperAuthor.setEmail("jane@example.com");
+        Paper paper = new Paper();
+        paper.getAuthors().add(paperAuthor);
+
+        when(paperRepository.findByConferenceId(1L)).thenReturn(List.of(paper));
+        when(userRepository.findByEmail("jane@example.com")).thenReturn(Optional.of(author));
+        when(repository.existsByConferenceIdAndReviewerIdAndDeclaredAgainstUserId(1L, 10L, 20L)).thenReturn(false);
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        ConflictDeclaration result = service.declareConflictByEmail(reviewer, conference, "jane@example.com");
+
+        assertThat(result.getDeclaredAgainstUser()).isEqualTo(author);
+    }
+
+    @Test
+    void declareConflictByEmailRejectsEmailThatIsNotARegisteredUser() {
+        when(userRepository.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> service.declareConflictByEmail(reviewer, conference, "nobody@example.com"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void declareConflictByEmailRejectsRegisteredUserWhoIsNotAnAuthorHere() {
+        // A valid, registered email that simply isn't an author at THIS conference -- must be
+        // rejected the same way an unregistered email is, not treated as a different case. If
+        // this distinguished the two outcomes, the error response itself would leak whether an
+        // arbitrary email belongs to a registered account.
+        Paper paper = new Paper();
+        when(paperRepository.findByConferenceId(1L)).thenReturn(List.of(paper));
+        when(userRepository.findByEmail("other@example.com")).thenReturn(Optional.of(author));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> service.declareConflictByEmail(reviewer, conference, "other@example.com"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(repository, never()).save(any());
+    }
 }

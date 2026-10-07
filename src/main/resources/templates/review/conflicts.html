@@ -18,40 +18,64 @@
         <p class="text-muted" th:text="'For: ' + ${conference.title}"></p>
 
         <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
-        <p>
-            Declare a conflict against any author below (co-author, advisor, family member, etc.) so you're
-            automatically excluded from reviewing their papers at this conference.
-        </p>
+        <div th:if="${conference.blindReview}">
+            <p>
+                This is a blind-review conference, so author identities aren't shown here. If you
+                already know -- outside this system -- that you have a conflict with a specific
+                author (co-author, advisor, family member, etc.), enter their email below.
+            </p>
+            <p class="text-muted" th:if="${!#lists.isEmpty(declaredAgainst)}">
+                You've already declared <span th:text="${#lists.size(declaredAgainst)}"></span> conflict(s) for this conference.
+            </p>
+            <form method="post" th:action="@{/review/ui/conflicts/declare-by-email}" class="row g-2 mb-4">
+                <div class="col-auto">
+                    <input type="email" class="form-control" name="email" placeholder="author@example.com" required>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="fa-solid fa-ban me-1"></i>Declare Conflict
+                    </button>
+                </div>
+            </form>
+        </div>
 
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Author</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="a : ${authors}">
-                    <td th:text="${a.fullName}"></td>
-                    <td th:text="${a.email}"></td>
-                    <td>
-                        <span th:if="${declaredAgainst.contains(a.id)}" class="badge bg-danger">
-                            <i class="fa-solid fa-ban me-1"></i>Conflict Declared
-                        </span>
-                        <form th:unless="${declaredAgainst.contains(a.id)}" method="post"
-                              th:action="@{/review/ui/conflicts/declare}" class="d-inline">
-                            <input type="hidden" name="declaredAgainstUserId" th:value="${a.id}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Declare Conflict</button>
-                        </form>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(authors)}">
-                    <td colspan="3" class="text-muted">No paper authors found for this conference yet.</td>
-                </tr>
-            </tbody>
-        </table>
+        <div th:unless="${conference.blindReview}">
+            <p>
+                Declare a conflict against any author below (co-author, advisor, family member, etc.) so you're
+                automatically excluded from reviewing their papers at this conference.
+            </p>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Author</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="a : ${authors}">
+                        <td th:text="${a.fullName}"></td>
+                        <td th:text="${a.email}"></td>
+                        <td>
+                            <span th:if="${declaredAgainst.contains(a.id)}" class="badge bg-danger">
+                                <i class="fa-solid fa-ban me-1"></i>Conflict Declared
+                            </span>
+                            <form th:unless="${declaredAgainst.contains(a.id)}" method="post"
+                                  th:action="@{/review/ui/conflicts/declare}" class="d-inline">
+                                <input type="hidden" name="declaredAgainstUserId" th:value="${a.id}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Declare Conflict</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(authors)}">
+                        <td colspan="3" class="text-muted">No paper authors found for this conference yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script th:replace="~{fragments/admin_layout :: scripts}"></script>

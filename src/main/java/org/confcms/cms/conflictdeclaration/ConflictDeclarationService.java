@@ -31,6 +31,13 @@ public class ConflictDeclarationService {
     // check -- a conflict can only be declared against a real account, since
     // ConflictDeclaration.declaredAgainstUser is a User, not a free-text PaperAuthor row).
     // LinkedHashMap keyed by user id de-duplicates a co-author appearing on multiple papers.
+    //
+    // ONLY safe to show to a reviewer for a NON-blind-review conference: this returns every
+    // author's real name, which a blind-review conference's reviewers are never supposed to
+    // see (the same anonymity ReviewService.toReviewView already enforces by emptying
+    // authorNames for a blind-review paper). Callers must gate this on
+    // conference.isBlindReview() themselves -- it is not checked here, so misuse elsewhere in
+    // this codebase stays possible; the only current caller (ReviewUiController) does gate it.
     @Transactional(readOnly = true)
     public List<User> declarableAuthors(Conference conference) {
         List<Paper> papers = paperRepository.findByConferenceId(conference.getId());
@@ -42,6 +49,30 @@ public class ConflictDeclarationService {
             }
         }
         return List.copyOf(byId.values());
+    }
+
+    // For a blind-review conference: the reviewer already knows (outside this system) who
+    // they have a conflict with, and types that person's email rather than browsing a roster
+    // this system would otherwise have to expose. Only declares a conflict if that email
+    // belongs to a registered User who is actually an author at this conference -- an
+    // arbitrary email (someone uninvolved, a typo, or a probe for "is this email registered
+    // and is it an author here") is rejected rather than silently accepted, so this can't be
+    // used to test account existence or conference participation.
+    @Transactional
+    public ConflictDeclaration declareConflictByEmail(User reviewer, Conference conference, String email) {
+        User declaredAgainstUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No author at this conference is registered with that email address."));
+
+        boolean isAuthorHere = paperRepository.findByConferenceId(conference.getId()).stream()
+                .flatMap(p -> p.getAuthors().stream())
+                .anyMatch(a -> a.getEmail().equalsIgnoreCase(email));
+        if (!isAuthorHere) {
+            throw new IllegalArgumentException(
+                    "No author at this conference is registered with that email address.");
+        }
+
+        return declareConflict(reviewer, conference, declaredAgainstUser);
     }
 
     @Transactional

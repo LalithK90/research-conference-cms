@@ -110,6 +110,12 @@ public class ReviewUiController {
 
     // Scoped to the active conference: declaring conflicts is meant to run once per reviewer
     // per conference cycle, ahead of bidding/assignment, per the original design spec.
+    //
+    // A blind-review conference never shows a browsable author roster here -- declarableAuthors
+    // returns every author's real name, which reviewers at a blind-review conference are never
+    // supposed to see (the same anonymity ReviewService.toReviewView already enforces for an
+    // assigned paper's author list). Those reviewers instead type the email of someone they
+    // already know outside the system, via declareConflictByEmail.
     @GetMapping("/conflicts")
     public String conflicts(Model model) {
         User actingUser = actingUser();
@@ -120,9 +126,12 @@ public class ReviewUiController {
                 .findByConferenceIdAndReviewerId(conference.getId(), actingUser.getId()).stream()
                 .map(d -> d.getDeclaredAgainstUser().getId())
                 .toList());
-        model.addAttribute("authors", conflictDeclarationService.declarableAuthors(conference).stream()
-                .filter(a -> !a.getId().equals(actingUser.getId()))
-                .toList());
+
+        if (!conference.isBlindReview()) {
+            model.addAttribute("authors", conflictDeclarationService.declarableAuthors(conference).stream()
+                    .filter(a -> !a.getId().equals(actingUser.getId()))
+                    .toList());
+        }
         return "review/conflicts";
     }
 
@@ -133,6 +142,18 @@ public class ReviewUiController {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         conflictDeclarationService.declareConflict(actingUser(), conference, declaredAgainstUser);
         redirectAttributes.addFlashAttribute("message", "Conflict declared.");
+        return "redirect:/review/ui/conflicts";
+    }
+
+    @PostMapping("/conflicts/declare-by-email")
+    public String declareConflictByEmail(@RequestParam String email, RedirectAttributes redirectAttributes) {
+        Conference conference = conferenceService.getActiveConference();
+        try {
+            conflictDeclarationService.declareConflictByEmail(actingUser(), conference, email);
+            redirectAttributes.addFlashAttribute("message", "Conflict declared.");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/review/ui/conflicts";
     }
 }

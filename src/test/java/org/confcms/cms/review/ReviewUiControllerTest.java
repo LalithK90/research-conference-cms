@@ -195,9 +195,10 @@ class ReviewUiControllerTest {
     }
 
     @Test
-    void conflictsShowsDeclarableAuthorsExcludingSelfAndAlreadyDeclaredIds() {
+    void conflictsShowsDeclarableAuthorsExcludingSelfAndAlreadyDeclaredIdsForNonBlindConference() {
         Conference conference = new Conference();
         conference.setId(5L);
+        conference.setBlindReview(false);
         when(conferenceService.getActiveConference()).thenReturn(conference);
 
         User self = reviewer;
@@ -221,6 +222,56 @@ class ReviewUiControllerTest {
         @SuppressWarnings("unchecked")
         List<Long> declaredAgainst = (List<Long>) model.getAttribute("declaredAgainst");
         assertThat(declaredAgainst).containsExactly(100L);
+    }
+
+    // The core of the blind-review fix: declarableAuthors must never even be called for a
+    // blind-review conference, let alone have its result (every author's real name) placed in
+    // the model where the template could render it.
+    @Test
+    void conflictsNeverExposesAuthorIdentitiesForABlindReviewConference() {
+        Conference conference = new Conference();
+        conference.setId(5L);
+        conference.setBlindReview(true);
+        when(conferenceService.getActiveConference()).thenReturn(conference);
+        when(conflictDeclarationRepository.findByConferenceIdAndReviewerId(5L, 1L)).thenReturn(List.of());
+
+        Model model = new ExtendedModelMap();
+        String view = controller.conflicts(model);
+
+        assertThat(view).isEqualTo("review/conflicts");
+        assertThat(model.containsAttribute("authors")).isFalse();
+        verify(conflictDeclarationService, Mockito.never()).declarableAuthors(any());
+    }
+
+    @Test
+    void declareConflictByEmailCallsServiceAndRedirects() {
+        Conference conference = new Conference();
+        conference.setId(5L);
+        conference.setBlindReview(true);
+        when(conferenceService.getActiveConference()).thenReturn(conference);
+
+        RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+        String view = controller.declareConflictByEmail("author@example.com", redirectAttributes);
+
+        assertThat(view).isEqualTo("redirect:/review/ui/conflicts");
+        verify(conflictDeclarationService).declareConflictByEmail(reviewer, conference, "author@example.com");
+        assertThat(redirectAttributes.getFlashAttributes()).containsKey("message");
+    }
+
+    @Test
+    void declareConflictByEmailCapturesInvalidEmailAsFlashError() {
+        Conference conference = new Conference();
+        conference.setId(5L);
+        when(conferenceService.getActiveConference()).thenReturn(conference);
+        Mockito.doThrow(new IllegalArgumentException("No author at this conference is registered with that email address."))
+                .when(conflictDeclarationService).declareConflictByEmail(reviewer, conference, "nobody@example.com");
+
+        RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+        String view = controller.declareConflictByEmail("nobody@example.com", redirectAttributes);
+
+        assertThat(view).isEqualTo("redirect:/review/ui/conflicts");
+        assertThat((Map<String, Object>) redirectAttributes.getFlashAttributes())
+                .containsEntry("error", "No author at this conference is registered with that email address.");
     }
 
     @Test
