@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/admin_layout :: head('All Papers')}"></head>
+
+<body>
+    <nav th:replace="~{fragments/admin_layout :: nav}"></nav>
+
+    <div class="container mt-4">
+        <h2 class="mb-3">All Papers</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Submitter</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="paper : ${papers}">
+                    <td th:text="${paper.id}"></td>
+                    <td th:text="${paper.title}"></td>
+                    <td th:text="${paper.submitter.fullName}"></td>
+                    <td><span class="badge bg-secondary" th:text="${paper.status}"></span></td>
+                    <td>
+                        <a th:href="@{'/admin/decisions/ui/paper/' + ${paper.id}}" class="btn btn-sm btn-primary">View</a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(papers)}">
+                    <td colspan="5" class="text-muted">No papers submitted yet.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script th:replace="~{fragments/admin_layout :: scripts}"></script>
+</body>
+
+</html>
