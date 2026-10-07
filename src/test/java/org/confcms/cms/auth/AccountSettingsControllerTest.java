@@ -15,12 +15,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -109,5 +114,72 @@ class AccountSettingsControllerTest {
 
         assertThat(view).isEqualTo("redirect:/account");
         assertThat(request.getSession(false)).isNull();
+    }
+
+    @Test
+    void unlinkIdentityRemovesItWhenUserHasAPassword() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("author@example.com");
+        user.setPasswordHash("$2a$10$somehash");
+        authenticateAs(user);
+        when(userRepository.findByEmail("author@example.com")).thenReturn(Optional.of(user));
+
+        UserIdentity google = new UserIdentity();
+        google.setProvider("google");
+        when(userIdentityRepository.findByUserId(1L)).thenReturn(List.of(google));
+        when(userIdentityRepository.findByUserIdAndProvider(1L, "google")).thenReturn(Optional.of(google));
+
+        RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+        String view = controller.unlinkIdentity("google", redirectAttributes);
+
+        assertThat(view).isEqualTo("redirect:/account");
+        verify(userIdentityRepository).delete(google);
+        assertThat(redirectAttributes.getFlashAttributes()).containsKey("message");
+    }
+
+    @Test
+    void unlinkIdentityRemovesOneOfSeveralEvenWithoutAPassword() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("author@example.com");
+        user.setPasswordHash(null);
+        authenticateAs(user);
+        when(userRepository.findByEmail("author@example.com")).thenReturn(Optional.of(user));
+
+        UserIdentity google = new UserIdentity();
+        google.setProvider("google");
+        UserIdentity orcid = new UserIdentity();
+        orcid.setProvider("orcid");
+        when(userIdentityRepository.findByUserId(1L)).thenReturn(List.of(google, orcid));
+        when(userIdentityRepository.findByUserIdAndProvider(1L, "google")).thenReturn(Optional.of(google));
+
+        RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+        String view = controller.unlinkIdentity("google", redirectAttributes);
+
+        assertThat(view).isEqualTo("redirect:/account");
+        verify(userIdentityRepository).delete(google);
+    }
+
+    @Test
+    void unlinkIdentityRefusesToRemoveTheOnlySignInMethod() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("author@example.com");
+        user.setPasswordHash(null);
+        authenticateAs(user);
+        when(userRepository.findByEmail("author@example.com")).thenReturn(Optional.of(user));
+
+        UserIdentity google = new UserIdentity();
+        google.setProvider("google");
+        when(userIdentityRepository.findByUserId(1L)).thenReturn(List.of(google));
+
+        RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+        String view = controller.unlinkIdentity("google", redirectAttributes);
+
+        assertThat(view).isEqualTo("redirect:/account");
+        verify(userIdentityRepository, never()).delete(any());
+        assertThat((Map<String, Object>) redirectAttributes.getFlashAttributes())
+                .containsEntry("error", "Can't unlink your only sign-in method. Set a password first, or link another account.");
     }
 }
