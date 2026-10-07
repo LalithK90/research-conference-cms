@@ -145,15 +145,15 @@ public class ReviewUiController {
         return "redirect:/review/ui/conflicts";
     }
 
+    // Always the same outcome regardless of whether the email matched a real author here --
+    // see ConflictDeclarationService.declareConflictByEmail for why (author-participation
+    // oracle on a blind-review conference).
     @PostMapping("/conflicts/declare-by-email")
     public String declareConflictByEmail(@RequestParam String email, RedirectAttributes redirectAttributes) {
         Conference conference = conferenceService.getActiveConference();
-        try {
-            conflictDeclarationService.declareConflictByEmail(actingUser(), conference, email);
-            redirectAttributes.addFlashAttribute("message", "Conflict declared.");
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-        }
+        conflictDeclarationService.declareConflictByEmail(actingUser(), conference, email);
+        redirectAttributes.addFlashAttribute("message",
+                "Your declaration has been recorded and will be applied if it matches an author.");
         return "redirect:/review/ui/conflicts";
     }
 }

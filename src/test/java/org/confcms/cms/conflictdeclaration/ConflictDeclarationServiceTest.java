@@ -118,7 +118,7 @@ class ConflictDeclarationServiceTest {
     }
 
     @Test
-    void declareConflictByEmailSucceedsWhenEmailIsARegisteredAuthorAtThisConference() {
+    void declareConflictByEmailCreatesRealDeclarationWhenEmailIsARegisteredAuthorAtThisConference() {
         PaperAuthor paperAuthor = new PaperAuthor();
         paperAuthor.setEmail("jane@example.com");
         Paper paper = new Paper();
@@ -129,36 +129,52 @@ class ConflictDeclarationServiceTest {
         when(repository.existsByConferenceIdAndReviewerIdAndDeclaredAgainstUserId(1L, 10L, 20L)).thenReturn(false);
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        ConflictDeclaration result = service.declareConflictByEmail(reviewer, conference, "jane@example.com");
+        service.declareConflictByEmail(reviewer, conference, "jane@example.com");
 
-        assertThat(result.getDeclaredAgainstUser()).isEqualTo(author);
+        org.mockito.ArgumentCaptor<ConflictDeclaration> captor = org.mockito.ArgumentCaptor.forClass(ConflictDeclaration.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getDeclaredAgainstUser()).isEqualTo(author);
     }
 
-    @Test
-    void declareConflictByEmailRejectsEmailThatIsNotARegisteredUser() {
-        when(userRepository.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
+    // The three "doesn't actually match" cases below must all behave identically from the
+    // caller's point of view (no exception, nothing saved) -- a background security review
+    // correctly flagged an earlier version that threw for these, since the distinct
+    // success/failure outcome let a reviewer enumerate guessed emails and learn who's
+    // actually submitting to a blind-review conference. There is nothing for the caller to
+    // observe here that would let it tell these apart from the real-match case above except
+    // the absence of a saved row, which ReviewUiController never surfaces either.
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(
-                        () -> service.declareConflictByEmail(reviewer, conference, "nobody@example.com"))
-                .isInstanceOf(IllegalArgumentException.class);
+    @Test
+    void declareConflictByEmailIsANoOpWhenEmailIsNotARegisteredUser() {
+        when(userRepository.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
+        when(paperRepository.findByConferenceId(1L)).thenReturn(List.of());
+
+        service.declareConflictByEmail(reviewer, conference, "nobody@example.com");
 
         verify(repository, never()).save(any());
     }
 
     @Test
-    void declareConflictByEmailRejectsRegisteredUserWhoIsNotAnAuthorHere() {
-        // A valid, registered email that simply isn't an author at THIS conference -- must be
-        // rejected the same way an unregistered email is, not treated as a different case. If
-        // this distinguished the two outcomes, the error response itself would leak whether an
-        // arbitrary email belongs to a registered account.
+    void declareConflictByEmailIsANoOpWhenRegisteredUserIsNotAnAuthorHere() {
         Paper paper = new Paper();
         when(paperRepository.findByConferenceId(1L)).thenReturn(List.of(paper));
         when(userRepository.findByEmail("other@example.com")).thenReturn(Optional.of(author));
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(
-                        () -> service.declareConflictByEmail(reviewer, conference, "other@example.com"))
-                .isInstanceOf(IllegalArgumentException.class);
+        service.declareConflictByEmail(reviewer, conference, "other@example.com");
 
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void declareConflictByEmailAlwaysQueriesBothRepositoriesRegardlessOfOutcome() {
+        // Closes the timing side of the same oracle: an unregistered email must not finish
+        // measurably faster than a matching one by skipping the paper/author scan.
+        when(userRepository.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
+        when(paperRepository.findByConferenceId(1L)).thenReturn(List.of());
+
+        service.declareConflictByEmail(reviewer, conference, "nobody@example.com");
+
+        verify(userRepository).findByEmail("nobody@example.com");
+        verify(paperRepository).findByConferenceId(1L);
     }
 }

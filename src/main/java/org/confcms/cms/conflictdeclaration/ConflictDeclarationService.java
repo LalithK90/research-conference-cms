@@ -53,26 +53,31 @@ public class ConflictDeclarationService {
 
     // For a blind-review conference: the reviewer already knows (outside this system) who
     // they have a conflict with, and types that person's email rather than browsing a roster
-    // this system would otherwise have to expose. Only declares a conflict if that email
-    // belongs to a registered User who is actually an author at this conference -- an
-    // arbitrary email (someone uninvolved, a typo, or a probe for "is this email registered
-    // and is it an author here") is rejected rather than silently accepted, so this can't be
-    // used to test account existence or conference participation.
+    // this system would otherwise have to expose.
+    //
+    // Deliberately silent on whether the email actually matched anything: an earlier version
+    // threw when the email didn't resolve to a registered author here, which a background
+    // security review correctly flagged as an author-participation oracle -- a reviewer could
+    // enumerate guessed emails and learn who's actually submitting to this blind-review
+    // conference purely from which guesses "succeeded" vs "failed", exactly the fact blind
+    // review exists to hide. This method instead always completes the same way for the caller
+    // (ReviewUiController shows one fixed message regardless of outcome): a matching email
+    // creates a real ConflictDeclaration; a non-matching one is a deliberate no-op, not
+    // persisted (there's no legitimate use for storing an arbitrary, unverified email, and
+    // doing so would itself be a minor data-quality/spam surface).
     @Transactional
-    public ConflictDeclaration declareConflictByEmail(User reviewer, Conference conference, String email) {
-        User declaredAgainstUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "No author at this conference is registered with that email address."));
-
+    public void declareConflictByEmail(User reviewer, Conference conference, String email) {
+        // Both lookups always run, win or lose, so a non-matching email doesn't finish
+        // measurably faster than a matching one -- the same timing-side-channel discipline
+        // this codebase already applies to the magic-link request endpoint.
+        var declaredAgainstUser = userRepository.findByEmail(email);
         boolean isAuthorHere = paperRepository.findByConferenceId(conference.getId()).stream()
                 .flatMap(p -> p.getAuthors().stream())
                 .anyMatch(a -> a.getEmail().equalsIgnoreCase(email));
-        if (!isAuthorHere) {
-            throw new IllegalArgumentException(
-                    "No author at this conference is registered with that email address.");
-        }
 
-        return declareConflict(reviewer, conference, declaredAgainstUser);
+        if (declaredAgainstUser.isPresent() && isAuthorHere) {
+            declareConflict(reviewer, conference, declaredAgainstUser.get());
+        }
     }
 
     @Transactional

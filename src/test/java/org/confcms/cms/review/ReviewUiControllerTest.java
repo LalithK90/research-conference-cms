@@ -244,7 +244,7 @@ class ReviewUiControllerTest {
     }
 
     @Test
-    void declareConflictByEmailCallsServiceAndRedirects() {
+    void declareConflictByEmailCallsServiceAndAlwaysShowsTheSameGenericMessage() {
         Conference conference = new Conference();
         conference.setId(5L);
         conference.setBlindReview(true);
@@ -255,24 +255,14 @@ class ReviewUiControllerTest {
 
         assertThat(view).isEqualTo("redirect:/review/ui/conflicts");
         verify(conflictDeclarationService).declareConflictByEmail(reviewer, conference, "author@example.com");
-        assertThat(redirectAttributes.getFlashAttributes()).containsKey("message");
-    }
-
-    @Test
-    void declareConflictByEmailCapturesInvalidEmailAsFlashError() {
-        Conference conference = new Conference();
-        conference.setId(5L);
-        when(conferenceService.getActiveConference()).thenReturn(conference);
-        Mockito.doThrow(new IllegalArgumentException("No author at this conference is registered with that email address."))
-                .when(conflictDeclarationService).declareConflictByEmail(reviewer, conference, "nobody@example.com");
-
-        RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
-        String view = controller.declareConflictByEmail("nobody@example.com", redirectAttributes);
-
-        assertThat(view).isEqualTo("redirect:/review/ui/conflicts");
         assertThat((Map<String, Object>) redirectAttributes.getFlashAttributes())
-                .containsEntry("error", "No author at this conference is registered with that email address.");
+                .containsEntry("message", "Your declaration has been recorded and will be applied if it matches an author.");
     }
+
+    // declareConflictByEmail returns void (never throws on a non-matching email -- see
+    // ConflictDeclarationService's own tests for why) -- there is no error branch left to
+    // verify here, by design: the whole point of the fix is that this controller method has
+    // only one possible response, regardless of whether the email matched anything.
 
     @Test
     void declareConflictCallsServiceAndRedirects() {
