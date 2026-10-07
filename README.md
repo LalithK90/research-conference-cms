@@ -25,21 +25,22 @@ The system supports **multiple conferences** by allowing administrators to creat
 *   **Track Management**: Organize submissions by tracks or sub-themes.
 
 ### 3. ⚖️ Advanced Review Process
-*   **Reviewer Bidding**: Reviewers can bid on papers they want to review (Eager, Willing, Conflict).
-*   **Smart Assignment**: Automated algorithm assigns papers based on bids and load balancing.
-*   **Conflict of Interest**: Built-in detection and manual declaration of COIs.
+*   **Smart Assignment**: Automated algorithm assigns papers based on reviewer load balancing, with admin/chair manual assignment as an alternative.
+*   **Conflict of Interest**: Reviewers declare conflicts against specific authors; auto-assignment automatically excludes declared conflicts (with a blind-review-safe declare-by-email flow for conferences that hide author identities from reviewers).
 *   **Scoring & Decisions**: Admins make final acceptance/rejection decisions based on reviewer scores.
+*   *Reviewer bidding (signalling interest/conflict on papers before assignment) has a data model but no endpoint or UI yet -- not reachable today.*
 
-### 4. 📅 Scheduling & Program
-*   **Session Management**: Create rooms, time slots, and sessions.
-*   **Program Builder**: Assign accepted papers to specific sessions.
-*   **Public Schedule**: Automatically generates a viewable schedule for attendees.
+### 4. 📅 Scheduling & Program (planned)
+*   A Room/Session/Presentation data model and REST API exist, but no admin or public UI has
+    been built on top of them yet. Track this as a separate upcoming feature.
 
 ### 5. 🎟️ Registration & Payments
-*   **Flexible Payment Providers**:
-    *   **Stripe**: Integrated credit card processing.
-    *   **PayPal**: Secure checkout.
-    *   **Local Bank Transfer**: Display custom bank details for manual verification.
+*   **Flexible Payment Providers** (admin can select and store credentials per conference; no
+    real gateway integration yet -- no Stripe/PayPal SDK calls exist, registrations are recorded
+    as `PENDING` regardless of provider):
+    *   **Stripe**: Credentials storage only -- checkout integration not yet built.
+    *   **PayPal**: Credentials storage only -- checkout integration not yet built.
+    *   **Local Bank Transfer**: Display custom bank details, with bank-slip upload and admin verification -- this path is fully functional today.
     *   **Free**: Support for free events.
 *   **Ticket Types**: Manage different rates for Students, Regular attendees, etc.
 
