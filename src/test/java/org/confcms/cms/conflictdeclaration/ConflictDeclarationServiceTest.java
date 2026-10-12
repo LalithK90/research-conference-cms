@@ -177,4 +177,68 @@ class ConflictDeclarationServiceTest {
         verify(userRepository).findByEmail("nobody@example.com");
         verify(paperRepository).findByConferenceId(1L);
     }
+
+    // declareConflictById: the POST a direct, non-UI client could hit with a guessed id --
+    // must be just as resistant to the same author-participation oracle as the email path,
+    // not merely relying on ReviewUiController hiding the browsable list in the HTML.
+
+    @Test
+    void declareConflictByIdCreatesRealDeclarationWhenUserIsAnAuthorHereAndConferenceIsNotBlindReview() {
+        conference.setBlindReview(false);
+        PaperAuthor paperAuthor = new PaperAuthor();
+        paperAuthor.setEmail("jane@example.com");
+        Paper paper = new Paper();
+        paper.getAuthors().add(paperAuthor);
+
+        author.setEmail("jane@example.com");
+        when(userRepository.findById(20L)).thenReturn(Optional.of(author));
+        when(paperRepository.findByConferenceId(1L)).thenReturn(List.of(paper));
+        when(repository.existsByConferenceIdAndReviewerIdAndDeclaredAgainstUserId(1L, 10L, 20L)).thenReturn(false);
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.declareConflictById(reviewer, conference, 20L);
+
+        org.mockito.ArgumentCaptor<ConflictDeclaration> captor = org.mockito.ArgumentCaptor.forClass(ConflictDeclaration.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getDeclaredAgainstUser()).isEqualTo(author);
+    }
+
+    @Test
+    void declareConflictByIdIsANoOpForABlindReviewConferenceEvenWithAValidAuthorId() {
+        // The core of this fix: hiding the browsable list in the UI is not a server-side
+        // control. A direct POST with a real author's id must still do nothing for a
+        // blind-review conference.
+        conference.setBlindReview(true);
+
+        service.declareConflictById(reviewer, conference, 20L);
+
+        verify(userRepository, never()).findById(any());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void declareConflictByIdIsANoOpWhenUserIdDoesNotExist() {
+        conference.setBlindReview(false);
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        service.declareConflictById(reviewer, conference, 999L);
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void declareConflictByIdIsANoOpWhenUserExistsButIsNotAnAuthorHere() {
+        // Closes the gap the id-based path never checked before: a valid registered user who
+        // simply isn't an author at this conference must not be declarable against.
+        conference.setBlindReview(false);
+        User notAnAuthor = new User();
+        notAnAuthor.setId(30L);
+        notAnAuthor.setEmail("stranger@example.com");
+        when(userRepository.findById(30L)).thenReturn(Optional.of(notAnAuthor));
+        when(paperRepository.findByConferenceId(1L)).thenReturn(List.of());
+
+        service.declareConflictById(reviewer, conference, 30L);
+
+        verify(repository, never()).save(any());
+    }
 }

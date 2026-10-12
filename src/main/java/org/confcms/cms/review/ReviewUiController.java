@@ -135,12 +135,14 @@ public class ReviewUiController {
         return "review/conflicts";
     }
 
+    // Enforced server-side in ConflictDeclarationService.declareConflictById, not just by
+    // hiding the browsable list for a blind-review conference: a direct POST here with a
+    // guessed user id must behave identically whether or not that id is actually a
+    // declarable author, for the same reason declareConflictByEmail does.
     @PostMapping("/conflicts/declare")
     public String declareConflict(@RequestParam Long declaredAgainstUserId, RedirectAttributes redirectAttributes) {
         Conference conference = conferenceService.getActiveConference();
-        User declaredAgainstUser = userRepository.findById(declaredAgainstUserId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        conflictDeclarationService.declareConflict(actingUser(), conference, declaredAgainstUser);
+        conflictDeclarationService.declareConflictById(actingUser(), conference, declaredAgainstUserId);
         redirectAttributes.addFlashAttribute("message", "Conflict declared.");
         return "redirect:/review/ui/conflicts";
     }

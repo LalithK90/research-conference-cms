@@ -265,20 +265,16 @@ class ReviewUiControllerTest {
     // only one possible response, regardless of whether the email matched anything.
 
     @Test
-    void declareConflictCallsServiceAndRedirects() {
+    void declareConflictDelegatesToTheIdBasedServiceMethodAndRedirects() {
         Conference conference = new Conference();
         conference.setId(5L);
         when(conferenceService.getActiveConference()).thenReturn(conference);
-
-        User author = new User();
-        author.setId(100L);
-        when(userRepository.findById(100L)).thenReturn(Optional.of(author));
 
         RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
         String view = controller.declareConflict(100L, redirectAttributes);
 
         assertThat(view).isEqualTo("redirect:/review/ui/conflicts");
-        verify(conflictDeclarationService).declareConflict(reviewer, conference, author);
+        verify(conflictDeclarationService).declareConflictById(reviewer, conference, 100L);
         assertThat(redirectAttributes.getFlashAttributes()).containsKey("message");
     }
 }

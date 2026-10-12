@@ -70,6 +70,12 @@ public class ConflictDeclarationService {
         // Both lookups always run, win or lose, so a non-matching email doesn't finish
         // measurably faster than a matching one -- the same timing-side-channel discipline
         // this codebase already applies to the magic-link request endpoint.
+        //
+        // Both checks are anchored to the same literal `email` string (not to each other's
+        // resolved record), so a DB-collation-vs-equalsIgnoreCase case mismatch can only ever
+        // produce a false negative here (a real author's declaration silently not applying,
+        // the already-fail-safe outcome this method defaults to) -- never a false positive or
+        // an oracle, since both branches observe the exact same input either way.
         var declaredAgainstUser = userRepository.findByEmail(email);
         boolean isAuthorHere = paperRepository.findByConferenceId(conference.getId()).stream()
                 .flatMap(p -> p.getAuthors().stream())
@@ -92,5 +98,32 @@ public class ConflictDeclarationService {
         declaration.setReviewer(reviewer);
         declaration.setDeclaredAgainstUser(declaredAgainstUser);
         return repository.save(declaration);
+    }
+
+    // Enforces server-side what ReviewUiController's conflicts() view only enforces by not
+    // SHOWING the browsable author list: a background security review correctly pointed out
+    // that hiding the list in the UI does nothing to stop a direct POST to this declare-by-id
+    // path with a guessed user ID, for a blind-review conference, where success vs. "not an
+    // author here" is just as much an author-participation oracle as the email path was.
+    // Also closes a gap the id-based path never had a check for at all: nothing previously
+    // confirmed declaredAgainstUser is actually an author at this conference, so a conflict
+    // could be declared against any registered user by id regardless of participation.
+    @Transactional
+    public void declareConflictById(User reviewer, Conference conference, Long declaredAgainstUserId) {
+        if (conference.isBlindReview()) {
+            return;
+        }
+
+        // Both lookups always run, win or lose -- see declareConflictByEmail for why
+        // (closing the matching timing side of the same oracle class).
+        var declaredAgainstUser = userRepository.findById(declaredAgainstUserId);
+        boolean isAuthorHere = declaredAgainstUser.isPresent()
+                && paperRepository.findByConferenceId(conference.getId()).stream()
+                        .flatMap(p -> p.getAuthors().stream())
+                        .anyMatch(a -> a.getEmail().equalsIgnoreCase(declaredAgainstUser.get().getEmail()));
+
+        if (isAuthorHere) {
+            declareConflict(reviewer, conference, declaredAgainstUser.get());
+        }
     }
 }
