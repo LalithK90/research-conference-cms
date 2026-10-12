@@ -396,6 +396,107 @@ class SubmissionServiceTest {
         assertThat(newVersion.getDuplicateOfPaperVersionId()).isNull();
     }
 
+    // submitPaper's own duplicate-flagging test (submitPaperFlagsPossibleDuplicateWhenContentHashMatches,
+    // above) only proved applyDuplicateCheck's positive case through that one call site --
+    // uploadRevision and uploadNewVersion share the exact same private method, but neither had a
+    // test proving THEY flag a genuine cross-paper match, only (for uploadRevision) that they
+    // correctly DON'T flag a match against the paper's own prior version. Closes that gap.
+    @Test
+    void uploadRevisionFlagsPossibleDuplicateWhenContentHashMatchesADifferentPaper() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.MAJOR_REVISION);
+        paper.setRevisionDueDate(LocalDate.now().plusDays(5));
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(fileStorageService.store(any())).thenReturn("/uploads/revised.pdf");
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Paper otherPaper = new Paper();
+        otherPaper.setId(999L);
+        PaperVersion existingMatch = new PaperVersion();
+        existingMatch.setId(42L);
+        existingMatch.setPaper(otherPaper);
+        when(paperVersionRepository.findByContentHash(any())).thenReturn(List.of(existingMatch));
+
+        MockMultipartFile file = new MockMultipartFile("file", "revised.pdf", "application/pdf", "%PDF-1.4 identical content".getBytes());
+
+        Paper result = service.uploadRevision(submitter, 5L, file);
+
+        PaperVersion newVersion = result.getVersions().get(result.getVersions().size() - 1);
+        assertThat(newVersion.isPossibleDuplicate()).isTrue();
+        assertThat(newVersion.getDuplicateOfPaperVersionId()).isEqualTo(42L);
+    }
+
+    @Test
+    void uploadNewVersionFlagsPossibleDuplicateWhenContentHashMatchesADifferentPaper() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.SUBMITTED);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(fileStorageService.store(any())).thenReturn("/uploads/v2.pdf");
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Paper otherPaper = new Paper();
+        otherPaper.setId(999L);
+        PaperVersion existingMatch = new PaperVersion();
+        existingMatch.setId(42L);
+        existingMatch.setPaper(otherPaper);
+        when(paperVersionRepository.findByContentHash(any())).thenReturn(List.of(existingMatch));
+
+        MockMultipartFile file = new MockMultipartFile("file", "v2.pdf", "application/pdf", "%PDF-1.4 identical content".getBytes());
+
+        Paper result = service.uploadNewVersion(submitter, 5L, file);
+
+        PaperVersion newVersion = result.getVersions().get(result.getVersions().size() - 1);
+        assertThat(newVersion.isPossibleDuplicate()).isTrue();
+        assertThat(newVersion.getDuplicateOfPaperVersionId()).isEqualTo(42L);
+    }
+
+    @Test
+    void uploadNewVersionDoesNotFlagDuplicateAgainstItsOwnPaperPriorVersion() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
+
+        User submitter = new User();
+        submitter.setId(10L);
+
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setSubmitter(submitter);
+        paper.setStatus(PaperStatus.SUBMITTED);
+
+        PaperVersion priorVersion = new PaperVersion();
+        priorVersion.setId(7L);
+        priorVersion.setPaper(paper);
+        paper.getVersions().add(priorVersion);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(fileStorageService.store(any())).thenReturn("/uploads/v2.pdf");
+        when(paperRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(paperVersionRepository.findByContentHash(any())).thenReturn(List.of(priorVersion));
+
+        MockMultipartFile file = new MockMultipartFile("file", "v2.pdf", "application/pdf", "%PDF-1.4 unchanged content".getBytes());
+
+        Paper result = service.uploadNewVersion(submitter, 5L, file);
+
+        PaperVersion newVersion = result.getVersions().get(result.getVersions().size() - 1);
+        assertThat(newVersion.isPossibleDuplicate()).isFalse();
+        assertThat(newVersion.getDuplicateOfPaperVersionId()).isNull();
+    }
+
     @Test
     void submitPaperDoesNotFlagDuplicateWhenNoHashMatchExists() {
         SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository);
