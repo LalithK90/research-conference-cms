@@ -3,6 +3,7 @@ package org.confcms.cms.paper;
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.conference.ConferenceService;
+import org.confcms.cms.scheduling.PresentationRepository;
 import org.confcms.cms.service.FileStorageService;
 import org.confcms.cms.service.EmailService;
 import org.confcms.cms.personinvitation.PersonInvitationService;
@@ -31,6 +32,7 @@ public class SubmissionService {
     private final PersonInvitationService personInvitationService;
     private final UserRepository userRepository;
     private final PaperVersionRepository paperVersionRepository;
+    private final PresentationRepository presentationRepository;
 
     @Transactional
     public Paper submitPaper(User submitter, String title, String abstractText, String track, MultipartFile file, List<PaperAuthor> authors) {
@@ -225,15 +227,22 @@ public class SubmissionService {
         paper.setStatus(PaperStatus.WITHDRAWN);
         Paper saved = paperRepository.save(paper);
 
+        // A withdrawn paper must not keep showing on the public program -- without this, a
+        // paper scheduled into a session before being withdrawn stayed listed on /schedule
+        // indefinitely, since nothing in SchedulingService's own flow ever learns the paper
+        // left ACCEPTED/CAMERA_READY_SUBMITTED status. This is the one place a paper's status
+        // can change out from under an existing Presentation, so the cleanup lives here rather
+        // than in SchedulingService, which has no reason to know about withdrawal at all.
+        presentationRepository.findByPaperId(paperId).ifPresent(presentationRepository::delete);
+
         try {
             emailService.sendSimpleEmail(paper.getSubmitter().getEmail(), "Paper withdrawn",
                     "Your paper '" + paper.getTitle() + "' has been withdrawn.");
         } catch (Exception ignored) {
         }
 
-
         return saved;
-        }
+    }
 
     @Transactional
     public Paper uploadRevision(User requester, Long paperId, MultipartFile file) {
