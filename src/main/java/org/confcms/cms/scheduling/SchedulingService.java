@@ -4,6 +4,7 @@ import org.confcms.cms.conference.Conference;
 import org.confcms.cms.conference.ConferenceRepository;
 import org.confcms.cms.paper.Paper;
 import org.confcms.cms.paper.PaperRepository;
+import org.confcms.cms.paper.PaperStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,11 +50,12 @@ public class SchedulingService {
         if (roomId != null) {
             room = roomRepository.findById(roomId)
                     .orElseThrow(() -> new IllegalArgumentException("Room not found"));
-        }
 
-        // Basic conflict check for room
-        if (room != null) {
-            // TODO: Check if room is already booked for this time
+            boolean overlaps = sessionRepository.findByRoomId(roomId).stream()
+                    .anyMatch(existing -> start.isBefore(existing.getEndTime()) && existing.getStartTime().isBefore(end));
+            if (overlaps) {
+                throw new IllegalStateException("This room is already booked for an overlapping time");
+            }
         }
 
         Session session = new Session();
@@ -79,6 +81,13 @@ public class SchedulingService {
         
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+
+        // Only a decided, accepted paper belongs in a public program -- scheduling anything
+        // earlier (still under review, or not yet decided) would put undecided or rejected
+        // work in front of attendees.
+        if (paper.getStatus() != PaperStatus.ACCEPTED && paper.getStatus() != PaperStatus.CAMERA_READY_SUBMITTED) {
+            throw new IllegalStateException("Only accepted papers can be scheduled into a session");
+        }
 
         // Check if paper is already presented
         if (presentationRepository.findByPaperId(paperId).isPresent()) {

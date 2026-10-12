@@ -10,6 +10,7 @@ import org.confcms.cms.speaker.SpeakerRepository;
 import org.confcms.cms.sponsor.SponsorRepository;
 import org.confcms.cms.conference.CommitteeService;
 import org.confcms.cms.conference.ConferenceService;
+import org.confcms.cms.scheduling.SchedulingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Controller;
@@ -33,6 +34,7 @@ public class PublicWebController {
     private final ConferenceRepository conferenceRepository;
     private final SpeakerRepository speakerRepository;
     private final SponsorRepository sponsorRepository;
+    private final SchedulingService schedulingService;
 
     @ModelAttribute("conference")
     public Conference addConferenceToModel() {
@@ -94,6 +96,13 @@ public class PublicWebController {
         return "public/venue";
     }
 
+    @GetMapping("/schedule")
+    public String schedule(Model model) {
+        Conference activeConference = conferenceService.getActiveConference();
+        model.addAttribute("sessions", schedulingService.getSessions(activeConference.getId()));
+        return "public/schedule";
+    }
+
     @GetMapping("/past-conferences")
     public String pastConferences(Model model) {
         List<Conference> past = conferenceRepository.findAll().stream()
@@ -147,6 +156,15 @@ public class PublicWebController {
         model.addAttribute("sponsorsByTier", byTier);
         model.addAttribute("hasNoSponsors", sponsors.isEmpty());
         return "public/sponsors";
+    }
+
+    @GetMapping("/past-conferences/{id}/schedule")
+    public String pastConferenceSchedule(@PathVariable Long id, Model model) {
+        Conference target = loadConferenceById(id);
+        model.addAttribute("conference", target);
+        model.addAttribute("pastConferenceId", target.getId());
+        model.addAttribute("sessions", schedulingService.getSessions(target.getId()));
+        return "public/schedule";
     }
 
     private Conference loadConferenceById(Long id) {

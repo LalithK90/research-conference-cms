@@ -28,10 +28,12 @@ class PublicWebControllerTest {
     private org.confcms.cms.speaker.SpeakerRepository speakerRepository;
     @Mock
     private org.confcms.cms.sponsor.SponsorRepository sponsorRepository;
+    @Mock
+    private org.confcms.cms.scheduling.SchedulingService schedulingService;
 
     private PublicWebController controller() {
         return new PublicWebController(conferenceService, committeeService, clientRegistrationRepository,
-                conferenceRepository, speakerRepository, sponsorRepository);
+                conferenceRepository, speakerRepository, sponsorRepository, schedulingService);
     }
 
     @Test
@@ -212,5 +214,35 @@ class PublicWebControllerTest {
         controller().about(model);
 
         assertThat(model.containsAttribute("pastConferenceId")).isFalse();
+    }
+
+    @Test
+    void scheduleListsSessionsForTheActiveConference() {
+        org.confcms.cms.conference.Conference activeConference = new org.confcms.cms.conference.Conference();
+        activeConference.setId(7L);
+        org.mockito.Mockito.when(conferenceService.getActiveConference()).thenReturn(activeConference);
+        org.mockito.Mockito.when(schedulingService.getSessions(7L))
+                .thenReturn(java.util.List.of(new org.confcms.cms.scheduling.Session()));
+
+        Model model = new ExtendedModelMap();
+        String view = controller().schedule(model);
+
+        assertThat(view).isEqualTo("public/schedule");
+        assertThat((java.util.List<?>) model.getAttribute("sessions")).hasSize(1);
+    }
+
+    @Test
+    void pastConferenceScheduleLoadsTheRequestedConferencesSessions() {
+        org.confcms.cms.conference.Conference target = new org.confcms.cms.conference.Conference();
+        target.setId(42L);
+        org.mockito.Mockito.when(conferenceRepository.findById(42L)).thenReturn(java.util.Optional.of(target));
+        org.mockito.Mockito.when(schedulingService.getSessions(42L)).thenReturn(java.util.List.of());
+
+        Model model = new ExtendedModelMap();
+        String view = controller().pastConferenceSchedule(42L, model);
+
+        assertThat(view).isEqualTo("public/schedule");
+        assertThat(model.getAttribute("pastConferenceId")).isEqualTo(42L);
+        org.mockito.Mockito.verify(conferenceService, org.mockito.Mockito.never()).getActiveConference();
     }
 }

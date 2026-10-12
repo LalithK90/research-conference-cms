@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/public_layout :: head('Schedule')}"></head>
+
+<body>
+    <nav th:replace="~{fragments/public_layout :: nav}"></nav>
+
+    <div class="container my-5">
+        <h1 class="text-center mb-5">Schedule</h1>
+
+        <div class="row justify-content-center" th:if="${#lists.isEmpty(sessions)}">
+            <div class="col-md-8">
+                <div class="alert alert-info">The schedule for this conference hasn't been published yet.</div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center" th:unless="${#lists.isEmpty(sessions)}">
+            <div class="col-md-10">
+                <div class="card mb-4" th:each="s : ${sessions}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong th:text="${s.title}"></strong>
+                            <span class="text-muted small" th:text="' &mdash; ' + ${#temporals.format(s.startTime, 'MMM d, HH:mm')} + ' - ' + ${#temporals.format(s.endTime, 'HH:mm')}"></span>
+                        </div>
+                        <span class="badge bg-secondary" th:if="${s.room != null}" th:text="${s.room.name}"></span>
+                    </div>
+                    <div class="card-body">
+                        <p th:if="${s.description != null and !s.description.isBlank()}" th:text="${s.description}"></p>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item" th:each="p : ${s.presentations}">
+                                <span th:text="${#temporals.format(p.startTime, 'HH:mm')} + ' - ' + ${#temporals.format(p.endTime, 'HH:mm')}" class="text-muted me-2"></span>
+                                <span th:text="${p.paper.title}"></span>
+                            </li>
+                            <li class="list-group-item text-muted" th:if="${#lists.isEmpty(s.presentations)}">
+                                No papers scheduled in this session yet.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="~{fragments/public_layout :: footer}"></footer>
+    <script th:replace="~{fragments/public_layout :: scripts}"></script>
+</body>
+
+</html>

@@ -30,9 +30,13 @@ The system supports **multiple conferences** by allowing administrators to creat
 *   **Scoring & Decisions**: Admins make final acceptance/rejection decisions based on reviewer scores.
 *   *Reviewer bidding (signalling interest/conflict on papers before assignment) has a data model but no endpoint or UI yet -- not reachable today.*
 
-### 4. 📅 Scheduling & Program (planned)
-*   A Room/Session/Presentation data model and REST API exist, but no admin or public UI has
-    been built on top of them yet. Track this as a separate upcoming feature.
+### 4. 📅 Scheduling & Program
+*   **Session Management**: Admin creates rooms and sessions (with time slots), with a
+    same-room-overlap check preventing double-booking.
+*   **Program Builder**: Assign accepted (or camera-ready) papers into sessions from a single
+    admin page covering rooms, sessions, and assignment together.
+*   **Public Schedule**: `/schedule` shows the active conference's sessions and their assigned
+    papers to attendees; past conferences have their own schedule page too.
 
 ### 5. 🎟️ Registration & Payments
 *   **Flexible Payment Providers** (admin can select and store credentials per conference; no
