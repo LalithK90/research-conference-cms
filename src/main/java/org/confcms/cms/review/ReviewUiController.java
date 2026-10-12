@@ -5,6 +5,9 @@ import org.confcms.cms.conference.ConferenceService;
 import org.confcms.cms.conflictdeclaration.ConflictDeclarationRepository;
 import org.confcms.cms.conflictdeclaration.ConflictDeclarationService;
 import org.confcms.cms.core.security.Role;
+import org.confcms.cms.paper.Paper;
+import org.confcms.cms.paper.PaperRepository;
+import org.confcms.cms.paper.PaperStatus;
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +28,7 @@ import java.util.List;
 // Thymeleaf front end for the reviewer workflow that ReviewRestController already exposes as a
 // JSON API -- this controller calls the same underlying services directly rather than making an
 // HTTP call back into the REST layer, matching the pattern AdminDecisionViewController already
-// uses for DecisionService. Reviewer bidding (submitBid) is intentionally out of scope here: it
-// has no REST endpoint either, so wiring it up is a separate, larger task.
+// uses for DecisionService.
 @Controller
 @RequestMapping("/review/ui")
 @PreAuthorize("hasRole('REVIEWER')")
@@ -40,6 +42,8 @@ public class ReviewUiController {
     private final ConferenceService conferenceService;
     private final ConflictDeclarationService conflictDeclarationService;
     private final ConflictDeclarationRepository conflictDeclarationRepository;
+    private final PaperRepository paperRepository;
+    private final ReviewBidRepository reviewBidRepository;
 
     private User actingUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -157,5 +161,41 @@ public class ReviewUiController {
         redirectAttributes.addFlashAttribute("message",
                 "Your declaration has been recorded and will be applied if it matches an author.");
         return "redirect:/review/ui/conflicts";
+    }
+
+    // Lists every SUBMITTED paper at the active conference the reviewer hasn't authored --
+    // bidding only matters before assignment, matching autoAssignReviewers' own
+    // SUBMITTED-only restriction. Never shows author names regardless of blind-review setting
+    // (see BiddablePaperView): a bid is an interest signal, not a review, so identity isn't
+    // needed to make the call.
+    @GetMapping("/bidding")
+    public String bidding(Model model) {
+        User actingUser = actingUser();
+        Conference conference = conferenceService.getActiveConference();
+
+        List<Paper> submittedPapers = paperRepository.findByConferenceIdAndStatus(conference.getId(), PaperStatus.SUBMITTED);
+        java.util.Map<Long, BidType> myBids = reviewBidRepository.findByReviewerId(actingUser.getId()).stream()
+                .collect(java.util.stream.Collectors.toMap(b -> b.getPaper().getId(), ReviewBid::getBidType));
+
+        List<BiddablePaperView> papers = submittedPapers.stream()
+                .filter(p -> !p.getSubmitter().getId().equals(actingUser.getId()))
+                .filter(p -> p.getAuthors().stream().noneMatch(a -> a.getEmail().equalsIgnoreCase(actingUser.getEmail())))
+                .map(p -> new BiddablePaperView(p.getId(), p.getTitle(), p.getAbstractText(), p.getTrack(), myBids.get(p.getId())))
+                .toList();
+
+        model.addAttribute("papers", papers);
+        model.addAttribute("bidTypes", List.of(BidType.EAGER, BidType.WILLING, BidType.NEUTRAL, BidType.NOT_WILLING));
+        return "review/bidding";
+    }
+
+    @PostMapping("/bidding/{paperId}")
+    public String submitBid(@PathVariable Long paperId, @RequestParam BidType bidType, RedirectAttributes redirectAttributes) {
+        try {
+            reviewAssignmentService.submitBid(actingUser(), paperId, bidType, null);
+            redirectAttributes.addFlashAttribute("message", "Bid recorded.");
+        } catch (SecurityException | IllegalStateException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/review/ui/bidding";
     }
 }

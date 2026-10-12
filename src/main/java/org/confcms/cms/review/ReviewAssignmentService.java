@@ -44,6 +44,22 @@ public class ReviewAssignmentService {
         Paper paper = paperRepository.findById(paperId)
                 .orElseThrow(() -> new IllegalArgumentException("Paper not found"));
 
+        // A reviewer bidding on their own paper (as submitter or co-author) is a conflict that
+        // should never even be offered, not just excluded later at assignment time -- matches
+        // the "can't review your own work" assumption everywhere else in this app.
+        boolean isOwnPaper = paper.getSubmitter().getId().equals(reviewer.getId())
+                || paper.getAuthors().stream().anyMatch(a -> a.getEmail().equalsIgnoreCase(reviewer.getEmail()));
+        if (isOwnPaper) {
+            throw new SecurityException("Cannot bid on your own paper");
+        }
+
+        // Bidding only makes sense before assignment: autoAssignReviewers itself only ever
+        // considers a SUBMITTED paper, so a bid on anything past that stage would never be
+        // read by anything.
+        if (paper.getStatus() != PaperStatus.SUBMITTED) {
+            throw new IllegalStateException("This paper is no longer open for bidding");
+        }
+
         ReviewBid bid = bidRepository.findByReviewerIdAndPaperId(reviewer.getId(), paperId)
                 .orElse(new ReviewBid());
 

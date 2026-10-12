@@ -7,6 +7,9 @@ import org.confcms.cms.conflictdeclaration.ConflictDeclarationRepository;
 import org.confcms.cms.conflictdeclaration.ConflictDeclarationService;
 import org.confcms.cms.core.security.Role;
 import org.confcms.cms.paper.Paper;
+import org.confcms.cms.paper.PaperAuthor;
+import org.confcms.cms.paper.PaperRepository;
+import org.confcms.cms.paper.PaperStatus;
 import org.confcms.cms.user.User;
 import org.confcms.cms.user.UserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -52,6 +55,10 @@ class ReviewUiControllerTest {
     private ConflictDeclarationService conflictDeclarationService;
     @Mock
     private ConflictDeclarationRepository conflictDeclarationRepository;
+    @Mock
+    private PaperRepository paperRepository;
+    @Mock
+    private ReviewBidRepository reviewBidRepository;
 
     private ReviewUiController controller;
     private User reviewer;
@@ -59,7 +66,7 @@ class ReviewUiControllerTest {
     @BeforeEach
     void setUp() {
         controller = new ReviewUiController(assignmentRepository, reviewService, reviewAssignmentService, userRepository,
-                conferenceService, conflictDeclarationService, conflictDeclarationRepository);
+                conferenceService, conflictDeclarationService, conflictDeclarationRepository, paperRepository, reviewBidRepository);
 
         reviewer = new User();
         reviewer.setId(1L);
@@ -276,5 +283,111 @@ class ReviewUiControllerTest {
         assertThat(view).isEqualTo("redirect:/review/ui/conflicts");
         verify(conflictDeclarationService).declareConflictById(reviewer, conference, 100L);
         assertThat(redirectAttributes.getFlashAttributes()).containsKey("message");
+    }
+
+    // --- bidding ---
+
+    private Paper biddablePaper(Long id, String submitterEmail) {
+        Paper paper = new Paper();
+        paper.setId(id);
+        paper.setTitle("Paper " + id);
+        paper.setAbstractText("Abstract " + id);
+        paper.setTrack("AI");
+        paper.setStatus(PaperStatus.SUBMITTED);
+        User submitter = new User();
+        submitter.setId(id + 1000L);
+        submitter.setEmail(submitterEmail);
+        paper.setSubmitter(submitter);
+        return paper;
+    }
+
+    @Test
+    void biddingExcludesPapersTheReviewerSubmittedOrCoAuthored() {
+        Conference conference = new Conference();
+        conference.setId(5L);
+        when(conferenceService.getActiveConference()).thenReturn(conference);
+
+        Paper ownPaper = biddablePaper(1L, "irrelevant@example.com");
+        ownPaper.setSubmitter(reviewer);
+
+        Paper coAuthoredPaper = biddablePaper(2L, "someone-else@example.com");
+        PaperAuthor coAuthorRow = new PaperAuthor();
+        coAuthorRow.setEmail(reviewer.getEmail());
+        coAuthoredPaper.getAuthors().add(coAuthorRow);
+
+        Paper otherPaper = biddablePaper(3L, "someone-else@example.com");
+
+        when(paperRepository.findByConferenceIdAndStatus(5L, PaperStatus.SUBMITTED))
+                .thenReturn(List.of(ownPaper, coAuthoredPaper, otherPaper));
+        when(reviewBidRepository.findByReviewerId(1L)).thenReturn(List.of());
+
+        Model model = new ExtendedModelMap();
+        String view = controller.bidding(model);
+
+        assertThat(view).isEqualTo("review/bidding");
+        @SuppressWarnings("unchecked")
+        List<BiddablePaperView> papers = (List<BiddablePaperView>) model.getAttribute("papers");
+        assertThat(papers).extracting(BiddablePaperView::paperId).containsExactly(3L);
+    }
+
+    @Test
+    void biddingShowsTheReviewersExistingBidForEachPaper() {
+        Conference conference = new Conference();
+        conference.setId(5L);
+        when(conferenceService.getActiveConference()).thenReturn(conference);
+
+        Paper paper = biddablePaper(3L, "someone-else@example.com");
+        when(paperRepository.findByConferenceIdAndStatus(5L, PaperStatus.SUBMITTED)).thenReturn(List.of(paper));
+
+        ReviewBid existingBid = new ReviewBid();
+        existingBid.setPaper(paper);
+        existingBid.setBidType(BidType.EAGER);
+        when(reviewBidRepository.findByReviewerId(1L)).thenReturn(List.of(existingBid));
+
+        Model model = new ExtendedModelMap();
+        controller.bidding(model);
+
+        @SuppressWarnings("unchecked")
+        List<BiddablePaperView> papers = (List<BiddablePaperView>) model.getAttribute("papers");
+        assertThat(papers).hasSize(1);
+        assertThat(papers.get(0).currentBid()).isEqualTo(BidType.EAGER);
+    }
+
+    @Test
+    void biddingOffersOnlyThePreferenceLevelsNotConflict() {
+        when(conferenceService.getActiveConference()).thenReturn(new Conference());
+        when(paperRepository.findByConferenceIdAndStatus(any(), any())).thenReturn(List.of());
+        when(reviewBidRepository.findByReviewerId(1L)).thenReturn(List.of());
+
+        Model model = new ExtendedModelMap();
+        controller.bidding(model);
+
+        @SuppressWarnings("unchecked")
+        List<BidType> bidTypes = (List<BidType>) model.getAttribute("bidTypes");
+        assertThat(bidTypes).containsExactly(BidType.EAGER, BidType.WILLING, BidType.NEUTRAL, BidType.NOT_WILLING);
+        assertThat(bidTypes).doesNotContain(BidType.CONFLICT);
+    }
+
+    @Test
+    void submitBidDelegatesToTheServiceAndRedirects() {
+        RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+        String view = controller.submitBid(3L, BidType.WILLING, redirectAttributes);
+
+        assertThat(view).isEqualTo("redirect:/review/ui/bidding");
+        verify(reviewAssignmentService).submitBid(reviewer, 3L, BidType.WILLING, null);
+        assertThat(redirectAttributes.getFlashAttributes()).containsKey("message");
+    }
+
+    @Test
+    void submitBidCapturesServiceRejectionAsFlashError() {
+        Mockito.doThrow(new SecurityException("Cannot bid on your own paper"))
+                .when(reviewAssignmentService).submitBid(reviewer, 3L, BidType.EAGER, null);
+
+        RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+        String view = controller.submitBid(3L, BidType.EAGER, redirectAttributes);
+
+        assertThat(view).isEqualTo("redirect:/review/ui/bidding");
+        assertThat((Map<String, Object>) redirectAttributes.getFlashAttributes())
+                .containsEntry("error", "Cannot bid on your own paper");
     }
 }

@@ -197,4 +197,106 @@ class ReviewAssignmentServiceTest {
         assertThat(assignment.getStatus()).isEqualTo(AssignmentStatus.DECLINED);
         verify(personInvitationService).createReviewerSuggestionInvitation(any(ReviewDecline.class), eq(conference), eq("Jane Doe"), eq("jane@example.com"));
     }
+
+    // --- submitBid: previously had zero validation ---
+
+    private User unrelatedSubmitter() {
+        User submitter = new User();
+        submitter.setId(999L);
+        submitter.setEmail("original-submitter@example.com");
+        return submitter;
+    }
+
+    @Test
+    void submitBidSavesANewBidForAFreshPaperReviewerPair() {
+        paper.setSubmitter(unrelatedSubmitter());
+        User reviewer = new User();
+        reviewer.setId(20L);
+        reviewer.setEmail("reviewer@example.com");
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(bidRepository.findByReviewerIdAndPaperId(20L, 5L)).thenReturn(Optional.empty());
+        when(bidRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.submitBid(reviewer, 5L, BidType.EAGER, null);
+
+        org.mockito.ArgumentCaptor<ReviewBid> captor = org.mockito.ArgumentCaptor.forClass(ReviewBid.class);
+        verify(bidRepository).save(captor.capture());
+        assertThat(captor.getValue().getReviewer()).isEqualTo(reviewer);
+        assertThat(captor.getValue().getPaper()).isEqualTo(paper);
+        assertThat(captor.getValue().getBidType()).isEqualTo(BidType.EAGER);
+    }
+
+    @Test
+    void submitBidUpdatesAnExistingBidInPlaceInsteadOfCreatingASecondRow() {
+        paper.setSubmitter(unrelatedSubmitter());
+        User reviewer = new User();
+        reviewer.setId(20L);
+        reviewer.setEmail("reviewer@example.com");
+
+        ReviewBid existing = new ReviewBid();
+        existing.setId(99L);
+        existing.setReviewer(reviewer);
+        existing.setPaper(paper);
+        existing.setBidType(BidType.NEUTRAL);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(bidRepository.findByReviewerIdAndPaperId(20L, 5L)).thenReturn(Optional.of(existing));
+        when(bidRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.submitBid(reviewer, 5L, BidType.WILLING, null);
+
+        assertThat(existing.getBidType()).isEqualTo(BidType.WILLING);
+        verify(bidRepository).save(existing);
+    }
+
+    @Test
+    void submitBidRejectsBiddingOnPapersOwnSubmitter() {
+        User submitter = new User();
+        submitter.setId(20L);
+        submitter.setEmail("submitter@example.com");
+        paper.setSubmitter(submitter);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        assertThatThrownBy(() -> service.submitBid(submitter, 5L, BidType.EAGER, null))
+                .isInstanceOf(SecurityException.class);
+
+        verify(bidRepository, never()).save(any());
+    }
+
+    @Test
+    void submitBidRejectsBiddingOnPapersOwnCoAuthor() {
+        paper.setSubmitter(unrelatedSubmitter());
+        User coAuthor = new User();
+        coAuthor.setId(21L);
+        coAuthor.setEmail("coauthor@example.com");
+
+        org.confcms.cms.paper.PaperAuthor author = new org.confcms.cms.paper.PaperAuthor();
+        author.setEmail("coauthor@example.com");
+        paper.getAuthors().add(author);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        assertThatThrownBy(() -> service.submitBid(coAuthor, 5L, BidType.EAGER, null))
+                .isInstanceOf(SecurityException.class);
+
+        verify(bidRepository, never()).save(any());
+    }
+
+    @Test
+    void submitBidRejectsPapersNotInSubmittedStatus() {
+        paper.setSubmitter(unrelatedSubmitter());
+        User reviewer = new User();
+        reviewer.setId(20L);
+        reviewer.setEmail("reviewer@example.com");
+        paper.setStatus(PaperStatus.UNDER_REVIEW);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        assertThatThrownBy(() -> service.submitBid(reviewer, 5L, BidType.EAGER, null))
+                .isInstanceOf(IllegalStateException.class);
+
+        verify(bidRepository, never()).save(any());
+    }
 }

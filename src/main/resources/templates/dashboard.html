@@ -40,6 +40,9 @@
         <a th:if="${user.role.name() == 'REVIEWER'}" th:href="@{/review/ui}" class="ms-3">
             <i class="fa-solid fa-clipboard-list me-1"></i>My Review Assignments
         </a>
+        <a th:if="${user.role.name() == 'REVIEWER'}" th:href="@{/review/ui/bidding}" class="ms-3">
+            <i class="fa-solid fa-hand-point-up me-1"></i>Bid on Papers
+        </a>
         <a th:if="${user.role.name() == 'REVIEWER'}" th:href="@{/review/ui/conflicts}" class="ms-3">
             <i class="fa-solid fa-user-shield me-1"></i>Declare Conflicts of Interest
         </a>
