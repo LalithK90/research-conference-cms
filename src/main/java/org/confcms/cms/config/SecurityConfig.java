@@ -33,6 +33,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final PasswordPromptAuthenticationSuccessHandler passwordPromptAuthenticationSuccessHandler;
     private final org.confcms.cms.security.OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+    private final org.confcms.cms.security.LoginFailureHandler loginFailureHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -61,6 +62,7 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/login")
                 .successHandler(passwordPromptAuthenticationSuccessHandler)
+                .failureHandler(loginFailureHandler)
                 .permitAll()
             )
             .logout(logout -> logout

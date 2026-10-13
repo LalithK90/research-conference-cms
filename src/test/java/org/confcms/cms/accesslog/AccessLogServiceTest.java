@@ -224,4 +224,56 @@ class AccessLogServiceTest {
         verify(accessLogRepository).countByEventTypeAndRequestedEmailIgnoreCaseAndEmailSentTrueAndCreatedAtAfter(
                 eq(AccessEventType.MAGIC_LINK_REQUEST), eq("victim@example.com"), any(LocalDateTime.class));
     }
+
+    @Test
+    void logLoginFailureWritesALoginFailureEntryWithTheAttemptedEmail() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("203.0.113.5");
+        when(geoLocationService.resolveLocation("203.0.113.5")).thenReturn(Optional.of("Bangkok, Thailand"));
+
+        service.logLoginFailure("victim@example.com", request);
+
+        ArgumentCaptor<AccessLog> captor = ArgumentCaptor.forClass(AccessLog.class);
+        verify(accessLogRepository).save(captor.capture());
+        AccessLog saved = captor.getValue();
+        assertThat(saved.getEventType()).isEqualTo(AccessEventType.LOGIN_FAILURE);
+        assertThat(saved.getRequestedEmail()).isEqualTo("victim@example.com");
+        assertThat(saved.getIpAddress()).isEqualTo("203.0.113.5");
+        assertThat(saved.getResolvedLocation()).isEqualTo("Bangkok, Thailand");
+    }
+
+    @Test
+    void isLoginLockedOutReturnsTrueWhenFailureCountMeetsTheMax() {
+        when(accessLogRepository.countByEventTypeAndRequestedEmailIgnoreCaseAndCreatedAtAfter(
+                eq(AccessEventType.LOGIN_FAILURE), eq("victim@example.com"), any(LocalDateTime.class)))
+                .thenReturn(5L);
+
+        boolean result = service.isLoginLockedOut("victim@example.com", 5, Duration.ofMinutes(15));
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void isLoginLockedOutReturnsFalseWhenFailureCountIsBelowTheMax() {
+        when(accessLogRepository.countByEventTypeAndRequestedEmailIgnoreCaseAndCreatedAtAfter(
+                eq(AccessEventType.LOGIN_FAILURE), eq("victim@example.com"), any(LocalDateTime.class)))
+                .thenReturn(4L);
+
+        boolean result = service.isLoginLockedOut("victim@example.com", 5, Duration.ofMinutes(15));
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void isLoginLockedOutIsCaseInsensitiveOnEmail() {
+        when(accessLogRepository.countByEventTypeAndRequestedEmailIgnoreCaseAndCreatedAtAfter(
+                eq(AccessEventType.LOGIN_FAILURE), eq("Victim@Example.com"), any(LocalDateTime.class)))
+                .thenReturn(5L);
+
+        boolean result = service.isLoginLockedOut("Victim@Example.com", 5, Duration.ofMinutes(15));
+
+        assertThat(result).isTrue();
+        verify(accessLogRepository).countByEventTypeAndRequestedEmailIgnoreCaseAndCreatedAtAfter(
+                eq(AccessEventType.LOGIN_FAILURE), eq("Victim@Example.com"), any(LocalDateTime.class));
+    }
 }

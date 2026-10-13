@@ -23,4 +23,10 @@ public interface AccessLogRepository extends JpaRepository<AccessLog, Long> {
     // IPs (a botnet or proxy chain) to email-bomb a single victim address.
     long countByEventTypeAndRequestedEmailIgnoreCaseAndEmailSentTrueAndCreatedAtAfter(
             AccessEventType eventType, String requestedEmail, LocalDateTime after);
+
+    // LOGIN_FAILURE lockout count, scoped by email alone (not IP): a targeted account must be
+    // protected regardless of which IP the attacker guesses from, unlike the magic-link throttle
+    // above which is intentionally scoped tighter.
+    long countByEventTypeAndRequestedEmailIgnoreCaseAndCreatedAtAfter(
+            AccessEventType eventType, String requestedEmail, LocalDateTime after);
 }

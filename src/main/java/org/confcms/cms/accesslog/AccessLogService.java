@@ -72,6 +72,33 @@ public class AccessLogService {
         return sentCount >= maxSends;
     }
 
+    // Recorded for every failed password login, whether or not the email belongs to a real
+    // account (CustomUserDetailsService's lockout check needs to count failures the same way
+    // for both cases, or an unknown-email probe would never count against the lockout and could
+    // be used to tell known emails apart from unknown ones).
+    public void logLoginFailure(String email, HttpServletRequest request) {
+        try {
+            String ip = request.getRemoteAddr();
+            AccessLog entry = new AccessLog();
+            entry.setEventType(AccessEventType.LOGIN_FAILURE);
+            entry.setRequestedEmail(email);
+            entry.setIpAddress(ip);
+            entry.setResolvedLocation(geoLocationService.resolveLocation(ip).orElse(null));
+            accessLogRepository.save(entry);
+        } catch (Exception e) {
+            log.warn("Failed to write access log entry (eventType=LOGIN_FAILURE)", e);
+        }
+    }
+
+    // Scoped by email alone, not (email, IP): a targeted account must be protected regardless of
+    // which IP the attacker guesses from -- unlike the magic-link throttle, which is deliberately
+    // scoped tighter because sending unwanted email is the harm there, not password exposure.
+    public boolean isLoginLockedOut(String email, int maxFailures, java.time.Duration window) {
+        long failureCount = accessLogRepository.countByEventTypeAndRequestedEmailIgnoreCaseAndCreatedAtAfter(
+                AccessEventType.LOGIN_FAILURE, email, java.time.LocalDateTime.now().minus(window));
+        return failureCount >= maxFailures;
+    }
+
     private void write(AccessEventType eventType, User user, HttpServletRequest request, PaperVersion paperVersion) {
         try {
             String ip = request.getRemoteAddr();
