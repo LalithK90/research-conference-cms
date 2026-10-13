@@ -37,7 +37,7 @@ class FirstRunAdminInitializerTest {
         initializer = new FirstRunAdminInitializer(userRepository, passwordEncoder);
         // No Spring context in this pure-Mockito test, so the @Value-injected field
         // needs to be set directly to what its default would resolve to.
-        org.springframework.test.util.ReflectionTestUtils.setField(initializer, "adminEmail", "asakahatapitiya@gmail.com");
+        org.springframework.test.util.ReflectionTestUtils.setField(initializer, "adminEmail", "admin@example.com");
     }
 
     @Test
@@ -62,7 +62,7 @@ class FirstRunAdminInitializerTest {
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(captor.capture());
         User saved = captor.getValue();
-        assertThat(saved.getEmail()).isEqualTo("asakahatapitiya@gmail.com");
+        assertThat(saved.getEmail()).isEqualTo("admin@example.com");
         assertThat(saved.getRole()).isEqualTo(Role.ADMIN);
         assertThat(saved.getPasswordHash()).isEqualTo("encoded-hash");
         assertThat(saved.isEnabled()).isTrue();

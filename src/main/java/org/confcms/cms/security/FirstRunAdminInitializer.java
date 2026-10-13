@@ -24,7 +24,9 @@ public class FirstRunAdminInitializer implements ApplicationRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.bootstrap.admin-email:asakahatapitiya@gmail.com}")
+    // example.com is IANA/RFC 2606 reserved for documentation -- unlike a real address, nobody's
+    // inbox receives this if an operator forgets to set app.bootstrap.admin-email before deploying.
+    @Value("${app.bootstrap.admin-email:admin@example.com}")
     private String adminEmail;
 
     @Override

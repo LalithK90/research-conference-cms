@@ -11,6 +11,12 @@
 # Application
 spring.application.name=conference-cms
 
+# First-run admin bootstrap: on first boot with no ADMIN account yet, this email gets a
+# randomly generated password, printed once to the server log (see FirstRunAdminInitializer).
+# The default is the IANA-reserved example.com domain, not a real inbox -- set this to an
+# address you actually control before first boot, or you won't be able to recover the account.
+app.bootstrap.admin-email=admin@example.com
+
 # A logged-in user with no activity for 30 minutes is treated as logged out -- their next
 # request after that is redirected to the login page (see SecurityConfig's
 # invalidSessionUrl) rather than silently relying on Tomcat's own implicit default, which
