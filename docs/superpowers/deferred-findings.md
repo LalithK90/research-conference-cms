@@ -21,6 +21,10 @@ Real, non-blocking findings surfaced during final whole-branch reviews across th
 
 - **M1 (narrowed further, still open):** Google and ORCID OAuth2 login still haven't been verified end-to-end with real credentials. Password login and magic-link login were both verified live under Spring Security 7. Re-confirmed again with dummy credentials in `application.properties` (now left in place, local-only/gitignored, with a `TODO` marking where real values go): both "Login with Google"/"Login with ORCID" buttons render, and both outbound redirects (`/oauth2/authorization/{google,orcid}`) carry the correct scope, PKCE challenge, and callback URI. What remains genuinely unverified is only the token-exchange/`CustomOAuth2UserService` step after a real provider login succeeds and calls back — a dummy client-id cannot reach that step (Google/ORCID reject it with `invalid_client` before any code is issued). The user will swap in real credentials; once that's done, a real login attempt through each provider should be done once to close this out.
 
+## From: Scheduling & Program Builder (reviewer bidding + session scheduling roadmap)
+
+- **Acknowledged, not a defect:** a review of the new scheduling feature flagged "no timezone handling" for session/presentation start and end times. Checked across the whole codebase: every date/time field anywhere in the app (`Conference.startDate`/`endDate`, `Registration`, `DecisionService`'s revision due dates, and now `Session`/`Presentation`) uses `LocalDate`/`LocalDateTime` with no timezone-aware type (`ZonedDateTime`/`OffsetDateTime`) anywhere. This is a pre-existing, app-wide implicit single-timezone assumption, not something scheduling introduced on its own. Adding real timezone support would mean a timezone field on `Conference`, a display-timezone policy, and converting every existing date/time read and write across the app — new architecture, not a bounded fix. Left as-is; revisit only as its own dedicated piece of work if multi-timezone conferences become a real requirement.
+
 ---
 
 ## How to use this file
