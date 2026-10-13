@@ -161,8 +161,12 @@ public class DecisionService {
         Paper paper = paperRepository.findById(paperId).orElseThrow(() -> new IllegalArgumentException("Paper not found"));
         requireChairOrAdmin(actingUser, paper);
 
-        if (paper.getStatus() == PaperStatus.CAMERA_READY_SUBMITTED) {
-            throw new IllegalStateException("This paper has already reached the camera-ready stage and cannot be re-decided");
+        // Once accepted (or further along, camera-ready), a decision is final -- re-deciding would
+        // silently leave a stale Presentation behind if the paper was already scheduled, since
+        // nothing in this flow knows to clean that up. Withdrawal (SubmissionService.withdrawPaper)
+        // is the only supported way to pull an accepted paper back out.
+        if (paper.getStatus() == PaperStatus.CAMERA_READY_SUBMITTED || paper.getStatus() == PaperStatus.ACCEPTED) {
+            throw new IllegalStateException("This paper has already reached a final decision and cannot be re-decided");
         }
 
         if ("ACCEPT".equalsIgnoreCase(decision)) {

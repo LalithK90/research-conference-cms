@@ -247,6 +247,23 @@ class DecisionServiceTest {
     }
 
     @Test
+    void applyDecisionRejectsPaperAlreadyAccepted() {
+        User admin = new User();
+        admin.setId(40L);
+        admin.setRole(Role.ADMIN);
+        paper.setStatus(PaperStatus.ACCEPTED);
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        assertThatThrownBy(() -> service.applyDecision(admin, 5L, "REJECT"))
+                .isInstanceOf(IllegalStateException.class);
+
+        assertThat(paper.getStatus()).isEqualTo(PaperStatus.ACCEPTED);
+        verify(paperRepository, never()).save(any());
+        verify(emailService, never()).sendTemplateEmail(any(), any(), any(), anyMap());
+    }
+
+    @Test
     void requestRevisionRejectsNonChairNonAdmin() {
         when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
         when(committeeService.isChairOrCoChair(strangerUser, conference)).thenReturn(false);
