@@ -153,7 +153,7 @@ class SchedulingServiceTest {
         Session session = new Session();
         session.setId(7L);
 
-        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(paper));
         when(sessionRepository.findById(7L)).thenReturn(Optional.of(session));
 
         assertThatThrownBy(() -> service.assignPaperToSession(5L, 7L,
@@ -173,7 +173,7 @@ class SchedulingServiceTest {
         Session session = new Session();
         session.setId(7L);
 
-        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(paper));
         when(sessionRepository.findById(7L)).thenReturn(Optional.of(session));
         when(presentationRepository.findByPaperId(5L)).thenReturn(Optional.empty());
         when(presentationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -194,7 +194,7 @@ class SchedulingServiceTest {
         Session session = new Session();
         session.setId(7L);
 
-        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(paper));
         when(sessionRepository.findById(7L)).thenReturn(Optional.of(session));
         when(presentationRepository.findByPaperId(5L)).thenReturn(Optional.empty());
         when(presentationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -214,13 +214,40 @@ class SchedulingServiceTest {
         Session session = new Session();
         session.setId(7L);
 
-        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+        when(paperRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(paper));
         when(sessionRepository.findById(7L)).thenReturn(Optional.of(session));
         when(presentationRepository.findByPaperId(5L)).thenReturn(Optional.of(new Presentation()));
 
         assertThatThrownBy(() -> service.assignPaperToSession(5L, 7L,
                 LocalDateTime.of(2026, 1, 1, 9, 0), LocalDateTime.of(2026, 1, 1, 9, 20)))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    // Without a row lock, two concurrent assignPaperToSession calls for the same paper can both
+    // pass the findByPaperId "already assigned" check before either commits its save -- only the
+    // DB's unique constraint on presentations.paper_id stops the second from double-booking, and
+    // it does so with an ugly DataIntegrityViolationException instead of this method's own clean
+    // IllegalStateException. Locking the paper row (same pattern as RegistrationService.register)
+    // narrows that race to the width of this transaction.
+    @Test
+    void assignPaperToSessionLocksThePaperRowToNarrowTheDoubleBookingRace() {
+        Paper paper = new Paper();
+        paper.setId(5L);
+        paper.setStatus(PaperStatus.ACCEPTED);
+
+        Session session = new Session();
+        session.setId(7L);
+
+        when(paperRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(paper));
+        when(sessionRepository.findById(7L)).thenReturn(Optional.of(session));
+        when(presentationRepository.findByPaperId(5L)).thenReturn(Optional.empty());
+        when(presentationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.assignPaperToSession(5L, 7L,
+                LocalDateTime.of(2026, 1, 1, 9, 0), LocalDateTime.of(2026, 1, 1, 9, 20));
+
+        verify(paperRepository).findByIdForUpdate(5L);
+        verify(paperRepository, never()).findById(5L);
     }
 
     @Test

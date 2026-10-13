@@ -76,7 +76,10 @@ public class SchedulingService {
     // --- Presentation Management ---
     @Transactional
     public Presentation assignPaperToSession(Long paperId, Long sessionId, LocalDateTime start, LocalDateTime end) {
-        Paper paper = paperRepository.findById(paperId)
+        // Locks this paper's row for the rest of the transaction, so a second concurrent
+        // assignment for the same paper blocks here instead of racing past the
+        // "already assigned" check below before either commits -- see PaperRepository.findByIdForUpdate.
+        Paper paper = paperRepository.findByIdForUpdate(paperId)
                 .orElseThrow(() -> new IllegalArgumentException("Paper not found"));
         
         Session session = sessionRepository.findById(sessionId)
