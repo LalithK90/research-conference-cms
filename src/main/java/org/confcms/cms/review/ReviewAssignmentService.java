@@ -60,6 +60,13 @@ public class ReviewAssignmentService {
             throw new IllegalStateException("This paper is no longer open for bidding");
         }
 
+        // CONFLICT is declared through the dedicated declare-conflict flow
+        // (ConflictDeclarationService), not as a bid preference -- the bidding UI never offers
+        // it, and accepting it here would let a crafted request bypass that flow's own checks.
+        if (bidType == BidType.CONFLICT) {
+            throw new IllegalArgumentException("Use the conflict declaration flow to declare a conflict, not a bid");
+        }
+
         ReviewBid bid = bidRepository.findByReviewerIdAndPaperId(reviewer.getId(), paperId)
                 .orElse(new ReviewBid());
 
@@ -148,9 +155,10 @@ public class ReviewAssignmentService {
         for (User reviewer : reviewers) {
             if (assignedCount >= 2) break;
 
-            // Skip if conflict or not willing
+            // Skip if not willing (CONFLICT can't occur here -- submitBid rejects it; conflicts
+            // are declared through ConflictDeclarationService and checked below instead)
             BidType bid = reviewerBids.get(reviewer.getId());
-            if (bid == BidType.CONFLICT || bid == BidType.NOT_WILLING) continue;
+            if (bid == BidType.NOT_WILLING) continue;
 
             // Skip if the reviewer has declared a conflict against any author on this paper
             boolean hasDeclaredConflict = paper.getAuthors().stream()
@@ -183,7 +191,7 @@ public class ReviewAssignmentService {
                 case WILLING -> score += 10;
                 case NEUTRAL -> score += 0;
                 case NOT_WILLING -> score -= 100;
-                case CONFLICT -> score -= 1000;
+                case CONFLICT -> throw new IllegalStateException("CONFLICT bids are rejected by submitBid and should never be stored");
             }
         }
 

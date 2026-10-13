@@ -299,4 +299,19 @@ class ReviewAssignmentServiceTest {
 
         verify(bidRepository, never()).save(any());
     }
+
+    @Test
+    void submitBidRejectsBidTypeConflictSinceDeclareConflictIsTheDedicatedFlowForThat() {
+        paper.setSubmitter(unrelatedSubmitter());
+        User reviewer = new User();
+        reviewer.setId(20L);
+        reviewer.setEmail("reviewer@example.com");
+
+        when(paperRepository.findById(5L)).thenReturn(Optional.of(paper));
+
+        assertThatThrownBy(() -> service.submitBid(reviewer, 5L, BidType.CONFLICT, null))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(bidRepository, never()).save(any());
+    }
 }
