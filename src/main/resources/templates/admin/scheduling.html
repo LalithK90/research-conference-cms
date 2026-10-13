@@ -91,7 +91,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <strong th:text="${s.title}"></strong>
-                            <span class="text-muted small" th:text="' (' + ${s.startTime} + ' - ' + ${s.endTime} + ')'"></span>
+                            <span class="text-muted small" th:text="' (' + ${#temporals.format(s.startTime, 'MMM d, HH:mm')} + ' - ' + ${#temporals.format(s.endTime, 'HH:mm')} + ')'"></span>
                             <span class="badge bg-secondary" th:if="${s.room != null}" th:text="${s.room.name}"></span>
                         </div>
                     </div>
@@ -99,7 +99,7 @@
                         <tbody>
                             <tr th:each="p : ${s.presentations}">
                                 <td th:text="${p.paper.title}"></td>
-                                <td th:text="${p.startTime} + ' - ' + ${p.endTime}"></td>
+                                <td th:text="${#temporals.format(p.startTime, 'HH:mm')} + ' - ' + ${#temporals.format(p.endTime, 'HH:mm')}"></td>
                                 <td>
                                     <form method="post"
                                           th:action="@{'/admin/conference/' + ${conference.id} + '/scheduling/presentations/' + ${p.id} + '/remove'}">
