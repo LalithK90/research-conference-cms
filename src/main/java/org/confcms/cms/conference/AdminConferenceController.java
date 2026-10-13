@@ -112,6 +112,8 @@ public class AdminConferenceController {
         conference.setVenueMapEmbedUrl(form.getVenueMapEmbedUrl());
         conference.setTravelInfoHtml(blankToNull(form.getTravelInfoHtml()));
 
+        rejectUnbuiltPaymentProvider(form.getPaymentProvider());
+
         ConferencePaymentConfig paymentConfig = new ConferencePaymentConfig();
         paymentConfig.setProvider(form.getPaymentProvider());
 
@@ -199,6 +201,17 @@ public class AdminConferenceController {
         return "admin/conference_form";
     }
 
+    // STRIPE/PAYPAL accept any credentials an admin types in but never call either provider's
+    // API -- a registrant "paying" through them never gets charged and the registration dead-ends
+    // at PENDING with no admin-visible way to resolve it. Rejecting them here (the form's radios
+    // are also disabled) closes the gap until real checkout integration exists.
+    private static void rejectUnbuiltPaymentProvider(PaymentProvider provider) {
+        if (provider == PaymentProvider.STRIPE || provider == PaymentProvider.PAYPAL) {
+            throw new IllegalArgumentException(
+                    "Stripe/PayPal checkout isn't built yet -- choose Free or Local Bank Transfer instead");
+        }
+    }
+
     // Never echoes the real secret into the rendered edit form.
     private static String maskIfPresent(String storedSecret) {
         return (storedSecret == null || storedSecret.isBlank()) ? null : SECRET_PLACEHOLDER;
@@ -219,6 +232,13 @@ public class AdminConferenceController {
         ConferencePaymentConfig previousConfig = conference.getPaymentConfig();
         String previousStripeSecret = previousConfig != null ? previousConfig.getStripeSecretKey() : null;
         String previousPaypalSecret = previousConfig != null ? previousConfig.getPaypalClientSecret() : null;
+        PaymentProvider previousProvider = previousConfig != null ? previousConfig.getProvider() : null;
+
+        // Only block a CHANGE to Stripe/PayPal -- a conference that already has one configured
+        // (from before checkout was known to be unbuilt) can still have its other fields edited.
+        if (form.getPaymentProvider() != previousProvider) {
+            rejectUnbuiltPaymentProvider(form.getPaymentProvider());
+        }
 
         conference.setTitle(form.getTitle());
         conference.setVenue(form.getVenue());

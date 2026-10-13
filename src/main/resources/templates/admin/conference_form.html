@@ -111,14 +111,14 @@
                             <label class="form-check-label" for="payFree">Free (No Payment)</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" th:field="*{paymentProvider}" value="STRIPE"
-                                id="payStripe" onclick="togglePaymentFields()">
-                            <label class="form-check-label" for="payStripe">Stripe</label>
+                            <input class="form-check-input" type="radio" value="STRIPE" id="payStripe" disabled
+                                th:checked="${conferenceForm.paymentProvider == T(org.confcms.cms.conference.PaymentProvider).STRIPE}">
+                            <label class="form-check-label" for="payStripe">Stripe <span class="text-muted">(checkout not built yet)</span></label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" th:field="*{paymentProvider}" value="PAYPAL"
-                                id="payPaypal" onclick="togglePaymentFields()">
-                            <label class="form-check-label" for="payPaypal">PayPal</label>
+                            <input class="form-check-input" type="radio" value="PAYPAL" id="payPaypal" disabled
+                                th:checked="${conferenceForm.paymentProvider == T(org.confcms.cms.conference.PaymentProvider).PAYPAL}">
+                            <label class="form-check-label" for="payPaypal">PayPal <span class="text-muted">(checkout not built yet)</span></label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" th:field="*{paymentProvider}"

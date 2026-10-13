@@ -58,6 +58,96 @@ class AdminConferenceControllerTest {
     }
 
     @Test
+    void saveConferenceRejectsStripeSinceCheckoutIsntBuiltYet() {
+        AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
+        form.setTitle("Test Conf");
+        form.setVenue("Venue");
+        form.setStartDate(LocalDate.now());
+        form.setEndDate(LocalDate.now().plusDays(1));
+        form.setContactEmail("a@b.com");
+        form.setPaymentProvider(PaymentProvider.STRIPE);
+        form.setChairUserId(7L);
+
+        User chairUser = new User();
+        chairUser.setId(7L);
+        when(userRepository.findById(7L)).thenReturn(Optional.of(chairUser));
+
+        assertThatThrownBy(() -> controller.saveConference(form))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(conferenceService, never()).saveConference(any());
+    }
+
+    @Test
+    void saveConferenceRejectsPaypalSinceCheckoutIsntBuiltYet() {
+        AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
+        form.setTitle("Test Conf");
+        form.setVenue("Venue");
+        form.setStartDate(LocalDate.now());
+        form.setEndDate(LocalDate.now().plusDays(1));
+        form.setContactEmail("a@b.com");
+        form.setPaymentProvider(PaymentProvider.PAYPAL);
+        form.setChairUserId(7L);
+
+        User chairUser = new User();
+        chairUser.setId(7L);
+        when(userRepository.findById(7L)).thenReturn(Optional.of(chairUser));
+
+        assertThatThrownBy(() -> controller.saveConference(form))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(conferenceService, never()).saveConference(any());
+    }
+
+    @Test
+    void updateConferenceRejectsSwitchingAnExistingConferenceToStripe() {
+        Conference existing = new Conference();
+        existing.setId(9L);
+        ConferencePaymentConfig existingConfig = new ConferencePaymentConfig();
+        existingConfig.setProvider(PaymentProvider.FREE);
+        existing.setPaymentConfig(existingConfig);
+        when(conferenceRepository.findById(9L)).thenReturn(Optional.of(existing));
+
+        AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
+        form.setTitle("Updated Title");
+        form.setVenue("Updated Venue");
+        form.setStartDate(LocalDate.now());
+        form.setEndDate(LocalDate.now().plusDays(1));
+        form.setContactEmail("a@b.com");
+        form.setPaymentProvider(PaymentProvider.STRIPE);
+
+        assertThatThrownBy(() -> controller.updateConference(9L, form))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(conferenceService, never()).saveConference(any());
+    }
+
+    @Test
+    void updateConferenceAllowsEditingOtherFieldsWhenProviderStaysStripe() {
+        Conference existing = new Conference();
+        existing.setId(9L);
+        ConferencePaymentConfig existingConfig = new ConferencePaymentConfig();
+        existingConfig.setProvider(PaymentProvider.STRIPE);
+        existingConfig.setStripeSecretKey("sk_live_realsecret");
+        existing.setPaymentConfig(existingConfig);
+        when(conferenceRepository.findById(9L)).thenReturn(Optional.of(existing));
+        when(conferenceService.saveConference(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
+        form.setTitle("Updated Title");
+        form.setVenue("Updated Venue");
+        form.setStartDate(LocalDate.now());
+        form.setEndDate(LocalDate.now().plusDays(1));
+        form.setContactEmail("a@b.com");
+        form.setPaymentProvider(PaymentProvider.STRIPE);
+        form.setStripeSecretKey(AdminConferenceController.SECRET_PLACEHOLDER);
+
+        controller.updateConference(9L, form);
+
+        assertThat(existing.getTitle()).isEqualTo("Updated Title");
+    }
+
+    @Test
     void saveConferenceAssignsChairWhenProvided() {
         AdminConferenceController.ConferenceForm form = new AdminConferenceController.ConferenceForm();
         form.setTitle("Test Conf");
