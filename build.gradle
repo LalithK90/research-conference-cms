@@ -49,6 +49,9 @@ dependencies {
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
+    // Spring Boot 4 split @WebMvcTest/MockMvc test support out of spring-boot-test-autoconfigure
+    // into its own web-stack-specific module, matching spring-boot-starter-webmvc.
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 }
 
 
