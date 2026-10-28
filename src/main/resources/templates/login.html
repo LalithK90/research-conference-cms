@@ -17,6 +17,10 @@
                             Your password has been reset. Please log in with your new password.
                         </div>
 
+                        <div th:if="${param.registered}" class="alert alert-success">
+                            Account created. Please log in.
+                        </div>
+
                         <div th:if="${param.error}" class="alert alert-danger">
                             Invalid email or password
                         </div>
@@ -39,6 +43,10 @@
 
                         <div class="text-center mt-3">
                             <a th:href="@{/auth/forgot-password}">Forgot password?</a>
+                        </div>
+
+                        <div class="text-center mt-2">
+                            <a th:href="@{/auth/signup}">Create an account</a>
                         </div>
 
                         <div th:if="${@environment.acceptsProfiles('dev')}" class="mt-3">
