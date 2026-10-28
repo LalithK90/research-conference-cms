@@ -9,6 +9,9 @@
     <div class="container my-5">
         <h1 class="text-center mb-5">Committee</h1>
 
+        <div th:if="${#lists.isEmpty(committee)}" class="alert alert-info">
+            Committee members will be announced soon.
+        </div>
         <div class="row">
             <div class="col-md-6 mb-4" th:each="member : ${committee}">
                 <div class="card h-100">
