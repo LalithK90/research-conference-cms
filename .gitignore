@@ -54,3 +54,4 @@ src/main/resources/application.properties
 .worktrees/
 .playwright-mcp
 *.json
+docs/**
