@@ -1,21 +1,52 @@
-/* AI-MERT-derived brand theme -- colors and heading font taken directly from
-   ai-mert.ait.ac.th's own inline CSS (fetched and inspected, not guessed). */
+/* Public-site design tokens and component overrides.
+   Base brand colors (--brand-primary, --brand-accent) are taken directly from
+   ai-mert.ait.ac.th's own inline CSS (fetched and inspected, not guessed); everything else
+   here is a deliberate token system layered on top -- see docs/ui-ux-modernization-report.md
+   for the rationale (previously: one brand color override on raw Bootstrap defaults). */
 :root {
+    /* Color */
     --brand-primary: #06690f;
     --brand-primary-dark: #05540c;
+    --brand-primary-deep: #04400a;
     --brand-accent: #e91e63;
-    --brand-text: #64686d;
-    --brand-footer-bg: #1f2024;
+    --surface: #ffffff;
+    --surface-tint: #f4f6f3;
+    --ink: #1c1d1b;
+    --ink-soft: #55564f;
+    --line: #e4e2dc;
+    --brand-footer-bg: #16311b;
+
+    /* Back-compat alias: existing templates/inline styles reference --brand-text directly. */
+    --brand-text: var(--ink-soft);
+
+    /* Type */
     --brand-heading-font: 'Montserrat', sans-serif;
+    --brand-body-font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* Spacing scale (used by new component rules below; existing Bootstrap utility
+       classes like mb-3/my-5 in templates are untouched -- this doesn't retrofit them) */
+    --space-xs: 0.5rem;
+    --space-sm: 1rem;
+    --space-md: 1.5rem;
+    --space-lg: 2.5rem;
+    --space-xl: 4rem;
+
+    /* Shape */
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --shadow-card: 0 1px 2px rgba(28, 29, 27, 0.04), 0 8px 24px rgba(28, 29, 27, 0.06);
+    --shadow-card-hover: 0 4px 10px rgba(28, 29, 27, 0.06), 0 16px 36px rgba(28, 29, 27, 0.1);
 }
 
 body {
-    color: var(--brand-text);
+    color: var(--ink-soft);
+    font-family: var(--brand-body-font);
 }
 
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--brand-heading-font);
     font-weight: 600;
+    color: var(--ink);
 }
 
 .navbar-brand {
@@ -24,13 +55,38 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 1.4rem;
 }
 
+/* --- Navbar: sticky with a soft shadow instead of a static flat bar, link underline
+   instead of a plain color swap on hover/active. --- */
 .public-navbar {
-    background-color: #ffffff !important;
-    border-bottom: 3px solid var(--brand-primary);
+    background-color: var(--surface) !important;
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 1px 0 rgba(28, 29, 27, 0.02);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    transition: box-shadow 0.2s ease;
+    padding-top: var(--space-xs);
+    padding-bottom: var(--space-xs);
 }
 
 .public-navbar .nav-link {
-    color: var(--brand-text) !important;
+    color: var(--ink-soft) !important;
+    font-weight: 500;
+    position: relative;
+    padding-bottom: 2px;
+}
+
+.public-navbar .nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: -2px;
+    height: 2px;
+    background: var(--brand-primary);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s ease;
 }
 
 .public-navbar .nav-link:hover,
@@ -38,22 +94,78 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--brand-primary) !important;
 }
 
+.public-navbar .nav-link:hover::after,
+.public-navbar .nav-link.active::after {
+    transform: scaleX(1);
+}
+
+/* --- Buttons: own radius/weight instead of Bootstrap defaults recolored, with a
+   press/hover lift instead of a flat darken. --- */
 .btn-brand-primary {
     background-color: var(--brand-primary);
-    border-color: var(--brand-primary-dark);
+    border-color: var(--brand-primary);
     color: #ffffff;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    padding: 0.55rem 1.4rem;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 .btn-brand-primary:hover {
     background-color: var(--brand-primary-dark);
     border-color: var(--brand-primary-dark);
     color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(6, 105, 15, 0.25);
 }
 
+.btn-brand-primary:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* --- Hero: still the brand gradient (kept, just deepened), but no longer centered --
+   asymmetric left-aligned text block is set up per-page in home.html (Phase 3). This
+   rule only sets the surface; alignment/columns are a layout decision per page. --- */
 .public-hero {
-    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-dark) 100%);
+    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-deep) 100%);
     color: #ffffff;
-    padding: 100px 0;
+    padding: var(--space-xl) 0;
+}
+
+.public-hero .lead {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+/* Homepage hero's right-hand panel (Phase 3: asymmetric layout instead of centered text). */
+.hero-countdown {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    text-align: center;
+}
+
+.hero-countdown-label {
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: var(--space-xs);
+}
+
+.hero-countdown-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Homepage feature cards (Call for Papers / Speakers / Sponsors) -- plain blocks, not
+   .card, so they don't pick up the shadow/hover-lift meant for list-page content cards. */
+.home-feature {
+    text-align: center;
+    padding: var(--space-md);
+    height: 100%;
 }
 
 .public-footer {
@@ -70,4 +182,155 @@ h1, h2, h3, h4, h5, h6 {
     text-transform: uppercase;
     font-size: 1rem;
     letter-spacing: 1px;
+}
+
+/* --- Cards: every public list page (speakers, committee, sponsors, schedule,
+   past-conferences) uses a bare .card -- restyled once here instead of per-page, plus a
+   hover lift (prefers-reduced-motion respected) since the public site had no motion at all. --- */
+.container .card,
+.container-fluid .card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.container .card:hover,
+.container-fluid .card:hover {
+    box-shadow: var(--shadow-card-hover);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .container .card:hover,
+    .container-fluid .card:hover {
+        transform: translateY(-3px);
+    }
+}
+
+/* --- Committee: name-forward row list instead of a card grid (Phase 4 -- committee
+   members are a directory, not presentation-focused like speakers). --- */
+.people-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.people-row {
+    display: flex;
+    gap: var(--space-md);
+    align-items: flex-start;
+    padding: var(--space-md) 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.people-row:first-child {
+    padding-top: 0;
+}
+
+.people-row:last-child {
+    border-bottom: none;
+}
+
+.people-photo {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.people-photo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-tint);
+    color: var(--brand-primary);
+    font-family: var(--brand-heading-font);
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.people-name {
+    font-size: 1.1rem;
+    margin: 0 0 2px;
+}
+
+.people-role {
+    color: var(--brand-primary);
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin: 0 0 6px;
+}
+
+.people-bio {
+    color: var(--ink-soft);
+    margin: 0;
+}
+
+/* --- Speakers: photo-forward spotlight tile, distinct from the committee's row list
+   since a speaker page is presentation-focused ("who's on stage"), not a directory. --- */
+.speaker-tile {
+    text-align: center;
+    padding: var(--space-md);
+    height: 100%;
+}
+
+.speaker-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto var(--space-sm);
+    display: block;
+}
+
+.speaker-photo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-tint);
+    color: var(--brand-primary);
+    font-family: var(--brand-heading-font);
+    font-weight: 700;
+    font-size: 2.5rem;
+}
+
+.speaker-name {
+    margin-bottom: 2px;
+}
+
+.speaker-title {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    margin-bottom: var(--space-xs);
+}
+
+.speaker-bio {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+}
+
+/* --- Sponsors: logo wall, no card chrome -- a subtle lift on hover for the clickable
+   logos is the only motion treatment this content type needs. --- */
+.sponsor-logo {
+    max-height: 100px;
+    max-width: 100%;
+}
+
+.sponsor-logo-link {
+    display: inline-block;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .sponsor-logo-link:hover {
+        transform: translateY(-2px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .public-navbar .nav-link::after,
+    .btn-brand-primary,
+    .sponsor-logo-link {
+        transition: none;
+    }
 }
