@@ -6,35 +6,48 @@
 <body>
     <nav th:replace="~{fragments/public_layout :: nav}"></nav>
 
-    <div class="public-hero text-center">
+    <div class="public-hero">
         <div class="container">
-            <h1 class="display-3" th:text="${conference.title}">Conference Title</h1>
-            <p class="lead" th:text="${conference.venue}">Venue</p>
-            <p class="lead" th:text="${conference.startDate} + ' - ' + ${conference.endDate}">Dates</p>
-            <div th:if="${conference != null}" id="countdown" class="mt-3" th:attr="data-end-date=${conference.endDate}">
-                <div class="h5">Time until conference end:</div>
-                <div id="countdown-timer" class="h3 fw-bold">--:--:--</div>
+            <div class="row align-items-center gy-4">
+                <div class="col-lg-7">
+                    <h1 class="display-4" th:text="${conference.title}">Conference Title</h1>
+                    <p class="lead mb-1" th:text="${conference.venue}">Venue</p>
+                    <p class="lead mb-4" th:text="${conference.startDate} + ' - ' + ${conference.endDate}">Dates</p>
+                    <a href="/register" class="btn btn-light btn-lg">Register Now</a>
+                </div>
+                <div class="col-lg-5">
+                    <div th:if="${conference != null}" id="countdown" class="hero-countdown"
+                         th:attr="data-end-date=${conference.endDate}">
+                        <div class="hero-countdown-label">Time until conference end</div>
+                        <div id="countdown-timer" class="hero-countdown-value">--:--:--</div>
+                    </div>
+                </div>
             </div>
-            <a href="/register" class="btn btn-light btn-lg mt-3">Register Now</a>
         </div>
     </div>
 
     <div class="container my-5">
-        <div class="row">
-            <div class="col-md-4 text-center">
-                <h3>Call for Papers</h3>
-                <p>Submit your research and contribute to advancing knowledge</p>
-                <a href="/call-for-papers" class="btn btn-brand-primary">Learn More</a>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="home-feature">
+                    <h3>Call for Papers</h3>
+                    <p>Submit your research and contribute to advancing knowledge</p>
+                    <a href="/call-for-papers" class="btn btn-brand-primary">Learn More</a>
+                </div>
             </div>
-            <div class="col-md-4 text-center">
-                <h3>Keynote Speakers</h3>
-                <p>Learn from leading experts in the field</p>
-                <a href="/speakers" class="btn btn-brand-primary">View Speakers</a>
+            <div class="col-md-4">
+                <div class="home-feature">
+                    <h3>Keynote Speakers</h3>
+                    <p>Learn from leading experts in the field</p>
+                    <a href="/speakers" class="btn btn-brand-primary">View Speakers</a>
+                </div>
             </div>
-            <div class="col-md-4 text-center">
-                <h3>Sponsors</h3>
-                <p>Meet the organizations supporting this conference</p>
-                <a href="/sponsors" class="btn btn-brand-primary">View Sponsors</a>
+            <div class="col-md-4">
+                <div class="home-feature">
+                    <h3>Sponsors</h3>
+                    <p>Meet the organizations supporting this conference</p>
+                    <a href="/sponsors" class="btn btn-brand-primary">View Sponsors</a>
+                </div>
             </div>
         </div>
     </div>
