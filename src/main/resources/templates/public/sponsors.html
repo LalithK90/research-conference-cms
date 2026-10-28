@@ -14,11 +14,12 @@
                 <h3 class="sponsor-tier-heading mb-4" th:text="${entry.key}">TIER</h3>
                 <div class="row align-items-center">
                     <div class="col-md-3 col-6 mb-4 text-center" th:each="sponsor : ${entry.value}">
-                        <a th:if="${sponsor.websiteUrl}" th:href="${sponsor.websiteUrl}" target="_blank" rel="noopener">
-                            <img th:src="${sponsor.logoUrl}" th:alt="${sponsor.name}" class="img-fluid" style="max-height: 100px;">
+                        <a th:if="${sponsor.websiteUrl}" th:href="${sponsor.websiteUrl}" target="_blank" rel="noopener"
+                           class="sponsor-logo-link">
+                            <img th:src="${sponsor.logoUrl}" th:alt="${sponsor.name}" class="sponsor-logo">
                         </a>
                         <img th:unless="${sponsor.websiteUrl}" th:src="${sponsor.logoUrl}" th:alt="${sponsor.name}"
-                             class="img-fluid" style="max-height: 100px;">
+                             class="sponsor-logo">
                     </div>
                 </div>
             </div>

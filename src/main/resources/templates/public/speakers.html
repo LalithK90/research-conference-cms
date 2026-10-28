@@ -13,16 +13,15 @@
         <div th:if="${#lists.isEmpty(plenarySpeakers)}" class="alert alert-info">
             Plenary speakers will be announced soon.
         </div>
-        <div class="row mb-5">
-            <div class="col-md-4 mb-4" th:each="speaker : ${plenarySpeakers}">
-                <div class="card h-100 text-center">
-                    <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" alt="Photo" class="rounded-circle mx-auto mt-3"
-                         style="width: 120px; height: 120px; object-fit: cover;">
-                    <div class="card-body">
-                        <h5 class="card-title" th:text="${speaker.fullName}">Name</h5>
-                        <p class="text-muted" th:if="${speaker.title}" th:text="${speaker.title}">Title</p>
-                        <p th:if="${speaker.bio}" th:text="${speaker.bio}">Bio</p>
-                    </div>
+        <div class="row g-4 mb-5">
+            <div class="col-md-4" th:each="speaker : ${plenarySpeakers}">
+                <div class="speaker-tile">
+                    <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" alt="Photo" class="speaker-photo">
+                    <div th:unless="${speaker.photoUrl}" class="speaker-photo speaker-photo-placeholder"
+                         th:text="${#strings.substring(speaker.fullName, 0, 1)}">N</div>
+                    <h5 class="speaker-name" th:text="${speaker.fullName}">Name</h5>
+                    <p class="speaker-title" th:if="${speaker.title}" th:text="${speaker.title}">Title</p>
+                    <p class="speaker-bio" th:if="${speaker.bio}" th:text="${speaker.bio}">Bio</p>
                 </div>
             </div>
         </div>
@@ -31,16 +30,15 @@
         <div th:if="${#lists.isEmpty(keynoteSpeakers)}" class="alert alert-info">
             Keynote speakers will be announced soon.
         </div>
-        <div class="row">
-            <div class="col-md-4 mb-4" th:each="speaker : ${keynoteSpeakers}">
-                <div class="card h-100 text-center">
-                    <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" alt="Photo" class="rounded-circle mx-auto mt-3"
-                         style="width: 120px; height: 120px; object-fit: cover;">
-                    <div class="card-body">
-                        <h5 class="card-title" th:text="${speaker.fullName}">Name</h5>
-                        <p class="text-muted" th:if="${speaker.title}" th:text="${speaker.title}">Title</p>
-                        <p th:if="${speaker.bio}" th:text="${speaker.bio}">Bio</p>
-                    </div>
+        <div class="row g-4">
+            <div class="col-md-4" th:each="speaker : ${keynoteSpeakers}">
+                <div class="speaker-tile">
+                    <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" alt="Photo" class="speaker-photo">
+                    <div th:unless="${speaker.photoUrl}" class="speaker-photo speaker-photo-placeholder"
+                         th:text="${#strings.substring(speaker.fullName, 0, 1)}">N</div>
+                    <h5 class="speaker-name" th:text="${speaker.fullName}">Name</h5>
+                    <p class="speaker-title" th:if="${speaker.title}" th:text="${speaker.title}">Title</p>
+                    <p class="speaker-bio" th:if="${speaker.bio}" th:text="${speaker.bio}">Bio</p>
                 </div>
             </div>
         </div>

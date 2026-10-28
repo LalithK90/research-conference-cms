@@ -12,20 +12,15 @@
         <div th:if="${#lists.isEmpty(committee)}" class="alert alert-info">
             Committee members will be announced soon.
         </div>
-        <div class="row">
-            <div class="col-md-6 mb-4" th:each="member : ${committee}">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <img th:if="${member.photoUrl}" th:src="${member.photoUrl}" alt="Photo" class="rounded-circle me-3"
-                                style="width: 100px; height: 100px; object-fit: cover;">
-                            <div>
-                                <h5 class="card-title" th:text="${member.user.fullName}">Name</h5>
-                                <p class="text-muted" th:text="${member.displayTitle ?: member.role.name()}">Role</p>
-                            </div>
-                        </div>
-                        <p class="mt-3" th:if="${member.bio}" th:text="${member.bio}">Bio</p>
-                    </div>
+        <div class="people-list">
+            <div class="people-row" th:each="member : ${committee}">
+                <img th:if="${member.photoUrl}" th:src="${member.photoUrl}" alt="Photo" class="people-photo">
+                <div th:unless="${member.photoUrl}" class="people-photo people-photo-placeholder"
+                     th:text="${#strings.substring(member.user.fullName, 0, 1)}">N</div>
+                <div class="people-info">
+                    <h3 class="people-name" th:text="${member.user.fullName}">Name</h3>
+                    <p class="people-role" th:text="${member.displayTitle ?: member.role.name()}">Role</p>
+                    <p class="people-bio" th:if="${member.bio}" th:text="${member.bio}">Bio</p>
                 </div>
             </div>
         </div>
