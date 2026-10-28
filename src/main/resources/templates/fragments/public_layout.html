@@ -14,7 +14,16 @@
 </head>
 
 <body>
-    <nav th:fragment="nav" class="navbar navbar-expand-lg public-navbar"
+    <!-- th:block lets this fragment emit two sibling top-level elements (the background div
+         plus the actual <nav>) from the one existing "nav" fragment reference every public
+         page already has as the first line inside <body> -- no per-page template changes
+         needed to add the animated background. -->
+    <th:block th:fragment="nav">
+    <!-- Animated "magnetic field" particle background (tsParticles), fixed behind all page
+         content via z-index -- public pages only, never the admin/review/auth areas. -->
+    <div id="tsparticles-bg"></div>
+
+    <nav class="navbar navbar-expand-lg public-navbar"
          th:with="pcid=${pastConferenceId}">
         <div class="container">
             <a class="navbar-brand" href="/" th:text="${conference != null ? conference.title : 'Conference'}">Conference</a>
@@ -59,13 +68,49 @@
             </div>
         </div>
     </nav>
+    </th:block>
 
     <footer th:fragment="footer" class="public-footer text-center py-4">
         <p>&copy; <span th:text="${#calendars.format(#calendars.createNow(), 'yyyy')}">2026</span>
             <span th:text="${conference != null ? conference.title : 'Conference'}">Conference</span>. All rights reserved.</p>
     </footer>
 
-    <script th:fragment="scripts" src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <th:block th:fragment="scripts">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
+    <script>
+        // Magnetic-field particle background: dots drift slowly and link with thin lines,
+        // pulled toward the cursor on hover. Colors adapted from the original dark demo
+        // (lalithk90.github.io/background-lab/01-particles.html) to this site's light theme
+        // and brand green, instead of the demo's dark background + blue particles.
+        (function () {
+            var el = document.getElementById('tsparticles-bg');
+            if (!el || typeof tsParticles === 'undefined') return;
+            var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            tsParticles.load({
+                id: 'tsparticles-bg',
+                options: {
+                    fullScreen: { enable: false },
+                    background: { color: 'transparent' },
+                    fpsLimit: 60,
+                    particles: {
+                        number: { value: 60, density: { enable: true, area: 900 } },
+                        color: { value: '#06690f' },
+                        links: { enable: true, distance: 120, color: '#06690f', opacity: 0.18, width: 1 },
+                        opacity: { value: 0.35 },
+                        move: { enable: !reducedMotion, speed: 1 },
+                        size: { value: { min: 1, max: 2 } }
+                    },
+                    interactivity: {
+                        events: { onHover: { enable: true, mode: 'attract' } },
+                        modes: { attract: { distance: 250, duration: 0.4, factor: 5, speed: 1.5 } }
+                    },
+                    detectRetina: true
+                }
+            });
+        })();
+    </script>
+    </th:block>
 </body>
 
 </html>

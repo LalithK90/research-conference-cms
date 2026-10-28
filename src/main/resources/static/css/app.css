@@ -21,3 +21,26 @@ html, body {
 .no-h-scroll {
   overflow-x: hidden !important;
 }
+
+/* Magnetic-field particle background (public pages only -- see fragments/public_layout.html).
+   Fixed behind all page content; canvas-level animation has no layout footprint of its own. */
+#tsparticles-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+#tsparticles-bg canvas {
+  pointer-events: auto;
+}
+
+/* Every public page's real content needs to sit above the fixed background layer. */
+.public-navbar,
+.public-hero,
+.public-footer,
+body > .container,
+body > .container-fluid {
+  position: relative;
+  z-index: 1;
+}
