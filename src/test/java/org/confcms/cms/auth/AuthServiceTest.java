@@ -43,11 +43,20 @@ class AuthServiceTest {
     void registerUserRejectsExistingEmail() {
         when(userRepository.findByEmail("author@example.com")).thenReturn(Optional.of(new User()));
 
-        assertThatThrownBy(() -> service.registerUser("author@example.com", "pw", "Author", Role.AUTHOR))
+        assertThatThrownBy(() -> service.registerUser("author@example.com", "Passw0rd!", "Author", Role.AUTHOR))
                 .isInstanceOf(IllegalArgumentException.class);
 
         verify(userRepository, never()).save(any());
         verify(userIdentityRepository, never()).save(any());
+    }
+
+    @Test
+    void registerUserRejectsAWeakPasswordBeforeCheckingTheEmail() {
+        assertThatThrownBy(() -> service.registerUser("author@example.com", "weak", "Author", Role.AUTHOR))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(userRepository, never()).findByEmail(any());
+        verify(userRepository, never()).save(any());
     }
 
     @Test

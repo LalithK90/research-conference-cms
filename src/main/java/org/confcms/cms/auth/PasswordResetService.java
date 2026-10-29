@@ -5,6 +5,7 @@ import org.confcms.cms.useridentity.UserIdentity;
 import org.confcms.cms.useridentity.UserIdentityRepository;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.service.EmailService;
+import org.confcms.cms.service.PasswordStrengthValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -73,6 +74,9 @@ public class PasswordResetService {
         PasswordResetToken token = validateToken(tokenValue);
         User user = token.getUser();
 
+        if (!PasswordStrengthValidator.isStrongEnough(newPassword)) {
+            throw new IllegalArgumentException("Password must be at least 8 characters and include a letter and a number");
+        }
         if (passwordHistoryService.isReuse(user, newPassword)) {
             throw new IllegalArgumentException("You can't reuse a recent password. Choose a different one.");
         }

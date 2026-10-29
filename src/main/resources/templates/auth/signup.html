@@ -28,7 +28,9 @@
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
+                                <input type="password" class="form-control" id="password" name="password"
+                                    minlength="8" pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" required>
+                                <div class="form-text">At least 8 characters, including a letter and a number.</div>
                             </div>
                             <button type="submit" class="btn btn-brand-primary w-100">Create Account</button>
                         </form>

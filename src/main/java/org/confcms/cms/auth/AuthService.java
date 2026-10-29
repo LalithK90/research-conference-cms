@@ -5,6 +5,7 @@ import org.confcms.cms.useridentity.UserIdentity;
 import org.confcms.cms.useridentity.UserIdentityRepository;
 import org.confcms.cms.user.UserRepository;
 import org.confcms.cms.core.security.Role;
+import org.confcms.cms.service.PasswordStrengthValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,9 @@ public class AuthService {
 
     @Transactional
     public User registerUser(String email, String password, String fullName, Role role) {
+        if (!PasswordStrengthValidator.isStrongEnough(password)) {
+            throw new IllegalArgumentException("Password must be at least 8 characters and include a letter and a number");
+        }
         if (userRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email already in use");
         }

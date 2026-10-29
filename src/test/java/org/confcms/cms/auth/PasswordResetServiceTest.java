@@ -181,6 +181,23 @@ class PasswordResetServiceTest {
     }
 
     @Test
+    void resetPasswordRejectsAWeakPasswordBeforeCheckingHistory() {
+        PasswordResetToken token = new PasswordResetToken();
+        token.setUser(user);
+        token.setToken("valid-token");
+        token.setExpiresAt(LocalDateTime.now().plusHours(1));
+        token.setUsed(false);
+
+        when(tokenRepository.findByToken("valid-token")).thenReturn(Optional.of(token));
+
+        assertThatThrownBy(() -> service.resetPassword("valid-token", "weak"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(passwordHistoryService, never()).isReuse(any(), any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
     void resetPasswordDoesNotDuplicateExistingLocalIdentity() {
         PasswordResetToken token = new PasswordResetToken();
         token.setUser(user);
