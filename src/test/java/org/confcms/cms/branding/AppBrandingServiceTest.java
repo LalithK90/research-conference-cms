@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -92,5 +93,29 @@ class AppBrandingServiceTest {
 
         assertThat(result.getFaviconUrl()).isNull();
         assertThat(result.getLogoUrl()).isNull();
+    }
+
+    // Enforced here, not just in AdminBrandingController -- this is the real trust boundary.
+    // These values render straight into a <style> block in every page's <head>, so a value
+    // that breaks out of the CSS declaration (e.g. "red; } body { display: none !important; }")
+    // would be live markup on every page, not just malformed data.
+    @Test
+    void saveRejectsAPrimaryColorThatIsNotHex() {
+        AppBranding form = new AppBranding();
+        form.setPrimaryColor("red; } body { display: none !important; } .x {");
+
+        assertThatThrownBy(() -> service.save(form))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(repository, never()).save(any(AppBranding.class));
+    }
+
+    @Test
+    void saveRejectsAFaviconUrlWithAJavascriptScheme() {
+        AppBranding form = new AppBranding();
+        form.setFaviconUrl("javascript:alert(1)");
+
+        assertThatThrownBy(() -> service.save(form))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(repository, never()).save(any(AppBranding.class));
     }
 }

@@ -1,5 +1,6 @@
 package org.confcms.cms.branding;
 
+import org.confcms.cms.service.HexColorValidator;
 import org.confcms.cms.service.SafeUrlValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,6 +33,12 @@ public class AdminBrandingController {
         if (!SafeUrlValidator.isHttpOrHttpsOrBlank(branding.getFaviconUrl())
                 || !SafeUrlValidator.isHttpOrHttpsOrBlank(branding.getLogoUrl())) {
             redirectAttributes.addFlashAttribute("error", "Favicon and logo URLs must start with http:// or https://");
+            return "redirect:/admin/branding";
+        }
+        if (!HexColorValidator.isHexOrBlank(branding.getPrimaryColor())
+                || !HexColorValidator.isHexOrBlank(branding.getPrimaryColorDark())
+                || !HexColorValidator.isHexOrBlank(branding.getAccentColor())) {
+            redirectAttributes.addFlashAttribute("error", "Colors must be hex values like #06690f");
             return "redirect:/admin/branding";
         }
         brandingService.save(branding);

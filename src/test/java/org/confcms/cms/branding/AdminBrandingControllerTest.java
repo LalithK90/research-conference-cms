@@ -78,4 +78,29 @@ class AdminBrandingControllerTest {
 
         verify(brandingService, never()).save(any());
     }
+
+    @Test
+    void saveRejectsAPrimaryColorThatIsNotHex() {
+        AppBranding form = new AppBranding();
+        form.setPrimaryColor("red; } body { display: none !important; } .x {");
+
+        RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+        String view = controller.save(form, redirectAttributes);
+
+        assertThat(view).isEqualTo("redirect:/admin/branding");
+        assertThat((java.util.Map<String, Object>) redirectAttributes.getFlashAttributes())
+                .containsKey("error");
+        verify(brandingService, never()).save(any());
+    }
+
+    @Test
+    void saveRejectsAnAccentColorThatIsNotHex() {
+        AppBranding form = new AppBranding();
+        form.setAccentColor("not-a-color");
+
+        RedirectAttributesModelMap redirectAttributes = new RedirectAttributesModelMap();
+        controller.save(form, redirectAttributes);
+
+        verify(brandingService, never()).save(any());
+    }
 }
