@@ -184,9 +184,10 @@ h1, h2, h3, h4, h5, h6 {
     letter-spacing: 1px;
 }
 
-/* --- Cards: every public list page (speakers, committee, sponsors, schedule,
-   past-conferences) uses a bare .card -- restyled once here instead of per-page, plus a
-   hover lift (prefers-reduced-motion respected) since the public site had no motion at all. --- */
+/* --- Cards: shadow/radius applies to every .card (register's form card included) so
+   nothing on the public site keeps Bootstrap's bare default card look. The hover-lift is
+   opt-in via .card-link -- only a card that IS a clickable navigation tile (past-conferences)
+   should lift on hover; a form card or a read-only content card shouldn't look clickable. --- */
 .container .card,
 .container-fluid .card {
     border: 1px solid var(--line);
@@ -195,14 +196,14 @@ h1, h2, h3, h4, h5, h6 {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.container .card:hover,
-.container-fluid .card:hover {
+.container .card.card-link:hover,
+.container-fluid .card.card-link:hover {
     box-shadow: var(--shadow-card-hover);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-    .container .card:hover,
-    .container-fluid .card:hover {
+    .container .card.card-link:hover,
+    .container-fluid .card.card-link:hover {
         transform: translateY(-3px);
     }
 }
@@ -325,6 +326,70 @@ h1, h2, h3, h4, h5, h6 {
     .sponsor-logo-link:hover {
         transform: translateY(-2px);
     }
+}
+
+/* --- Schedule: static session block (no hover-lift) -- a session isn't a clickable
+   tile like a speaker or past-conference card, so it doesn't borrow .card's motion. --- */
+.schedule-session {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--brand-primary);
+    border-radius: var(--radius-sm);
+}
+
+.schedule-session-header {
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--line);
+}
+
+.schedule-session-body {
+    padding: var(--space-sm) var(--space-md);
+}
+
+.schedule-session-body .list-group-item {
+    border-color: var(--line);
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* --- Page header: the consistent banner every "plain content" public page (about, venue,
+   call-for-papers, contact, past-conferences, register) now opens with, instead of a bare
+   centered h1 on the white body background. Gives those pages the same deliberate opening
+   moment home/committee/speakers already have, without needing a card-grid rework -- their
+   content (admin-authored HTML, forms, simple lists) doesn't call for one. --- */
+.page-header {
+    background: var(--surface-tint);
+    border-bottom: 1px solid var(--line);
+    padding: var(--space-lg) 0;
+    margin-bottom: var(--space-sm);
+}
+
+.page-header-eyebrow {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brand-primary);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.page-header h1 {
+    margin-bottom: 0;
+    font-size: 2rem;
+}
+
+/* Admin-authored HTML (conference.aboutHtml, travelInfoHtml, callForPapersHtml) rendered
+   via th:utext -- capped width for readability instead of stretching to the full column. */
+.page-content {
+    max-width: 70ch;
+    margin: 0 auto;
+}
+
+.register-card-header {
+    background-color: var(--brand-primary);
+    color: #ffffff;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

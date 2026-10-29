@@ -6,16 +6,21 @@
 <body>
     <nav th:replace="~{fragments/public_layout :: nav}"></nav>
 
-    <div class="container my-5">
-        <h1 class="text-center mb-5">Past Conferences</h1>
+    <div class="page-header">
+        <div class="container">
+            <p class="page-header-eyebrow">Archive</p>
+            <h1>Past Conferences</h1>
+        </div>
+    </div>
 
+    <div class="container my-5">
         <div th:if="${#lists.isEmpty(pastConferences)}" class="alert alert-info text-center">
             No past conferences to show yet.
         </div>
 
         <div class="row">
             <div class="col-md-6 mb-4" th:each="past : ${pastConferences}">
-                <div class="card h-100">
+                <div class="card card-link h-100">
                     <div class="card-body">
                         <h5 class="card-title" th:text="${past.title}">Title</h5>
                         <p class="text-muted" th:text="${past.venue} + ' | ' + ${past.startDate} + ' - ' + ${past.endDate}">Venue | Dates</p>

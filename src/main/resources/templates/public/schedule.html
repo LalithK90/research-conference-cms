@@ -17,15 +17,15 @@
 
         <div class="row justify-content-center" th:unless="${#lists.isEmpty(sessions)}">
             <div class="col-md-10">
-                <div class="card mb-4" th:each="s : ${sessions}">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="schedule-session mb-4" th:each="s : ${sessions}">
+                    <div class="schedule-session-header d-flex justify-content-between align-items-center">
                         <div>
                             <strong th:text="${s.title}"></strong>
                             <span class="text-muted small" th:text="' &mdash; ' + ${#temporals.format(s.startTime, 'MMM d, HH:mm')} + ' - ' + ${#temporals.format(s.endTime, 'HH:mm')}"></span>
                         </div>
                         <span class="badge bg-secondary" th:if="${s.room != null}" th:text="${s.room.name}"></span>
                     </div>
-                    <div class="card-body">
+                    <div class="schedule-session-body">
                         <p th:if="${s.description != null and !s.description.isBlank()}" th:text="${s.description}"></p>
                         <ul class="list-group list-group-flush">
                             <li class="list-group-item" th:each="p : ${s.presentations}">
