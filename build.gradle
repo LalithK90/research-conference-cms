@@ -52,6 +52,10 @@ dependencies {
     // Spring Boot 4 split @WebMvcTest/MockMvc test support out of spring-boot-test-autoconfigure
     // into its own web-stack-specific module, matching spring-boot-starter-webmvc.
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    // In-memory DB for @SpringBootTest integration tests -- production runs on MySQL only
+    // (see application.properties), but no Docker/Testcontainers runtime is available in
+    // this dev environment, so integration tests run against H2 in MySQL compatibility mode.
+    testRuntimeOnly("com.h2database:h2")
 }
 
 
