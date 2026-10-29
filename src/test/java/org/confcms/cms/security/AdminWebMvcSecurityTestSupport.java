@@ -1,6 +1,7 @@
 package org.confcms.cms.security;
 
 import org.confcms.cms.accesslog.AccessLogService;
+import org.confcms.cms.branding.AppBrandingService;
 import org.confcms.cms.config.SecurityConfig;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.MockMvcBuilderCustomizer;
@@ -57,4 +58,8 @@ public abstract class AdminWebMvcSecurityTestSupport {
     protected LoginFailureHandler loginFailureHandler;
     @MockitoBean
     protected AccessLogService accessLogService;
+    // BrandingModelAdvice (a @ControllerAdvice) is auto-included by @WebMvcTest the same way
+    // GlobalExceptionHandler is -- its AppBrandingService dependency needs mocking here too.
+    @MockitoBean
+    protected AppBrandingService appBrandingService;
 }

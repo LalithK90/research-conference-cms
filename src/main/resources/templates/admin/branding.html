@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/admin_layout :: head('Branding')}"></head>
+
+<body>
+    <nav th:replace="~{fragments/admin_layout :: nav}"></nav>
+
+    <div class="container mt-5 mb-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Branding</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Install-wide favicon, logo, and brand colors -- applies to every public, admin,
+                    and login page. Leave a field blank to use the built-in default.
+                </p>
+
+                <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+                <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+                <form th:action="@{/admin/branding/save}" th:object="${branding}" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Favicon URL</label>
+                        <input type="text" class="form-control" th:field="*{faviconUrl}" placeholder="https://example.com/favicon.ico">
+                        <small class="text-muted">Shown in the browser tab. Must start with http:// or https://</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Logo URL</label>
+                        <input type="text" class="form-control" th:field="*{logoUrl}" placeholder="https://example.com/logo.png">
+                        <small class="text-muted">Shown next to the conference title in the public navigation bar.</small>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Primary Color</label>
+                            <div class="d-flex gap-2">
+                                <input type="color" class="form-control form-control-color" th:value="*{primaryColor} ?: '#06690f'"
+                                       onchange="document.getElementById('primaryColor').value = this.value">
+                                <input type="text" class="form-control" id="primaryColor" th:field="*{primaryColor}" placeholder="#06690f">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Primary Color (Dark/Hover)</label>
+                            <div class="d-flex gap-2">
+                                <input type="color" class="form-control form-control-color" th:value="*{primaryColorDark} ?: '#05540c'"
+                                       onchange="document.getElementById('primaryColorDark').value = this.value">
+                                <input type="text" class="form-control" id="primaryColorDark" th:field="*{primaryColorDark}" placeholder="#05540c">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Accent Color</label>
+                            <div class="d-flex gap-2">
+                                <input type="color" class="form-control form-control-color" th:value="*{accentColor} ?: '#e91e63'"
+                                       onchange="document.getElementById('accentColor').value = this.value">
+                                <input type="text" class="form-control" id="accentColor" th:field="*{accentColor}" placeholder="#e91e63">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Branding</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script th:replace="~{fragments/admin_layout :: scripts}"></script>
+</body>
+
+</html>
