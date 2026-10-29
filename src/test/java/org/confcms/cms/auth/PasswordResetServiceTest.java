@@ -39,13 +39,15 @@ class PasswordResetServiceTest {
     private EmailService emailService;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private PasswordHistoryService passwordHistoryService;
 
     private PasswordResetService service;
     private User user;
 
     @BeforeEach
     void setUp() {
-        service = new PasswordResetService(userRepository, tokenRepository, userIdentityRepository, emailService, passwordEncoder);
+        service = new PasswordResetService(userRepository, tokenRepository, userIdentityRepository, emailService, passwordEncoder, passwordHistoryService);
 
         user = new User();
         user.setId(1L);
@@ -139,6 +141,7 @@ class PasswordResetServiceTest {
         token.setUsed(false);
 
         when(tokenRepository.findByToken("valid-token")).thenReturn(Optional.of(token));
+        when(passwordHistoryService.isReuse(user, "NewPassw0rd!")).thenReturn(false);
         when(passwordEncoder.encode("NewPassw0rd!")).thenReturn("hashed-value");
         when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(userIdentityRepository.existsByUserIdAndProvider(1L, "local")).thenReturn(false);
@@ -154,6 +157,27 @@ class PasswordResetServiceTest {
         verify(userIdentityRepository).save(identityCaptor.capture());
         assertThat(identityCaptor.getValue().getProvider()).isEqualTo("local");
         assertThat(identityCaptor.getValue().getUser()).isEqualTo(user);
+
+        verify(passwordHistoryService).record(user, "hashed-value");
+    }
+
+    @Test
+    void resetPasswordRejectsAPasswordFoundInHistory() {
+        PasswordResetToken token = new PasswordResetToken();
+        token.setUser(user);
+        token.setToken("valid-token");
+        token.setExpiresAt(LocalDateTime.now().plusHours(1));
+        token.setUsed(false);
+
+        when(tokenRepository.findByToken("valid-token")).thenReturn(Optional.of(token));
+        when(passwordHistoryService.isReuse(user, "OldPassw0rd!")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.resetPassword("valid-token", "OldPassw0rd!"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(userRepository, never()).save(any());
+        verify(tokenRepository, never()).save(any());
+        verify(passwordHistoryService, never()).record(any(), any());
     }
 
     @Test
@@ -165,6 +189,7 @@ class PasswordResetServiceTest {
         token.setUsed(false);
 
         when(tokenRepository.findByToken("valid-token")).thenReturn(Optional.of(token));
+        when(passwordHistoryService.isReuse(user, "NewPassw0rd!")).thenReturn(false);
         when(passwordEncoder.encode(any())).thenReturn("hashed-value");
         when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(userIdentityRepository.existsByUserIdAndProvider(1L, "local")).thenReturn(true);

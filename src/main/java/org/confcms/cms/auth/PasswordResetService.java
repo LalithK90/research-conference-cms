@@ -27,6 +27,7 @@ public class PasswordResetService {
     private final UserIdentityRepository userIdentityRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordHistoryService passwordHistoryService;
 
     @Transactional
     public void requestReset(String email) {
@@ -72,8 +73,14 @@ public class PasswordResetService {
         PasswordResetToken token = validateToken(tokenValue);
         User user = token.getUser();
 
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        if (passwordHistoryService.isReuse(user, newPassword)) {
+            throw new IllegalArgumentException("You can't reuse a recent password. Choose a different one.");
+        }
+
+        String newHash = passwordEncoder.encode(newPassword);
+        user.setPasswordHash(newHash);
         userRepository.save(user);
+        passwordHistoryService.record(user, newHash);
 
         token.setUsed(true);
         tokenRepository.save(token);
