@@ -18,7 +18,7 @@
                 <div class="speaker-tile">
                     <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" alt="Photo" class="speaker-photo">
                     <div th:unless="${speaker.photoUrl}" class="speaker-photo speaker-photo-placeholder"
-                         th:text="${#strings.substring(speaker.fullName, 0, 1)}">N</div>
+                         th:text="${#strings.isEmpty(speaker.fullName) ? '?' : #strings.substring(speaker.fullName, 0, 1)}">N</div>
                     <h5 class="speaker-name" th:text="${speaker.fullName}">Name</h5>
                     <p class="speaker-title" th:if="${speaker.title}" th:text="${speaker.title}">Title</p>
                     <p class="speaker-bio" th:if="${speaker.bio}" th:text="${speaker.bio}">Bio</p>
@@ -35,7 +35,7 @@
                 <div class="speaker-tile">
                     <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" alt="Photo" class="speaker-photo">
                     <div th:unless="${speaker.photoUrl}" class="speaker-photo speaker-photo-placeholder"
-                         th:text="${#strings.substring(speaker.fullName, 0, 1)}">N</div>
+                         th:text="${#strings.isEmpty(speaker.fullName) ? '?' : #strings.substring(speaker.fullName, 0, 1)}">N</div>
                     <h5 class="speaker-name" th:text="${speaker.fullName}">Name</h5>
                     <p class="speaker-title" th:if="${speaker.title}" th:text="${speaker.title}">Title</p>
                     <p class="speaker-bio" th:if="${speaker.bio}" th:text="${speaker.bio}">Bio</p>

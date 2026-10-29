@@ -65,6 +65,17 @@ class AdminSpeakerControllerTest {
     }
 
     @Test
+    void saveRejectsAJavascriptSchemePhotoUrl() {
+        Speaker speaker = new Speaker();
+        speaker.setFullName("Ada Lovelace");
+        speaker.setPhotoUrl("javascript:alert(1)");
+
+        assertThatThrownBy(() -> controller.save(1L, speaker))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(speakerRepository, never()).save(speaker);
+    }
+
+    @Test
     void saveRejectsSpeakerIdBelongingToAnotherConference() {
         Conference otherConference = new Conference();
         otherConference.setId(99L);

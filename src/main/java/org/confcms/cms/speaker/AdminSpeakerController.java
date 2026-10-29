@@ -2,6 +2,7 @@ package org.confcms.cms.speaker;
 
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.conference.ConferenceRepository;
+import org.confcms.cms.service.SafeUrlValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -35,6 +36,9 @@ public class AdminSpeakerController {
 
     @PostMapping("/save")
     public String save(@PathVariable Long conferenceId, @ModelAttribute Speaker speaker) {
+        if (!SafeUrlValidator.isHttpOrHttpsOrBlank(speaker.getPhotoUrl())) {
+            throw new IllegalArgumentException("Photo URL must start with http:// or https://");
+        }
         if (speaker.getId() != null) {
             loadSpeakerInConference(conferenceId, speaker.getId());
         }

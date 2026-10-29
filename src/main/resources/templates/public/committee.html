@@ -16,7 +16,7 @@
             <div class="people-row" th:each="member : ${committee}">
                 <img th:if="${member.photoUrl}" th:src="${member.photoUrl}" alt="Photo" class="people-photo">
                 <div th:unless="${member.photoUrl}" class="people-photo people-photo-placeholder"
-                     th:text="${#strings.substring(member.user.fullName, 0, 1)}">N</div>
+                     th:text="${#strings.isEmpty(member.user.fullName) ? '?' : #strings.substring(member.user.fullName, 0, 1)}">N</div>
                 <div class="people-info">
                     <h3 class="people-name" th:text="${member.user.fullName}">Name</h3>
                     <p class="people-role" th:text="${member.displayTitle ?: member.role.name()}">Role</p>

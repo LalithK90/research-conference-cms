@@ -65,6 +65,28 @@ class AdminSponsorControllerTest {
     }
 
     @Test
+    void saveRejectsAJavascriptSchemeWebsiteUrl() {
+        Sponsor sponsor = new Sponsor();
+        sponsor.setName("Acme Corp");
+        sponsor.setWebsiteUrl("javascript:alert(1)");
+
+        assertThatThrownBy(() -> controller.save(1L, sponsor))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(sponsorRepository, never()).save(sponsor);
+    }
+
+    @Test
+    void saveRejectsAJavascriptSchemeLogoUrl() {
+        Sponsor sponsor = new Sponsor();
+        sponsor.setName("Acme Corp");
+        sponsor.setLogoUrl("javascript:alert(1)");
+
+        assertThatThrownBy(() -> controller.save(1L, sponsor))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(sponsorRepository, never()).save(sponsor);
+    }
+
+    @Test
     void saveRejectsSponsorIdBelongingToAnotherConference() {
         Conference otherConference = new Conference();
         otherConference.setId(99L);

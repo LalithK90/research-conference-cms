@@ -2,6 +2,7 @@ package org.confcms.cms.sponsor;
 
 import org.confcms.cms.conference.Conference;
 import org.confcms.cms.conference.ConferenceRepository;
+import org.confcms.cms.service.SafeUrlValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -35,6 +36,10 @@ public class AdminSponsorController {
 
     @PostMapping("/save")
     public String save(@PathVariable Long conferenceId, @ModelAttribute Sponsor sponsor) {
+        if (!SafeUrlValidator.isHttpOrHttpsOrBlank(sponsor.getWebsiteUrl())
+                || !SafeUrlValidator.isHttpOrHttpsOrBlank(sponsor.getLogoUrl())) {
+            throw new IllegalArgumentException("Website and logo URLs must start with http:// or https://");
+        }
         if (sponsor.getId() != null) {
             loadSponsorInConference(conferenceId, sponsor.getId());
         }
