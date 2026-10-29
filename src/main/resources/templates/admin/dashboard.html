@@ -10,7 +10,7 @@
         <div class="alert alert-warning d-flex justify-content-between align-items-center">
             <span>You're using a temporary/passwordless login.</span>
             <span>
-                <a th:href="@{/auth/forgot-password}" class="btn btn-sm btn-primary">Set a password now</a>
+                <a th:href="@{/auth/forgot-password}" class="btn btn-sm btn-brand-primary">Set a password now</a>
                 <form method="post" th:action="@{/account/dismiss-password-prompt}" class="d-inline">
                     <button type="submit" class="btn btn-sm btn-outline-secondary">Skip for now</button>
                 </form>
@@ -46,7 +46,7 @@
                         <span class="badge bg-secondary" th:text="${paper.status}">SUBMITTED</span>
                     </td>
                     <td>
-                        <a th:href="@{'/admin/decisions/ui/paper/' + ${paper.id}}" class="btn btn-sm btn-primary">View</a>
+                        <a th:href="@{'/admin/decisions/ui/paper/' + ${paper.id}}" class="btn btn-sm btn-brand-primary">View</a>
                         <a th:href="@{'/admin/decisions/ui/paper/' + ${paper.id} + '/assign'}" class="btn btn-sm btn-info">Assign Reviewer</a>
                     </td>
                 </tr>

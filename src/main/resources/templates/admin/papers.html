@@ -25,7 +25,7 @@
                     <td th:text="${paper.submitter.fullName}"></td>
                     <td><span class="badge bg-secondary" th:text="${paper.status}"></span></td>
                     <td>
-                        <a th:href="@{'/admin/decisions/ui/paper/' + ${paper.id}}" class="btn btn-sm btn-primary">View</a>
+                        <a th:href="@{'/admin/decisions/ui/paper/' + ${paper.id}}" class="btn btn-sm btn-brand-primary">View</a>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(papers)}">

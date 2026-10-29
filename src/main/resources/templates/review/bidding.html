@@ -34,7 +34,7 @@
                         <option th:each="bt : ${bidTypes}" th:value="${bt}" th:text="${bt}"
                                 th:selected="${bt == p.currentBid}"></option>
                     </select>
-                    <button type="submit" class="btn btn-sm btn-primary">
+                    <button type="submit" class="btn btn-sm btn-brand-primary">
                         <span th:if="${p.currentBid == null}">Submit Bid</span>
                         <span th:unless="${p.currentBid == null}">Update Bid</span>
                     </button>

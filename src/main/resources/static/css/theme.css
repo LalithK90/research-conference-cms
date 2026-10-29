@@ -438,3 +438,32 @@ h1, h2, h3, h4, h5, h6 {
         transition: none;
     }
 }
+
+/* --- Admin area: deliberately keeps its own dark navbar (distinct from the public site, so
+   an admin always has a visual cue which area they're in) but otherwise now shares the same
+   token system -- previously admin_layout.html never loaded theme.css at all, so none of the
+   brand colors/fonts/radius tokens applied there, and every card header/button fell back to
+   Bootstrap's stock blue regardless of what an admin set on /admin/branding. --- */
+.admin-navbar {
+    background-color: var(--ink) !important;
+    border-bottom: 3px solid var(--brand-primary);
+}
+
+.admin-navbar .navbar-brand {
+    color: #ffffff;
+}
+
+/* Replaces bg-primary on admin card headers (conference/sponsor/speaker/user forms, dashboard
+   panels) -- same brand color, but via the token instead of Bootstrap's hardcoded blue, so a
+   custom branding color actually shows up here too. */
+.admin-header {
+    background-color: var(--brand-primary) !important;
+    color: #ffffff;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+/* Admin cards/tables get the same radius token as the public site, without the public-only
+   hover-lift (an admin data table isn't a clickable navigation tile). */
+.admin-content .card {
+    border-radius: var(--radius-md);
+}

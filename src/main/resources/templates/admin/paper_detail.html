@@ -63,7 +63,7 @@
                                                class="form-control form-control-sm" th:value="${v.plagiarismScore}" />
                                         <input type="text" name="note" placeholder="Note (checked with...)"
                                                class="form-control form-control-sm" th:value="${v.plagiarismNote}" />
-                                        <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                        <button type="submit" class="btn btn-sm btn-brand-primary">Save</button>
                                     </form>
                                 </td>
                                 <td>
@@ -125,7 +125,7 @@
                             <option value="MAJOR_REVISION">Major Revision</option>
                         </select>
                         <input type="date" name="dueDate" required="required" class="form-control w-auto" />
-                        <button type="submit" class="btn btn-primary">Request Revision</button>
+                        <button type="submit" class="btn btn-brand-primary">Request Revision</button>
                     </form>
 
                     <form th:if="${paper.status.name() == 'MINOR_REVISION' or paper.status.name() == 'MAJOR_REVISION'}"
@@ -135,7 +135,7 @@
                             <option value="ACCEPT_DIRECTLY">Accept Directly</option>
                             <option value="SEND_BACK_TO_REVIEWERS">Send Back to Reviewers</option>
                         </select>
-                        <button type="submit" class="btn btn-primary">Resolve Revision</button>
+                        <button type="submit" class="btn btn-brand-primary">Resolve Revision</button>
                     </form>
                 </div>
             </div>

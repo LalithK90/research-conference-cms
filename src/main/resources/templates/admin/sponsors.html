@@ -26,7 +26,7 @@
                     <td th:text="${s.tier}"></td>
                     <td th:text="${s.displayOrder}"></td>
                     <td>
-                        <a th:href="@{'/admin/conference/' + ${conference.id} + '/sponsors/' + ${s.id} + '/edit'}" class="btn btn-sm btn-primary">Edit</a>
+                        <a th:href="@{'/admin/conference/' + ${conference.id} + '/sponsors/' + ${s.id} + '/edit'}" class="btn btn-sm btn-brand-primary">Edit</a>
                         <form th:action="@{'/admin/conference/' + ${conference.id} + '/sponsors/' + ${s.id} + '/delete'}" method="post" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                         </form>
