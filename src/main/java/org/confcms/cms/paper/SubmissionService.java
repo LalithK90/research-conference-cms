@@ -140,7 +140,7 @@ public class SubmissionService {
     }
     
     public List<Paper> getAllPapers() {
-        return paperRepository.findAll();
+        return paperRepository.findAllWithSubmitterAndVersions();
     }
 
     @Transactional

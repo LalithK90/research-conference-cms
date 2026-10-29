@@ -15,7 +15,6 @@ import org.springframework.ui.Model;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -89,7 +88,11 @@ class AdminControllerTest {
 
         PaperVersion matchedVersion = new PaperVersion();
         matchedVersion.setId(42L);
-        when(paperVersionRepository.findById(42L)).thenReturn(Optional.of(matchedVersion));
+        // Called with Map.values(), not a List -- its Collection view doesn't satisfy
+        // List.equals() argument matching, so match on contents instead of the exact type.
+        when(paperVersionRepository.findAllWithPaperByIdIn(
+                org.mockito.ArgumentMatchers.argThat(ids -> ids != null && ids.contains(42L))))
+                .thenReturn(List.of(matchedVersion));
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         Model model = new ExtendedModelMap();

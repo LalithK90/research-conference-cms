@@ -34,7 +34,7 @@ public class AdminRegistrationController {
     public String list(Model model) {
         var conference = conferenceService.getActiveConference();
         model.addAttribute("registrations", registrationRepository
-                .findByConferenceIdAndPaymentStatus(conference.getId(), PaymentStatus.AWAITING_VERIFICATION));
+                .findByConferenceIdAndPaymentStatusWithUser(conference.getId(), PaymentStatus.AWAITING_VERIFICATION));
         return "admin/registrations";
     }
 

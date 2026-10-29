@@ -36,15 +36,33 @@ public class AdminController {
         return "admin/dashboard";
     }
 
+    // Two passes instead of one findById() call per flagged paper inside the loop (an N+1,
+    // worsened by the template also walking each match's own lazy paper.title -- a second N+1):
+    // first collect every duplicate-of id across all papers, then fetch them all in one batched
+    // IN query with the paper association already joined.
     private Map<Long, PaperVersion> resolveDuplicateMatches(List<Paper> papers) {
-        Map<Long, PaperVersion> matches = new HashMap<>();
+        Map<Long, Long> paperIdToDuplicateOfVersionId = new HashMap<>();
         for (Paper paper : papers) {
             paper.getVersions().stream()
                     .max(Comparator.comparing(PaperVersion::getVersionNumber))
                     .filter(PaperVersion::isPossibleDuplicate)
-                    .ifPresent(latest -> paperVersionRepository.findById(latest.getDuplicateOfPaperVersionId())
-                            .ifPresent(matched -> matches.put(paper.getId(), matched)));
+                    .ifPresent(latest -> paperIdToDuplicateOfVersionId.put(paper.getId(), latest.getDuplicateOfPaperVersionId()));
         }
+        if (paperIdToDuplicateOfVersionId.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, PaperVersion> duplicateOfVersionById = paperVersionRepository
+                .findAllWithPaperByIdIn(paperIdToDuplicateOfVersionId.values()).stream()
+                .collect(java.util.stream.Collectors.toMap(PaperVersion::getId, v -> v));
+
+        Map<Long, PaperVersion> matches = new HashMap<>();
+        paperIdToDuplicateOfVersionId.forEach((paperId, duplicateOfVersionId) -> {
+            PaperVersion matched = duplicateOfVersionById.get(duplicateOfVersionId);
+            if (matched != null) {
+                matches.put(paperId, matched);
+            }
+        });
         return matches;
     }
 

@@ -700,4 +700,21 @@ class SubmissionServiceTest {
         assertThat(paper.getStatus()).isEqualTo(PaperStatus.WITHDRAWN);
         verify(presentationRepository, never()).delete(any());
     }
+
+    // getAllPapers() must go through the fetch-joined query, not plain findAll() -- the admin
+    // dashboard/papers templates access paper.submitter and paper.versions for every row, and
+    // findAll() would leave both as lazy loads (an N+1 per association, per row).
+    @Test
+    void getAllPapersUsesTheFetchJoinedQueryNotPlainFindAll() {
+        SubmissionService service = new SubmissionService(paperRepository, fileStorageService, emailService, conferenceService, personInvitationService, userRepository, paperVersionRepository, presentationRepository);
+
+        Paper paper = new Paper();
+        paper.setId(1L);
+        when(paperRepository.findAllWithSubmitterAndVersions()).thenReturn(List.of(paper));
+
+        List<Paper> result = service.getAllPapers();
+
+        assertThat(result).containsExactly(paper);
+        verify(paperRepository, never()).findAll();
+    }
 }

@@ -52,7 +52,7 @@ class AdminRegistrationControllerTest {
         conference.setId(10L);
         when(conferenceService.getActiveConference()).thenReturn(conference);
         List<Registration> pending = List.of(new Registration());
-        when(registrationRepository.findByConferenceIdAndPaymentStatus(10L, PaymentStatus.AWAITING_VERIFICATION))
+        when(registrationRepository.findByConferenceIdAndPaymentStatusWithUser(10L, PaymentStatus.AWAITING_VERIFICATION))
                 .thenReturn(pending);
 
         Model model = new ExtendedModelMap();
