@@ -128,6 +128,16 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--brand-primary);
 }
 
+/* Hover-to-open on desktop (a real pointer device) -- gated behind (hover: hover) so touch
+   devices keep Bootstrap's click-to-toggle behavior instead of a menu that opens on tap and
+   can't be dismissed without tapping elsewhere. */
+@media (hover: hover) and (pointer: fine) {
+    .public-navbar .nav-item.dropdown:hover > .dropdown-menu {
+        display: block;
+        margin-top: 0;
+    }
+}
+
 /* --- Buttons: own radius/weight instead of Bootstrap defaults recolored, with a
    press/hover lift instead of a flat darken. --- */
 .btn-brand-primary {
