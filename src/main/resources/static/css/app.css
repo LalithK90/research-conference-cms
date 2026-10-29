@@ -11,17 +11,6 @@ html, body {
   box-sizing: border-box;
 }
 
-/* Prevent long words/urls from forcing horizontal scroll */
-.no-wrap-fix {
-  word-wrap: break-word;
-  overflow-wrap: anywhere;
-}
-
-/* Utility: remove horizontal scroll for specific wrappers */
-.no-h-scroll {
-  overflow-x: hidden !important;
-}
-
 /* Magnetic-field particle background (public pages only -- see fragments/public_layout.html).
    Fixed behind all page content; canvas-level animation has no layout footprint of its own. */
 #tsparticles-bg {

@@ -16,7 +16,7 @@
         <div class="row g-4 mb-5">
             <div class="col-md-4" th:each="speaker : ${plenarySpeakers}">
                 <div class="speaker-tile">
-                    <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" alt="Photo" class="speaker-photo">
+                    <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" th:alt="${speaker.fullName}" class="speaker-photo">
                     <div th:unless="${speaker.photoUrl}" class="speaker-photo speaker-photo-placeholder"
                          th:text="${#strings.isEmpty(speaker.fullName) ? '?' : #strings.substring(speaker.fullName, 0, 1)}">N</div>
                     <h5 class="speaker-name" th:text="${speaker.fullName}">Name</h5>
@@ -33,7 +33,7 @@
         <div class="row g-4">
             <div class="col-md-4" th:each="speaker : ${keynoteSpeakers}">
                 <div class="speaker-tile">
-                    <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" alt="Photo" class="speaker-photo">
+                    <img th:if="${speaker.photoUrl}" th:src="${speaker.photoUrl}" th:alt="${speaker.fullName}" class="speaker-photo">
                     <div th:unless="${speaker.photoUrl}" class="speaker-photo speaker-photo-placeholder"
                          th:text="${#strings.isEmpty(speaker.fullName) ? '?' : #strings.substring(speaker.fullName, 0, 1)}">N</div>
                     <h5 class="speaker-name" th:text="${speaker.fullName}">Name</h5>
