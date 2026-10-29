@@ -53,6 +53,14 @@ h1, h2, h3, h4, h5, h6 {
     font-family: var(--brand-heading-font);
     font-weight: bold;
     font-size: 1.4rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-brand-logo {
+    height: 32px;
+    width: auto;
 }
 
 /* --- Navbar: sticky with a soft shadow instead of a static flat bar, link underline
@@ -97,6 +105,27 @@ h1, h2, h3, h4, h5, h6 {
 .public-navbar .nav-link:hover::after,
 .public-navbar .nav-link.active::after {
     transform: scaleX(1);
+}
+
+/* Dropdown menus (About/Event groups) -- matches the site's radius/shadow tokens instead of
+   Bootstrap's sharp-cornered default, and the dropdown-toggle caret doesn't fight the
+   underline-on-hover rule above (that rule still applies to the toggle link itself). */
+.public-navbar .dropdown-menu {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-xs) 0;
+}
+
+.public-navbar .dropdown-item {
+    color: var(--ink-soft);
+    padding: 0.5rem var(--space-md);
+}
+
+.public-navbar .dropdown-item:hover,
+.public-navbar .dropdown-item:focus {
+    background-color: var(--surface-tint);
+    color: var(--brand-primary);
 }
 
 /* --- Buttons: own radius/weight instead of Bootstrap defaults recolored, with a
