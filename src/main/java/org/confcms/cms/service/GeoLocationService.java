@@ -40,8 +40,8 @@ public class GeoLocationService {
         try {
             InetAddress address = InetAddress.getByName(ipAddress);
             CityResponse response = reader.city(address);
-            String city = response.getCity().getName();
-            String country = response.getCountry().getName();
+            String city = response.city().name();
+            String country = response.country().name();
             if (city == null && country == null) {
                 return Optional.empty();
             }
